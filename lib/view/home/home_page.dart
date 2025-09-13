@@ -11,84 +11,115 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final MainController controller = Get.find<MainController>();
-    
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(16.w),
-          child: Column(
-            children: [
-              // Header with profile and chat
-              _buildHeader(),
-              SizedBox(height: 20.h),
-              
-              // Search bar
-              const SearchWidget(hint: 'ابحث عن طبيب أو مستشفى...'),
-              SizedBox(height: 20.h),
-              
-              // Banner/Image section
-              _buildBanner(),
-              SizedBox(height: 20.h),
-              
-              // Tab buttons (أطباء الأعلى تقييماً, الكل)
-              _buildTabHeader(),
-              SizedBox(height: 20.h),
-              
-              // Content tabs
-              Expanded(
-                child: Obx(() => IndexedStack(
-                  index: controller.homeTabIndex.value,
+      body: Column(
+        children: [
+          // Top section with header and search
+          Container(
+            color: AppColors.background,
+            child: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.all(16.w),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    _buildDoctorsTab(),
-                    _buildHospitalsTab(),
-                    _buildMedicalCentersTab(),
-                  ],
-                )),
-              ),
-              
-              // Bottom tab selector
-              _buildBottomTabs(controller),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+                    // Chat icon
+                    Container(
+                      width: 48.w,
+                      height: 48.w,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      child: Center(
+                        child: Image.asset(
+                          'assets/icons/home/Message Icon.png',
+                          width: 24,
+                          height: 24,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.chat_bubble_outline,
+                              color: Colors.white,
+                              size: 22,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 16.w),
 
-  Widget _buildHeader() {
-    return Row(
-      children: [
-        // Profile avatar
-        Container(
-          width: 50.w,
-          height: 50.w,
-          decoration: const BoxDecoration(
-            color: AppColors.primary,
-            shape: BoxShape.circle,
+                    // Search bar (expanded to take remaining space)
+                    Expanded(
+                      child: SearchWidget(hint: 'ابحث عن طبيب أو مستشفى...'),
+                    ),
+                    SizedBox(width: 16.w),
+
+                    // Profile avatar
+                    Container(
+                      width: 48.w,
+                      height: 48.w,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.person,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-          child: const Icon(
-            Icons.person,
-            color: Colors.white,
-            size: 30,
+
+          // Rest of the content (scrollable)
+          Expanded(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.all(16.w),
+                child: Column(
+                  children: [
+                    // Banner/Image section
+                    _buildBanner(),
+                    SizedBox(height: 20.h),
+
+                // Top rated doctors section
+                _buildTopRatedDoctorsSection(),
+                SizedBox(height: 20.h),
+                
+                // Tab buttons (الكل)
+                _buildTabHeader(),
+                SizedBox(height: 20.h),
+                
+                // Content tabs
+                SizedBox(
+                  height: 400.h, // Fixed height for the grid
+                  child: Obx(() => IndexedStack(
+                    index: controller.homeTabIndex.value,
+                    children: [
+                      _buildDoctorsTab(),
+                      _buildHospitalsTab(),
+                      _buildMedicalCentersTab(),
+                    ],
+                  )),
+                ),
+                SizedBox(height: 20.h),
+                
+                // Bottom tab selector
+                _buildBottomTabs(controller),
+                SizedBox(height: 20.h), // Extra padding at bottom
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
-        const Spacer(),
-        // Chat icon
-        Container(
-          width: 50.w,
-          height: 50.w,
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          child: const Icon(
-            Icons.chat_bubble_outline,
-            color: Colors.white,
-            size: 24,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -102,10 +133,7 @@ class HomePage extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.primary,
-            AppColors.primaryLight,
-          ],
+          colors: [AppColors.primary, AppColors.primaryLight],
         ),
       ),
       child: Container(
@@ -114,10 +142,7 @@ class HomePage extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
-            colors: [
-              AppColors.primary.withOpacity(0.8),
-              Colors.transparent,
-            ],
+            colors: [AppColors.primary.withOpacity(0.8), Colors.transparent],
           ),
         ),
         padding: EdgeInsets.all(20.w),
@@ -144,7 +169,9 @@ class HomePage extends StatelessWidget {
                   height: 8.w,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: index == 3 ? AppColors.textPrimary : Colors.white.withOpacity(0.5),
+                    color: index == 3
+                        ? AppColors.textPrimary
+                        : Colors.white.withOpacity(0.5),
                   ),
                 ),
               ),
@@ -158,12 +185,6 @@ class HomePage extends StatelessWidget {
   Widget _buildTabHeader() {
     return Row(
       children: [
-        Icon(
-          Icons.tune,
-          color: AppColors.textSecondary,
-          size: 24.sp,
-        ),
-        const Spacer(),
         Text(
           'الكل',
           style: TextStyle(
@@ -172,6 +193,8 @@ class HomePage extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
+        const Spacer(),
+        Icon(Icons.tune, color: AppColors.textSecondary, size: 24.sp),
       ],
     );
   }
@@ -212,10 +235,7 @@ class HomePage extends StatelessWidget {
     return const Center(
       child: Text(
         'لا توجد مجمعات',
-        style: TextStyle(
-          color: AppColors.textSecondary,
-          fontSize: 16,
-        ),
+        style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
       ),
     );
   }
@@ -250,58 +270,67 @@ class HomePage extends StatelessWidget {
         );
       },
       child: Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadow,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(height: 8.h),
+            // Doctor image with rounded rectangle
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8.w),
+              child: AspectRatio(
+                aspectRatio: 1.0, // Perfect square
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
+                  child: const Icon(
+                    Icons.person,
+                    color: AppColors.primary,
+                    size: 40,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 8.h),
+            // Doctor name
+            Text(
+              doctorNames[index % doctorNames.length],
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w700,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: 2.h),
+            // Specialty
+            Text(
+              specialties[index % specialties.length],
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w400,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const Spacer(),
+          ],
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(height: 16.h),
-          // Doctor image
-          Container(
-            width: 80.w,
-            height: 80.w,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.primaryLight,
-            ),
-            child: const Icon(
-              Icons.person,
-              color: AppColors.primary,
-              size: 40,
-            ),
-          ),
-          SizedBox(height: 12.h),
-          // Doctor name
-          Text(
-            doctorNames[index % doctorNames.length],
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: 4.h),
-          // Specialty
-          Text(
-            specialties[index % specialties.length],
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12.sp,
-            ),
-          ),
-          const Spacer(),
-        ],
-      ),
-    ),
     );
   }
 
@@ -317,88 +346,235 @@ class HomePage extends StatelessWidget {
         );
       },
       child: Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadow,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Hospital logo
+            Container(
+              width: 80.w,
+              height: 80.w,
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: const Icon(
+                Icons.local_hospital,
+                color: AppColors.primary,
+                size: 40,
+              ),
+            ),
+            SizedBox(height: 12.h),
+            // Hospital name
+            Text(
+              'مستشفى روما',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Hospital logo
-          Container(
-            width: 80.w,
-            height: 80.w,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(12.r),
+    );
+  }
+
+  Widget _buildTopRatedDoctorsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'الأطباء الأعلى تقييماً',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            child: const Icon(
-              Icons.local_hospital,
-              color: AppColors.primary,
-              size: 40,
+            Icon(
+              Icons.arrow_back_ios,
+              color: AppColors.textSecondary,
+              size: 16.sp,
             ),
+          ],
+        ),
+        SizedBox(height: 16.h),
+        SizedBox(
+          height: 200.h,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: 0),
+            physics: const BouncingScrollPhysics(),
+            itemCount: 8, // زيادة عدد الأطباء لضمان السكرول
+            itemBuilder: (context, index) {
+              return Container(
+                width: 140.w,
+                margin: EdgeInsets.only(left: index == 0 ? 0 : 12.w),
+                child: _buildTopRatedDoctorCard(index),
+              );
+            },
           ),
-          SizedBox(height: 12.h),
-          // Hospital name
-          Text(
-            'مستشفى روما',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w600,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTopRatedDoctorCard(int index) {
+    final List<String> doctorNames = [
+      'د. آرين',
+      'د. صوفيا',
+      'د. سونجوز',
+      'د. مالوون',
+      'د. أحمد',
+      'د. فاطمة',
+      'د. خالد',
+      'د. مريم',
+    ];
+
+    final List<String> specialties = [
+      'جراحة القلب',
+      'طب العيون',
+      'جراحة القلب',
+      'جراحة العيون',
+      'طب الأسنان',
+      'طب الأطفال',
+      'جراحة العظام',
+      'طب الجلدية',
+    ];
+
+    return GestureDetector(
+      onTap: () {
+        Get.snackbar(
+          'تفاصيل الطبيب',
+          'سيتم فتح صفحة تفاصيل ${doctorNames[index]}',
+          backgroundColor: AppColors.primary,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 2),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadow,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-          ),
-        ],
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(height: 8.h),
+            // Doctor image with rounded rectangle
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8.w),
+              child: AspectRatio(
+                aspectRatio: 1.0, // Perfect square
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
+                  child: const Icon(
+                    Icons.person,
+                    color: AppColors.primary,
+                    size: 45,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 8.h),
+            // Doctor name
+            Text(
+              doctorNames[index],
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: 2.h),
+            // Specialty
+            Text(
+              specialties[index],
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w400,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const Spacer(),
+          ],
+        ),
       ),
-    ),
     );
   }
 
   Widget _buildBottomTabs(MainController controller) {
     final List<String> tabLabels = ['أطباء', 'مستشفيات', 'مجمعات'];
-    
-    return Obx(() => Container(
-      height: 50.h,
-      decoration: BoxDecoration(
-        color: AppColors.primaryLight,
-        borderRadius: BorderRadius.circular(25.r),
-      ),
-      child: Row(
-        children: List.generate(3, (index) {
-          final isSelected = controller.homeTabIndex.value == index;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => controller.changeHomeTab(index),
-              child: Container(
-                height: 50.h,
-                decoration: isSelected
-                    ? BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(25.r),
-                      )
-                    : null,
-                child: Center(
-                  child: Text(
-                    tabLabels[index],
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.primary,
-                      fontSize: 16.sp,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+
+    return Obx(
+      () => Container(
+        height: 50.h,
+        decoration: BoxDecoration(
+          color: AppColors.primaryLight,
+          borderRadius: BorderRadius.circular(25.r),
+        ),
+        child: Row(
+          children: List.generate(3, (index) {
+            final isSelected = controller.homeTabIndex.value == index;
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => controller.changeHomeTab(index),
+                child: Container(
+                  height: 50.h,
+                  decoration: isSelected
+                      ? BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(25.r),
+                        )
+                      : null,
+                  child: Center(
+                    child: Text(
+                      tabLabels[index],
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : AppColors.primary,
+                        fontSize: 16.sp,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          );
-        }),
+            );
+          }),
+        ),
       ),
-    ));
+    );
   }
 }
