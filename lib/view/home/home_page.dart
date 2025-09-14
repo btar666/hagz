@@ -7,9 +7,11 @@ import '../../widget/search_widget.dart';
 import '../../widget/banner_carousel.dart';
 import '../../widget/my_text.dart';
 import '../../widget/specialty_text.dart';
+import '../doctors/top_rated_doctors_page.dart';
+import '../doctors/doctor_profile_page.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +45,7 @@ class HomePage extends StatelessWidget {
                           height: 24,
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) {
+                            // أيقونة احتياطية في حالة عدم وجود الملف
                             return const Icon(
                               Icons.chat_bubble_outline,
                               color: Colors.white,
@@ -95,9 +98,18 @@ class HomePage extends StatelessWidget {
                           const BannerCarousel(),
                           SizedBox(height: 20.h),
 
-                          // Top rated doctors section
-                          _buildTopRatedDoctorsSection(),
-                          SizedBox(height: 20.h),
+                          // Top rated doctors section - يظهر فقط في تبويب الأطباء
+                          Obx(() {
+                            if (controller.homeTabIndex.value == 0) {
+                              return Column(
+                                children: [
+                                  _buildTopRatedDoctorsSection(),
+                                  SizedBox(height: 20.h),
+                                ],
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          }),
 
                           // Tab buttons (الكل)
                           _buildTabHeader(),
@@ -140,13 +152,12 @@ class HomePage extends StatelessWidget {
   Widget _buildTabHeader() {
     return Row(
       children: [
-        Text(
+        MyText(
           'الكل',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w600,
-          ),
+          fontSize: 18.sp,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
+          textAlign: TextAlign.start,
         ),
         const Spacer(),
         Icon(Icons.tune, color: AppColors.textSecondary, size: 24.sp),
@@ -177,7 +188,7 @@ class HomePage extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 12.w,
         mainAxisSpacing: 12.h,
-        childAspectRatio: 0.8, // مطابق لبطاقات الأطباء
+        childAspectRatio: 178 / 209, // نسبة العرض إلى الارتفاع للحصول على 178w × 209h
       ),
       itemCount: 4, // Sample count
       itemBuilder: (context, index) {
@@ -187,10 +198,13 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildMedicalCentersTab() {
-    return const Center(
-      child: Text(
+    return Center(
+      child: MyText(
         'لا توجد مجمعات',
-        style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+        color: AppColors.textSecondary,
+        fontSize: 16.sp,
+        fontWeight: FontWeight.w700,
+        textAlign: TextAlign.center,
       ),
     );
   }
@@ -216,13 +230,11 @@ class HomePage extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        Get.snackbar(
-          'تفاصيل الطبيب',
-          'سيتم فتح صفحة تفاصيل ${doctorNames[index % doctorNames.length]}',
-          backgroundColor: AppColors.primary,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 2),
-        );
+        // الانتقال إلى صفحة تفاصيل الطبيب
+        Get.to(() => DoctorProfilePage(
+          doctorName: doctorNames[index % doctorNames.length],
+          specialization: specialties[index % specialties.length],
+        ));
       },
       child: Container(
         decoration: BoxDecoration(
@@ -308,13 +320,6 @@ class HomePage extends StatelessWidget {
       'مستشفى الأمل',
     ];
 
-    final List<String> hospitalTypes = [
-      'مستشفى عام',
-      'مركز تخصصي',
-      'مستشفى خاص',
-      'مركز طبي',
-    ];
-
     return GestureDetector(
       onTap: () {
         Get.snackbar(
@@ -340,69 +345,60 @@ class HomePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(height: 8.h),
-            // Hospital image with rounded rectangle (same as doctor card)
+            SizedBox(height: 8.h), // تقليل المسافة العلوية
+            // Hospital image with rounded rectangle - أبعاد محددة 155w × 160h مع مسافات محددة
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.w),
-              child: AspectRatio(
-                aspectRatio: 1.0, // Perfect square
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
-                    borderRadius: BorderRadius.circular(16.r),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16.r),
-                    child: Image.asset(
-                      'assets/icons/home/news1.png', // استخدام صورة مؤقتة
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryLight,
-                            borderRadius: BorderRadius.circular(16.r),
+              padding: EdgeInsets.symmetric(horizontal: 9.w), // مسافة 9 من الجوانب
+              child: Container(
+                width: 155.w, // عرض محدد للصورة
+                height: 140.h, // تقليل ارتفاع الصورة لحل overflow
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16.r),
+                  child: Image.asset(
+                    'assets/icons/home/hospital.png', // صورة المستشفى المخصصة
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: double.infinity,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(16.r),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.local_hospital,
+                            color: AppColors.primary,
+                            size: 40,
                           ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.local_hospital,
-                              color: AppColors.primary,
-                              size: 40,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
             ),
-            SizedBox(height: 8.h),
+            SizedBox(height: 6.h), // تقليل المسافة
             // Hospital name
-            Text(
-              hospitalNames[index % hospitalNames.length],
-              style: TextStyle(
+            Flexible(
+              child: MyText(
+                hospitalNames[index % hospitalNames.length],
+                fontFamily: 'Expo Arabic',
                 color: AppColors.textPrimary,
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w700,
+                fontSize: 16.46.sp,
+                fontWeight: FontWeight.w700, // Bold
+                height: 1.0, // line-height: 100%
+                letterSpacing: 0, // letter-spacing: 0%
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
-            SizedBox(height: 2.h),
-            // Hospital type/specialty
-            Text(
-              hospitalTypes[index % hospitalTypes.length],
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w400,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const Spacer(),
+            SizedBox(height: 8.h), // مسافة سفلية
           ],
         ),
       ),
@@ -413,40 +409,48 @@ class HomePage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'الأطباء الأعلى تقييماً',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w600,
-              ),
+        GestureDetector(
+          onTap: () => Get.to(() => const TopRatedDoctorsPage()),
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 4.w),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8.r),
             ),
-            Icon(
-              Icons.arrow_back_ios,
-              color: AppColors.textSecondary,
-              size: 16.sp,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: MyText(
+                    'الأطباء الأعلى تقييماً',
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                    textAlign: TextAlign.start,
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: AppColors.textSecondary,
+                  size: 16.sp,
+                ),
+              ],
             ),
-          ],
+          ),
         ),
         SizedBox(height: 16.h),
         SizedBox(
           height: 197.h, // ارتفاع محدد للكاردات العلوية
-          child: ListView.builder(
+          child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.symmetric(horizontal: 0),
             physics: const BouncingScrollPhysics(),
             itemCount: 8, // زيادة عدد الأطباء لضمان السكرول
+            separatorBuilder: (context, index) => SizedBox(width: 12.w), // مسافة موحدة بين جميع الكاردات
             itemBuilder: (context, index) {
-              return Padding(
-                padding: EdgeInsets.only(left: index == 0 ? 0 : 12.w),
-                child: SizedBox(
-                  width: 137.w, // عرض محدد للكاردات العلوية
-                  height: 197.h, // ارتفاع محدد
-                  child: _buildTopRatedDoctorCard(index),
-                ),
+              return SizedBox(
+                width: 137.w, // عرض محدد للكاردات العلوية
+                height: 197.h, // ارتفاع محدد
+                child: _buildTopRatedDoctorCard(index),
               );
             },
           ),
@@ -480,13 +484,11 @@ class HomePage extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        Get.snackbar(
-          'تفاصيل الطبيب',
-          'سيتم فتح صفحة تفاصيل ${doctorNames[index]}',
-          backgroundColor: AppColors.primary,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 2),
-        );
+        // الانتقال إلى صفحة تفاصيل الطبيب
+        Get.to(() => DoctorProfilePage(
+          doctorName: doctorNames[index],
+          specialization: specialties[index],
+        ));
       },
       child: Container(
         width: double.infinity, // يملأ عرض الـ SizedBox المحدد
@@ -587,15 +589,15 @@ class HomePage extends StatelessWidget {
                         )
                       : null,
                   child: Center(
-                    child: Text(
+                    child: MyText(
                       tabLabels[index],
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : AppColors.primary,
-                        fontSize: 16.sp,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                      ),
+                      fontFamily: 'Expo Arabic',
+                      fontWeight: FontWeight.w600, // SemiBold
+                      fontSize: 16.sp,
+                      height: 1.0, // line-height: 100%
+                      letterSpacing: 0, // letter-spacing: 0%
+                      color: isSelected ? Colors.white : AppColors.primary,
+                      textAlign: TextAlign.right,
                     ),
                   ),
                 ),
