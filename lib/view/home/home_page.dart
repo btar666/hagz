@@ -4,6 +4,9 @@ import 'package:get/get.dart';
 import '../../controller/main_controller.dart';
 import '../../utils/app_colors.dart';
 import '../../widget/search_widget.dart';
+import '../../widget/banner_carousel.dart';
+import '../../widget/my_text.dart';
+import '../../widget/specialty_text.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -79,43 +82,53 @@ class HomePage extends StatelessWidget {
 
           // Rest of the content (scrollable)
           Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.all(16.w),
-                child: Column(
-                  children: [
-                    // Banner/Image section
-                    _buildBanner(),
-                    SizedBox(height: 20.h),
+            child: Column(
+              children: [
+                // Scrollable content
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.w),
+                      child: Column(
+                        children: [
+                          // Banner carousel section
+                          const BannerCarousel(),
+                          SizedBox(height: 20.h),
 
-                // Top rated doctors section
-                _buildTopRatedDoctorsSection(),
-                SizedBox(height: 20.h),
-                
-                // Tab buttons (الكل)
-                _buildTabHeader(),
-                SizedBox(height: 20.h),
-                
-                // Content tabs
-                SizedBox(
-                  height: 400.h, // Fixed height for the grid
-                  child: Obx(() => IndexedStack(
-                    index: controller.homeTabIndex.value,
-                    children: [
-                      _buildDoctorsTab(),
-                      _buildHospitalsTab(),
-                      _buildMedicalCentersTab(),
-                    ],
-                  )),
+                          // Top rated doctors section
+                          _buildTopRatedDoctorsSection(),
+                          SizedBox(height: 20.h),
+
+                          // Tab buttons (الكل)
+                          _buildTabHeader(),
+                          SizedBox(height: 20.h),
+
+                          // Content tabs
+                          SizedBox(
+                            height: 400.h, // Fixed height for the grid
+                            child: Obx(
+                              () => IndexedStack(
+                                index: controller.homeTabIndex.value,
+                                children: [
+                                  _buildDoctorsTab(),
+                                  _buildHospitalsTab(),
+                                  _buildMedicalCentersTab(),
+                                ],
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 20.h), // Space before fixed bottom tabs
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                SizedBox(height: 20.h),
-                
-                // Bottom tab selector
-                _buildBottomTabs(controller),
-                SizedBox(height: 20.h), // Extra padding at bottom
-                  ],
+                // Fixed bottom tab selector
+                Container(
+                  padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 20.h),
+                  child: _buildBottomTabs(controller),
                 ),
-              ),
+              ],
             ),
           ),
         ],
@@ -123,64 +136,6 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildBanner() {
-    return Container(
-      width: double.infinity,
-      height: 180.h,
-      decoration: BoxDecoration(
-        color: AppColors.primaryLight,
-        borderRadius: BorderRadius.circular(16.r),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.primaryLight],
-        ),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16.r),
-          gradient: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [AppColors.primary.withOpacity(0.8), Colors.transparent],
-          ),
-        ),
-        padding: EdgeInsets.all(20.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Text(
-              'الأطباء الأعلى تقييماً',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20.sp,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 8.h),
-            // Dots indicator
-            Row(
-              children: List.generate(
-                4,
-                (index) => Container(
-                  margin: EdgeInsets.only(right: 8.w),
-                  width: 8.w,
-                  height: 8.w,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: index == 3
-                        ? AppColors.textPrimary
-                        : Colors.white.withOpacity(0.5),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildTabHeader() {
     return Row(
@@ -206,7 +161,7 @@ class HomePage extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 12.w,
         mainAxisSpacing: 12.h,
-        childAspectRatio: 0.8,
+        childAspectRatio: 178 / 247, // نسبة العرض إلى الارتفاع للحصول على 178h × 247w
       ),
       itemCount: 6, // Sample count
       itemBuilder: (context, index) {
@@ -222,11 +177,11 @@ class HomePage extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 12.w,
         mainAxisSpacing: 12.h,
-        childAspectRatio: 0.9,
+        childAspectRatio: 0.8, // مطابق لبطاقات الأطباء
       ),
       itemCount: 4, // Sample count
       itemBuilder: (context, index) {
-        return _buildHospitalCard();
+        return _buildHospitalCard(index);
       },
     );
   }
@@ -295,35 +250,46 @@ class HomePage extends StatelessWidget {
                     color: AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(16.r),
                   ),
-                  child: const Icon(
-                    Icons.person,
-                    color: AppColors.primary,
-                    size: 40,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16.r),
+                    child: Image.asset(
+                      'assets/icons/home/doctor.png',
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryLight,
+                            borderRadius: BorderRadius.circular(16.r),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.person,
+                              color: AppColors.primary,
+                              size: 40,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
             ),
             SizedBox(height: 8.h),
             // Doctor name
-            Text(
+            MyText(
               doctorNames[index % doctorNames.length],
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w700,
-              ),
+              fontSize: 15.sp, // حجم أكبر للأطباء في الكاردات السفلية
+              textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            SizedBox(height: 2.h),
+            SizedBox(height: 6.h), // زيادة المسافة بين الاسم والتخصص
             // Specialty
-            Text(
+            SpecialtyText(
               specialties[index % specialties.length],
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w400,
-              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -334,12 +300,26 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildHospitalCard() {
+  Widget _buildHospitalCard(int index) {
+    final List<String> hospitalNames = [
+      'مستشفى روما',
+      'مستشفى النور',
+      'مستشفى الحياة',
+      'مستشفى الأمل',
+    ];
+
+    final List<String> hospitalTypes = [
+      'مستشفى عام',
+      'مركز تخصصي',
+      'مستشفى خاص',
+      'مركز طبي',
+    ];
+
     return GestureDetector(
       onTap: () {
         Get.snackbar(
           'تفاصيل المستشفى',
-          'سيتم فتح صفحة تفاصيل مستشفى روما',
+          'سيتم فتح صفحة تفاصيل ${hospitalNames[index % hospitalNames.length]}',
           backgroundColor: AppColors.primary,
           colorText: Colors.white,
           duration: const Duration(seconds: 2),
@@ -358,32 +338,71 @@ class HomePage extends StatelessWidget {
           ],
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Hospital logo
-            Container(
-              width: 80.w,
-              height: 80.w,
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-              child: const Icon(
-                Icons.local_hospital,
-                color: AppColors.primary,
-                size: 40,
+            SizedBox(height: 8.h),
+            // Hospital image with rounded rectangle (same as doctor card)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8.w),
+              child: AspectRatio(
+                aspectRatio: 1.0, // Perfect square
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16.r),
+                    child: Image.asset(
+                      'assets/icons/home/news1.png', // استخدام صورة مؤقتة
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryLight,
+                            borderRadius: BorderRadius.circular(16.r),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.local_hospital,
+                              color: AppColors.primary,
+                              size: 40,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
               ),
             ),
-            SizedBox(height: 12.h),
+            SizedBox(height: 8.h),
             // Hospital name
             Text(
-              'مستشفى روما',
+              hospitalNames[index % hospitalNames.length],
               style: TextStyle(
                 color: AppColors.textPrimary,
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w700,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
+            SizedBox(height: 2.h),
+            // Hospital type/specialty
+            Text(
+              hospitalTypes[index % hospitalTypes.length],
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w400,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const Spacer(),
           ],
         ),
       ),
@@ -414,17 +433,20 @@ class HomePage extends StatelessWidget {
         ),
         SizedBox(height: 16.h),
         SizedBox(
-          height: 200.h,
+          height: 197.h, // ارتفاع محدد للكاردات العلوية
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.symmetric(horizontal: 0),
             physics: const BouncingScrollPhysics(),
             itemCount: 8, // زيادة عدد الأطباء لضمان السكرول
             itemBuilder: (context, index) {
-              return Container(
-                width: 140.w,
-                margin: EdgeInsets.only(left: index == 0 ? 0 : 12.w),
-                child: _buildTopRatedDoctorCard(index),
+              return Padding(
+                padding: EdgeInsets.only(left: index == 0 ? 0 : 12.w),
+                child: SizedBox(
+                  width: 137.w, // عرض محدد للكاردات العلوية
+                  height: 197.h, // ارتفاع محدد
+                  child: _buildTopRatedDoctorCard(index),
+                ),
               );
             },
           ),
@@ -467,6 +489,8 @@ class HomePage extends StatelessWidget {
         );
       },
       child: Container(
+        width: double.infinity, // يملأ عرض الـ SizedBox المحدد
+        height: double.infinity, // يملأ ارتفاع الـ SizedBox المحدد
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16.r),
@@ -481,48 +505,53 @@ class HomePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(height: 8.h),
-            // Doctor image with rounded rectangle
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.w),
-              child: AspectRatio(
-                aspectRatio: 1.0, // Perfect square
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
-                    borderRadius: BorderRadius.circular(16.r),
-                  ),
-                  child: const Icon(
-                    Icons.person,
-                    color: AppColors.primary,
-                    size: 45,
+            SizedBox(height: 5.h),
+            // Doctor image with rounded rectangle - مثل الكاردات السفلية
+            Center(
+              child: Container(
+                width: 126.w, // عرض محدد للصورة
+                height: 135.h, // ارتفاع محدد للصورة
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16.r),
+                  child: Image.asset(
+                    'assets/icons/home/doctor.png',
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: double.infinity,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(16.r),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.person,
+                            color: AppColors.primary,
+                            size: 40,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
             ),
             SizedBox(height: 8.h),
             // Doctor name
-            Text(
+            MyText(
               doctorNames[index],
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w700,
-              ),
-              textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            SizedBox(height: 2.h),
+            SizedBox(height: 6.h), // زيادة المسافة بين الاسم والتخصص
             // Specialty
-            Text(
+            SpecialtyText(
               specialties[index],
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w400,
-              ),
-              textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -540,7 +569,7 @@ class HomePage extends StatelessWidget {
       () => Container(
         height: 50.h,
         decoration: BoxDecoration(
-          color: AppColors.primaryLight,
+          color: const Color(0xFFFFFFFF), // أبيض
           borderRadius: BorderRadius.circular(25.r),
         ),
         child: Row(

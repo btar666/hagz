@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'banner_controller.dart';
 
 class MainController extends GetxController {
   // Current page index for bottom navigation
@@ -7,12 +8,22 @@ class MainController extends GetxController {
   // Home page tab index (أطباء، مستشفيات، مجمعات)
   var homeTabIndex = 0.obs;
   
+  // Banner controller
+  late BannerController bannerController;
+  
   void changeTab(int index) {
     currentIndex.value = index;
   }
   
   void changeHomeTab(int index) {
     homeTabIndex.value = index;
+  }
+  
+  @override
+  void onInit() {
+    super.onInit();
+    // تهيئة banner controller
+    bannerController = Get.put(BannerController());
   }
   
   // Navigation methods using GetX
