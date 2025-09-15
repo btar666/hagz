@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import '../../utils/app_colors.dart';
-import '../../widget/my_text.dart';
-import '../../widget/specialty_text.dart';
+import '../../../utils/app_colors.dart';
+import '../../../widget/my_text.dart';
+import '../../../widget/specialty_text.dart';
 import 'doctor_profile_page.dart';
 
 class TopRatedDoctorsPage extends StatelessWidget {
@@ -50,11 +50,7 @@ class TopRatedDoctorsPage extends StatelessWidget {
             color: AppColors.primary,
             borderRadius: BorderRadius.circular(20.r),
           ),
-          child: const Icon(
-            Icons.tune,
-            color: Colors.white,
-            size: 20,
-          ),
+          child: const Icon(Icons.tune, color: Colors.white, size: 20),
         ),
         title: MyText(
           'الأطباء الأعلى تقييماً',
@@ -92,7 +88,8 @@ class TopRatedDoctorsPage extends StatelessWidget {
             crossAxisCount: 2,
             crossAxisSpacing: 12.w,
             mainAxisSpacing: 12.h,
-            childAspectRatio: 178 / 247, // نفس نسبة كاردات الأطباء في الصفحة الرئيسية
+            childAspectRatio:
+                178 / 247, // نفس نسبة كاردات الأطباء في الصفحة الرئيسية
           ),
           itemCount: doctorNames.length,
           itemBuilder: (context, index) {
@@ -103,14 +100,20 @@ class TopRatedDoctorsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDoctorCard(int index, List<String> doctorNames, List<String> specialties) {
+  Widget _buildDoctorCard(
+    int index,
+    List<String> doctorNames,
+    List<String> specialties,
+  ) {
     return GestureDetector(
       onTap: () {
         // الانتقال إلى صفحة تفاصيل الطبيب
-        Get.to(() => DoctorProfilePage(
-          doctorName: doctorNames[index],
-          specialization: specialties[index],
-        ));
+        Get.to(
+          () => DoctorProfilePage(
+            doctorName: doctorNames[index],
+            specialization: specialties[index],
+          ),
+        );
       },
       child: Container(
         decoration: BoxDecoration(

@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:hagz/view/home/hospital/hospital_details_page.dart';
 import '../../controller/main_controller.dart';
 import '../../utils/app_colors.dart';
 import '../../widget/search_widget.dart';
 import '../../widget/banner_carousel.dart';
 import '../../widget/my_text.dart';
 import '../../widget/specialty_text.dart';
-import '../doctors/top_rated_doctors_page.dart';
-import '../doctors/doctor_profile_page.dart';
+import 'doctors/top_rated_doctors_page.dart';
+import 'doctors/doctor_profile_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -129,7 +130,9 @@ class HomePage extends StatelessWidget {
                               ),
                             ),
                           ),
-                          SizedBox(height: 20.h), // Space before fixed bottom tabs
+                          SizedBox(
+                            height: 20.h,
+                          ), // Space before fixed bottom tabs
                         ],
                       ),
                     ),
@@ -147,7 +150,6 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
-
 
   Widget _buildTabHeader() {
     return Row(
@@ -172,7 +174,8 @@ class HomePage extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 12.w,
         mainAxisSpacing: 12.h,
-        childAspectRatio: 178 / 247, // نسبة العرض إلى الارتفاع للحصول على 178h × 247w
+        childAspectRatio:
+            178 / 247, // نسبة العرض إلى الارتفاع للحصول على 178h × 247w
       ),
       itemCount: 6, // Sample count
       itemBuilder: (context, index) {
@@ -188,7 +191,8 @@ class HomePage extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 12.w,
         mainAxisSpacing: 12.h,
-        childAspectRatio: 178 / 209, // نسبة العرض إلى الارتفاع للحصول على 178w × 209h
+        childAspectRatio:
+            178 / 209, // نسبة العرض إلى الارتفاع للحصول على 178w × 209h
       ),
       itemCount: 4, // Sample count
       itemBuilder: (context, index) {
@@ -231,10 +235,12 @@ class HomePage extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         // الانتقال إلى صفحة تفاصيل الطبيب
-        Get.to(() => DoctorProfilePage(
-          doctorName: doctorNames[index % doctorNames.length],
-          specialization: specialties[index % specialties.length],
-        ));
+        Get.to(
+          () => DoctorProfilePage(
+            doctorName: doctorNames[index % doctorNames.length],
+            specialization: specialties[index % specialties.length],
+          ),
+        );
       },
       child: Container(
         decoration: BoxDecoration(
@@ -320,14 +326,22 @@ class HomePage extends StatelessWidget {
       'مستشفى الأمل',
     ];
 
+    final List<String> hospitalLocations = [
+      'شارع المتحف قرب نقابة الأطباء',
+      'شارع الكندي بجانب الجامعة الأردنية',
+      'شارع الملكة رانيا قرب المدينة الطبية',
+      'شارع عبدون بجانب مجمع النخيل',
+    ];
+
     return GestureDetector(
       onTap: () {
-        Get.snackbar(
-          'تفاصيل المستشفى',
-          'سيتم فتح صفحة تفاصيل ${hospitalNames[index % hospitalNames.length]}',
-          backgroundColor: AppColors.primary,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 2),
+        // الانتقال إلى صفحة تفاصيل المستشفى
+        Get.to(
+          () => HospitalDetailsPage(
+            hospitalName: hospitalNames[index % hospitalNames.length],
+            hospitalLocation:
+                hospitalLocations[index % hospitalLocations.length],
+          ),
         );
       },
       child: Container(
@@ -348,7 +362,9 @@ class HomePage extends StatelessWidget {
             SizedBox(height: 8.h), // تقليل المسافة العلوية
             // Hospital image with rounded rectangle - أبعاد محددة 155w × 160h مع مسافات محددة
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 9.w), // مسافة 9 من الجوانب
+              padding: EdgeInsets.symmetric(
+                horizontal: 9.w,
+              ), // مسافة 9 من الجوانب
               child: Container(
                 width: 155.w, // عرض محدد للصورة
                 height: 140.h, // تقليل ارتفاع الصورة لحل overflow
@@ -413,9 +429,7 @@ class HomePage extends StatelessWidget {
           onTap: () => Get.to(() => const TopRatedDoctorsPage()),
           child: Container(
             padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 4.w),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8.r),
-            ),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(8.r)),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -445,7 +459,8 @@ class HomePage extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 0),
             physics: const BouncingScrollPhysics(),
             itemCount: 8, // زيادة عدد الأطباء لضمان السكرول
-            separatorBuilder: (context, index) => SizedBox(width: 12.w), // مسافة موحدة بين جميع الكاردات
+            separatorBuilder: (context, index) =>
+                SizedBox(width: 12.w), // مسافة موحدة بين جميع الكاردات
             itemBuilder: (context, index) {
               return SizedBox(
                 width: 137.w, // عرض محدد للكاردات العلوية
@@ -485,10 +500,12 @@ class HomePage extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         // الانتقال إلى صفحة تفاصيل الطبيب
-        Get.to(() => DoctorProfilePage(
-          doctorName: doctorNames[index],
-          specialization: specialties[index],
-        ));
+        Get.to(
+          () => DoctorProfilePage(
+            doctorName: doctorNames[index],
+            specialization: specialties[index],
+          ),
+        );
       },
       child: Container(
         width: double.infinity, // يملأ عرض الـ SizedBox المحدد
