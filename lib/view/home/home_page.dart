@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:hagz/view/home/hospital/hospital_details_page.dart';
+import 'package:hagz/view/home/complex/complex_details_page.dart';
 import '../../controller/main_controller.dart';
 import '../../utils/app_colors.dart';
 import '../../widget/search_widget.dart';
@@ -199,14 +200,19 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildMedicalCentersTab() {
-    return Center(
-      child: MyText(
-        'لا توجد مجمعات',
-        color: AppColors.textSecondary,
-        fontSize: 16.sp,
-        fontWeight: FontWeight.w700,
-        textAlign: TextAlign.center,
+    // عرض المجمعات بقائمة منفصلة لكن بنفس تصميم المستشفيات وبنفس شبكة العرض
+    return GridView.builder(
+      padding: EdgeInsets.zero,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12.w,
+        mainAxisSpacing: 12.h,
+        childAspectRatio: 178 / 209,
       ),
+      itemCount: _complexNames.length,
+      itemBuilder: (context, index) {
+        return _buildComplexCard(index);
+      },
     );
   }
 
@@ -315,6 +321,20 @@ class HomePage extends StatelessWidget {
     );
   }
 
+  // بيانات المجمعات (منفصلة عن المستشفيات)
+  final List<String> _complexNames = const [
+    'مجمع الشفاء الطبي',
+    'مجمع الرفاه الطبي',
+    'مجمع الحياة الطبي',
+    'مجمع النخيل الطبي',
+  ];
+  final List<String> _complexLocations = const [
+    'شارع الزهور قرب دوار الجامعة',
+    'المنطقة الطبية قرب المستشفى التعليمي',
+    'شارع المدينة مجاور مجمع الأطباء',
+    'الحي الراقي قرب حديقة النخيل',
+  ];
+
   Widget _buildHospitalCard(int index) {
     final List<String> hospitalNames = [
       'مستشفى روما',
@@ -412,6 +432,87 @@ class HomePage extends StatelessWidget {
               ),
             ),
             SizedBox(height: 8.h), // مسافة سفلية
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildComplexCard(int index) {
+    return GestureDetector(
+      onTap: () {
+        Get.to(
+          () => ComplexDetailsPage(
+            complexName: _complexNames[index % _complexNames.length],
+            complexLocation: _complexLocations[index % _complexLocations.length],
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadow,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(height: 8.h),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 9.w),
+              child: Container(
+                width: 155.w,
+                height: 140.h,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16.r),
+                  child: Image.asset(
+                    'assets/icons/home/hospital.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(16.r),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.apartment,
+                            color: AppColors.primary,
+                            size: 40,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 6.h),
+            Flexible(
+              child: MyText(
+                _complexNames[index % _complexNames.length],
+                fontFamily: 'Expo Arabic',
+                color: AppColors.textPrimary,
+                fontSize: 16.46.sp,
+                fontWeight: FontWeight.w700,
+                height: 1.0,
+                letterSpacing: 0,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ),
+            SizedBox(height: 8.h),
           ],
         ),
       ),
