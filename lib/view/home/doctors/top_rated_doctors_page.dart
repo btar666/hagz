@@ -38,9 +38,9 @@ class TopRatedDoctorsPage extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF4FEFF),
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: const Color(0xFFF4FEFF),
         elevation: 0,
         leading: Container(
           margin: EdgeInsets.all(8.w),

@@ -3,91 +3,42 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
+import '../home/doctors/doctor_profile_page.dart';
 
 class SpecialtiesPage extends StatelessWidget {
   const SpecialtiesPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F8FA),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            _buildHeader(),
-
-            // Search bar
-            _buildSearchBar(),
-
-            SizedBox(height: 20.h),
-
-            // Main content with doctors list and specialties sidebar
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: Row(
-                  children: [
-                    // Doctors list
-                    Expanded(child: _buildDoctorsList()),
-
-                    SizedBox(width: 15.w),
-
-                    // Specialties sidebar
-                    _buildSpecialtiesSidebar(),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      height: 120.h,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(25),
-          bottomRight: Radius.circular(25),
-        ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w),
-          child: Row(
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF4FEFF),
+        body: SafeArea(
+          child: Column(
             children: [
-              // Empty space to balance the back button
-              SizedBox(width: 50.w),
-              const Spacer(),
+              // Header
+              _buildHeader(),
 
-              // Title
-              MyText(
-                'الاختصاصات',
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-                textAlign: TextAlign.center,
-              ),
+              // Search bar
+              _buildSearchBar(),
 
-              const Spacer(),
-              // Back button
-              GestureDetector(
-                onTap: () => Get.back(),
-                child: Container(
-                  width: 50.w,
-                  height: 50.w,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF7FC8D6),
-                    borderRadius: BorderRadius.circular(15.r),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_forward_ios,
-                    color: Colors.white,
-                    size: 20,
+              SizedBox(height: 20.h),
+
+              // Main content with doctors list and specialties sidebar
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  child: Row(
+                    children: [
+                      // Specialties sidebar
+                      _buildSpecialtiesSidebar(),
+
+                      SizedBox(width: 15.w),
+
+                      // Doctors list
+                      Expanded(child: _buildDoctorsList()),
+                    ],
                   ),
                 ),
               ),
@@ -98,36 +49,67 @@ class SpecialtiesPage extends StatelessWidget {
     );
   }
 
+  Widget _buildHeader() {
+    return Container(
+      padding: EdgeInsets.only(top: 50.h, bottom: 30.h),
+      child: Center(
+        child: MyText(
+          'الاختصاصات',
+          fontSize: 18.sp,
+          fontWeight: FontWeight.w600,
+          color: Colors.black87,
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
   Widget _buildSearchBar() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 15.h),
       child: Container(
-        height: 55.h,
+        height: 48.h,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(25.r),
+          borderRadius: BorderRadius.circular(30.r),
+          border: Border.all(
+            color: const Color(0xFF7FC8D6).withOpacity(0.3),
+            width: 1.5,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 15,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: TextField(
           textAlign: TextAlign.right,
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 15.sp,
+            fontWeight: FontWeight.w500,
+          ),
           decoration: InputDecoration(
             hintText: 'ابحث عن اختصاص...',
-            hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14.sp),
-            prefixIcon: Icon(
-              Icons.search,
-              color: const Color(0xFF7FC8D6),
-              size: 24.r,
+            hintStyle: TextStyle(
+              color: const Color(0xFF9CA3AF),
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w400,
+            ),
+            prefixIcon: Container(
+              padding: EdgeInsets.all(12.r),
+              child: Icon(
+                Icons.search,
+                color: const Color(0xFF7FC8D6),
+                size: 26.r,
+              ),
             ),
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(
-              horizontal: 20.w,
-              vertical: 15.h,
+              horizontal: 25.w,
+              vertical: 18.h,
             ),
           ),
         ),
@@ -146,75 +128,101 @@ class SpecialtiesPage extends StatelessWidget {
   }
 
   Widget _buildDoctorCard(DoctorItem doctor) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+    return GestureDetector(
+      onTap: () {
+        Get.to(
+          () => DoctorProfilePage(
+            doctorName: doctor.name,
+            specialization: doctor.specialty,
           ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(20.w),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(25.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
         child: Row(
           children: [
-            // Doctor info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  MyText(
-                    doctor.name,
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                    textAlign: TextAlign.right,
-                  ),
-                  SizedBox(height: 5.h),
-                  MyText(
-                    doctor.specialty,
-                    fontSize: 12.sp,
-                    color: Colors.grey[600],
-                    textAlign: TextAlign.right,
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(width: 15.w),
-
-            // Doctor image
+            // Doctor image section
             Container(
-              width: 80.w,
-              height: 80.w,
+              width: 99.w,
+              height: 90.h,
+              margin: EdgeInsets.all(10.w),
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(20.r),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
-              child: ClipOval(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20.r),
                 child: Image.asset(
                   doctor.imagePath,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      color: Colors.grey[200],
-                      child: Icon(
-                        Icons.person,
-                        size: 40.r,
-                        color: Colors.grey[400],
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.person,
+                            size: 50.r,
+                            color: Colors.grey[400],
+                          ),
+                          SizedBox(height: 5.h),
+                          MyText(
+                            'صورة الطبيب',
+                            fontSize: 10.sp,
+                            color: Colors.grey[500],
+                          ),
+                        ],
                       ),
                     );
                   },
+                ),
+              ),
+            ),
+
+            // Doctor info section
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.all(25.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    MyText(
+                      doctor.name,
+                      fontSize: 17.sp,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF2D3748),
+                      textAlign: TextAlign.left,
+                    ),
+                    SizedBox(height: 8.h),
+                    MyText(
+                      doctor.specialty,
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF718096),
+                      textAlign: TextAlign.left,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -263,35 +271,41 @@ class SpecialtiesPage extends StatelessWidget {
         // Handle specialty selection
       },
       child: Container(
-        width: 50.w,
-        height: 50.w,
-        margin: EdgeInsets.symmetric(horizontal: 15.w),
-        decoration: BoxDecoration(
-          color: specialty.isSelected
-              ? const Color(0xFFFFB800)
-              : specialty.color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(15.r),
-          border: specialty.isSelected
-              ? Border.all(color: const Color(0xFFFFB800), width: 2)
-              : null,
-        ),
+        margin: EdgeInsets.symmetric(horizontal: 10.w),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              specialty.icon,
-              color: specialty.isSelected ? Colors.white : specialty.color,
-              size: 20.r,
-            ),
-            if (specialty.label.isNotEmpty) ...[
-              SizedBox(height: 2.h),
-              MyText(
-                specialty.label,
-                fontSize: 8.sp,
-                color: specialty.isSelected ? Colors.white : specialty.color,
-                textAlign: TextAlign.center,
+            // Icon container
+            Container(
+              width: 50.w,
+              height: 50.w,
+              decoration: BoxDecoration(
+                color: specialty.isSelected
+                    ? const Color(0xFFFFB800)
+                    : specialty.color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(15.r),
+                border: specialty.isSelected
+                    ? Border.all(color: const Color(0xFFFFB800), width: 2)
+                    : null,
               ),
-            ],
+              child: Icon(
+                specialty.icon,
+                color: specialty.isSelected ? Colors.white : specialty.color,
+                size: 20.r,
+              ),
+            ),
+
+            SizedBox(height: 5.h),
+
+            // Label text
+            MyText(
+              specialty.label,
+              fontSize: 10.sp,
+              color: specialty.isSelected
+                  ? const Color(0xFFFFB800)
+                  : Colors.grey[600],
+              textAlign: TextAlign.center,
+              maxLines: 2,
+            ),
           ],
         ),
       ),
@@ -341,44 +355,44 @@ class SpecialtiesPage extends StatelessWidget {
     SidebarSpecialtyItem(
       icon: Icons.psychology,
       color: const Color(0xFFFFB800),
-      label: '',
+      label: 'طب الأعصاب',
       name: 'طب الأعصاب',
     ),
     SidebarSpecialtyItem(
       icon: Icons.medical_services,
       color: const Color(0xFFFFB800),
-      label: '',
+      label: 'طب الأسنان',
       name: 'طب الأسنان',
     ),
     SidebarSpecialtyItem(
       icon: Icons.local_hospital,
       color: const Color(0xFFFFB800),
-      label: '',
+      label: 'الطب العام',
       name: 'الطب العام',
     ),
     SidebarSpecialtyItem(
       icon: Icons.remove_red_eye,
       color: const Color(0xFFFFB800),
-      label: '',
+      label: 'طب العيون',
       name: 'طب العيون',
       isSelected: true,
     ),
     SidebarSpecialtyItem(
       icon: Icons.child_care,
       color: const Color(0xFFFFB800),
-      label: '',
+      label: 'طب الأطفال',
       name: 'طب الأطفال',
     ),
     SidebarSpecialtyItem(
       icon: Icons.accessible,
       color: const Color(0xFFFFB800),
-      label: '',
+      label: 'المفاصل',
       name: 'المفاصل',
     ),
     SidebarSpecialtyItem(
       icon: Icons.healing,
       color: const Color(0xFFFFB800),
-      label: '',
+      label: 'العلاج الطبيعي',
       name: 'العلاج الطبيعي',
     ),
   ];

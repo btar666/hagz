@@ -19,67 +19,64 @@ class HomePage extends StatelessWidget {
     final MainController controller = Get.find<MainController>();
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF4FEFF),
       body: Column(
         children: [
           // Top section with header and search
-          Container(
-            color: AppColors.background,
-            child: SafeArea(
-              child: Padding(
-                padding: EdgeInsets.all(16.w),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Chat icon
-                    Container(
-                      width: 48.w,
-                      height: 48.w,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(20.r),
-                      ),
-                      child: Center(
-                        child: Image.asset(
-                          'assets/icons/home/Message Icon.png',
-                          width: 24,
-                          height: 24,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            // أيقونة احتياطية في حالة عدم وجود الملف
-                            return const Icon(
-                              Icons.chat_bubble_outline,
-                              color: Colors.white,
-                              size: 22,
-                            );
-                          },
-                        ),
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.all(16.w),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Chat icon
+                  Container(
+                    width: 48.w,
+                    height: 48.w,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Center(
+                      child: Image.asset(
+                        'assets/icons/home/Message Icon.png',
+                        width: 24,
+                        height: 24,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          // أيقونة احتياطية في حالة عدم وجود الملف
+                          return const Icon(
+                            Icons.chat_bubble_outline,
+                            color: Colors.white,
+                            size: 22,
+                          );
+                        },
                       ),
                     ),
-                    SizedBox(width: 16.w),
+                  ),
+                  SizedBox(width: 16.w),
 
-                    // Search bar (expanded to take remaining space)
-                    Expanded(
-                      child: SearchWidget(hint: 'ابحث عن طبيب أو مستشفى...'),
-                    ),
-                    SizedBox(width: 16.w),
+                  // Search bar (expanded to take remaining space)
+                  Expanded(
+                    child: SearchWidget(hint: 'ابحث عن طبيب أو مستشفى...'),
+                  ),
+                  SizedBox(width: 16.w),
 
-                    // Profile avatar
-                    Container(
-                      width: 48.w,
-                      height: 48.w,
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.person,
-                        color: Colors.white,
-                        size: 28,
-                      ),
+                  // Profile avatar
+                  Container(
+                    width: 48.w,
+                    height: 48.w,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
                     ),
-                  ],
-                ),
+                    child: const Icon(
+                      Icons.person,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

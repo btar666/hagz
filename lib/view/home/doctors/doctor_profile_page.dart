@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:hagz/utils/app_colors.dart';
 import 'package:hagz/widget/my_text.dart';
 import '../../../controller/doctor_profile_controller.dart';
+import '../../appointments/patient_registration_page.dart';
 
 class DoctorProfilePage extends StatelessWidget {
   final String doctorName;
@@ -19,39 +20,42 @@ class DoctorProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(DoctorProfileController());
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Header with back button, title, and chat button
-            _buildHeader(),
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF4FEFF),
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              // Header with back button, title, and chat button
+              _buildHeader(),
 
-            // Doctor image section
-            _buildDoctorImage(),
+              // Doctor image section
+              _buildDoctorImage(),
 
-            SizedBox(height: 20.h),
+              SizedBox(height: 20.h),
 
-            // Doctor name and specialty
-            _buildDoctorInfo(),
+              // Doctor name and specialty
+              _buildDoctorInfo(),
 
-            SizedBox(height: 20.h),
+              SizedBox(height: 20.h),
 
-            // Social media icons
-            _buildSocialMediaIcons(),
+              // Social media icons
+              _buildSocialMediaIcons(),
 
-            SizedBox(height: 30.h),
+              SizedBox(height: 30.h),
 
-            // Expandable sections
-            _buildExpandableSections(controller),
+              // Expandable sections
+              _buildExpandableSections(controller),
 
-            SizedBox(height: 30.h),
+              SizedBox(height: 30.h),
 
-            // Book appointment button
-            _buildBookButton(),
+              // Book appointment button
+              _buildBookButton(),
 
-            SizedBox(height: 30.h),
-          ],
+              SizedBox(height: 30.h),
+            ],
+          ),
         ),
       ),
     );
@@ -734,26 +738,34 @@ class DoctorProfilePage extends StatelessWidget {
   Widget _buildBookButton() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 28.w),
-      child: Container(
-        width: double.infinity,
-        height: 56.h,
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          borderRadius: BorderRadius.circular(28.r),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            MyText(
-              'حجز موعد',
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(width: 8.w),
-            const Icon(Icons.calendar_today, color: Colors.white, size: 20),
-          ],
+      child: GestureDetector(
+        onTap: () {
+          Get.to(() => PatientRegistrationPage(
+            doctorName: doctorName,
+            doctorSpecialty: specialization,
+          ));
+        },
+        child: Container(
+          width: double.infinity,
+          height: 56.h,
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(28.r),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              MyText(
+                'حجز موعد',
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(width: 8.w),
+              const Icon(Icons.calendar_today, color: Colors.white, size: 20),
+            ],
+          ),
         ),
       ),
     );

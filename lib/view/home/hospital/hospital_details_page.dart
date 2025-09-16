@@ -20,7 +20,7 @@ class HospitalDetailsPage extends StatelessWidget {
     final controller = Get.put(HospitalDetailsController());
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F8FA),
+        backgroundColor: const Color(0xFFF4FEFF),
       body: SingleChildScrollView(
         child: Column(
           children: [
