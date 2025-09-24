@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
+import 'doctor_profile_manage_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -33,11 +34,11 @@ class SettingsPage extends StatelessWidget {
               title: 'إدارة حسابك الشخصي',
               color: AppColors.secondary,
               onTap: () {
-                // Handle account management
+                Get.to(() => DoctorProfileManagePage());
               },
             ),
             SizedBox(height: 16.h),
-            
+
             // Secretary accounts management
             _buildSettingsItem(
               icon: Icons.people,
@@ -48,7 +49,7 @@ class SettingsPage extends StatelessWidget {
               },
             ),
             SizedBox(height: 16.h),
-            
+
             // Language change
             _buildSettingsItem(
               icon: Icons.language,
@@ -59,7 +60,7 @@ class SettingsPage extends StatelessWidget {
               },
             ),
             SizedBox(height: 16.h),
-            
+
             // About app
             _buildSettingsItem(
               icon: Icons.info,
@@ -70,7 +71,7 @@ class SettingsPage extends StatelessWidget {
               },
             ),
             SizedBox(height: 16.h),
-            
+
             // Help
             _buildSettingsItem(
               icon: Icons.help,
@@ -81,7 +82,7 @@ class SettingsPage extends StatelessWidget {
               },
             ),
             SizedBox(height: 16.h),
-            
+
             // Development team
             _buildSettingsItem(
               icon: Icons.code,
@@ -92,7 +93,7 @@ class SettingsPage extends StatelessWidget {
               },
             ),
             SizedBox(height: 16.h),
-            
+
             // Logout
             _buildSettingsItem(
               icon: Icons.logout,
@@ -103,7 +104,7 @@ class SettingsPage extends StatelessWidget {
               },
             ),
             SizedBox(height: 32.h),
-            
+
             // Delete account (red color)
             _buildSettingsItem(
               icon: Icons.delete,
@@ -150,14 +151,10 @@ class SettingsPage extends StatelessWidget {
                 color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10.r),
               ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 20.sp,
-              ),
+              child: Icon(icon, color: color, size: 20.sp),
             ),
             SizedBox(width: 16.w),
-            
+
             // Title
             Expanded(
               child: Text(
@@ -169,13 +166,9 @@ class SettingsPage extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Arrow
-            Icon(
-              Icons.arrow_back_ios,
-              color: AppColors.textLight,
-              size: 16.sp,
-            ),
+            Icon(Icons.arrow_back_ios, color: AppColors.textLight, size: 16.sp),
           ],
         ),
       ),
@@ -247,7 +240,9 @@ class SettingsPage extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('تأكيد حذف الحساب'),
-        content: const Text('هل أنت متأكد من رغبتك في حذف الحساب؟ هذا الإجراء لا يمكن التراجع عنه.'),
+        content: const Text(
+          'هل أنت متأكد من رغبتك في حذف الحساب؟ هذا الإجراء لا يمكن التراجع عنه.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

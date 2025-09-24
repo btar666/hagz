@@ -4,17 +4,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'controller/main_controller.dart';
 import 'utils/app_colors.dart';
-import 'view/main_page.dart';
+import 'view/onboarding/onboarding_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  
+
   runApp(const MedicalApp());
 }
 
@@ -42,7 +42,7 @@ class MedicalApp extends StatelessWidget {
             ),
             fontFamily: 'Arial', // You can add Arabic fonts later
           ),
-          home: const MainPage(),
+          home: const OnboardingPage(),
           locale: const Locale('ar'),
           fallbackLocale: const Locale('ar'),
           onInit: () {
