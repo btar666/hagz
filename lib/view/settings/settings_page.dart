@@ -3,6 +3,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
 import 'doctor_profile_manage_page.dart';
+import 'secretary_accounts_page.dart';
+import '../appointments/past_appointments_page.dart';
+import '../../widget/confirm_dialogs.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -45,7 +48,18 @@ class SettingsPage extends StatelessWidget {
               title: 'إدارة حسابات السكرتارية',
               color: AppColors.secondary,
               onTap: () {
-                // Handle secretary accounts
+                Get.to(() => const SecretaryAccountsPage());
+              },
+            ),
+            SizedBox(height: 16.h),
+
+            // Past appointments (same design as others)
+            _buildSettingsItem(
+              icon: Icons.event_note_rounded,
+              title: 'المواعيد السابقة',
+              color: AppColors.secondary,
+              onTap: () {
+                Get.to(() => const PastAppointmentsPage());
               },
             ),
             SizedBox(height: 16.h),
@@ -210,56 +224,14 @@ class SettingsPage extends StatelessWidget {
   }
 
   void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('تأكيد تسجيل الخروج'),
-        content: const Text('هل أنت متأكد من رغبتك في تسجيل الخروج؟'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Handle logout
-            },
-            child: const Text(
-              'تسجيل الخروج',
-              style: TextStyle(color: AppColors.error),
-            ),
-          ),
-        ],
-      ),
-    );
+    showLogoutConfirmDialog(context, onConfirm: () {
+      // TODO: Handle logout
+    });
   }
 
   void _showDeleteAccountDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('تأكيد حذف الحساب'),
-        content: const Text(
-          'هل أنت متأكد من رغبتك في حذف الحساب؟ هذا الإجراء لا يمكن التراجع عنه.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Handle account deletion
-            },
-            child: const Text(
-              'حذف الحساب',
-              style: TextStyle(color: AppColors.error),
-            ),
-          ),
-        ],
-      ),
-    );
+    showDeleteAccountConfirmDialog(context, onConfirm: () {
+      // TODO: Handle account deletion
+    });
   }
 }

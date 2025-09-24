@@ -7,6 +7,8 @@ class DoctorProfileController extends GetxController {
   var isOpinionsExpanded = false.obs;
   var isCasesExpanded = false.obs;
   var isInsuranceExpanded = false.obs;
+  var isAvailabilityExpanded = false.obs; // المواعيد المتاحة
+  var isSequenceExpanded = false.obs; // تسلسل المواعيد
   // Manage page UI states
   var isEditingSocial = false.obs;
 
@@ -31,6 +33,14 @@ class DoctorProfileController extends GetxController {
     isInsuranceExpanded.value = !isInsuranceExpanded.value;
   }
 
+  void toggleAvailabilityExpansion() {
+    isAvailabilityExpanded.value = !isAvailabilityExpanded.value;
+  }
+
+  void toggleSequenceExpansion() {
+    isSequenceExpanded.value = !isSequenceExpanded.value;
+  }
+
   // Sample doctor data - you can replace this with API calls
   var doctorName = 'د. أحمد محمد'.obs;
   var doctorSpecialty = 'طبيب أطفال'.obs;
@@ -43,20 +53,41 @@ class DoctorProfileController extends GetxController {
   var doctorPhone = '+966501234567'.obs;
   // Certificates images (paths or URLs)
   var certificateImages = <String>[].obs;
+  // Paths can be absolute files or asset paths
+  // Addresses: each item has value and isLink (website)
+  var addresses = <Map<String, dynamic>>[
+    {'value': 'مركز العيون التخصصي , دهوك', 'isLink': false},
+    {
+      'value': '',
+      'isLink': true, // رابط موقع
+    },
+  ].obs;
 
-  // Sample opinions data
+  // Sample opinions data (with publish state and avatar)
   var opinions = <Map<String, dynamic>>[
     {
-      'patientName': 'أم سارة',
+      'patientName': 'غونجا',
       'rating': 5.0,
-      'comment': 'طبيب ممتاز ومتفهم، يتعامل مع الأطفال بلطف',
-      'date': '2024-01-15',
+      'comment': 'انها طبيبة محترفة و تتمتع بخبرة واسعة في مجالها.',
+      'date': null, // will be set in onInit to now-10m
+      'published': false,
+      'avatar': 'assets/icons/home/doctor.png',
     },
     {
-      'patientName': 'أبو أحمد',
+      'patientName': 'ريتشارد',
       'rating': 4.5,
-      'comment': 'خبرة واضحة وتشخيص دقيق',
-      'date': '2024-01-10',
+      'comment': 'انها طبيبة محترفة و تتمتع بخبرة واسعة في مجالها.',
+      'date': null, // now - 26m
+      'published': false,
+      'avatar': 'assets/icons/home/doctor.png',
+    },
+    {
+      'patientName': 'سونوكو',
+      'rating': 4.8,
+      'comment': 'انها طبيبة محترفة و تتمتع بخبرة واسعة في مجالها.',
+      'date': null, // now - 10h
+      'published': true,
+      'avatar': 'assets/icons/home/doctor.png',
     },
   ].obs;
 
@@ -74,6 +105,27 @@ class DoctorProfileController extends GetxController {
     },
   ].obs;
 
+  // Availability calendar state
+  var selectedMonth = DateTime.now().obs; // always first day semantics in view
+  // status per day: 'available' | 'full' | 'holiday' | 'closed'
+  var dayStatuses = <int, String>{}.obs;
+
+  // Treated cases (legacy single-case editors)
+  var treatedCaseName = 'جفاف و حساسية'.obs;
+  var treatedCaseImages = <String>[].obs;
+
+  // New: Managed cases list (each with name + one image) + form state
+  var managedCases = <Map<String, String>>[].obs; // { 'name': ..., 'image': path }
+  var newCaseName = ''.obs;
+  var newCaseImage = ''.obs;
+
+  // Appointments sequence (order queue)
+  var sequenceAppointments = <Map<String, dynamic>>[
+    {'order': 1, 'patient': 'اسم المريض', 'time': '6:40 صباحاً', 'status': 'completed'},
+    {'order': 2, 'patient': 'اسم المريض', 'time': '6:40 صباحاً', 'status': 'pending'},
+    {'order': 4, 'patient': 'اسم المريض', 'time': '6:40 صباحاً', 'status': 'cancelled'},
+  ].obs;
+
   // Insurance companies
   var acceptedInsurance = <String>[
     'التأمين الطبي الشامل',
@@ -87,6 +139,33 @@ class DoctorProfileController extends GetxController {
     super.onInit();
     // Initialize any data loading here
     loadDoctorData();
+    // Seed relative dates for sample opinions
+    if (opinions.isNotEmpty) {
+      final now = DateTime.now();
+      // Safe updates with spread to trigger Rx refresh
+      if (opinions.length >= 1) {
+        opinions[0] = {
+          ...opinions[0],
+          'date': now.subtract(const Duration(minutes: 10)).toIso8601String(),
+        };
+      }
+      if (opinions.length >= 2) {
+        opinions[1] = {
+          ...opinions[1],
+          'date': now.subtract(const Duration(minutes: 26)).toIso8601String(),
+        };
+      }
+      if (opinions.length >= 3) {
+        opinions[2] = {
+          ...opinions[2],
+          'date': now.subtract(const Duration(hours: 10)).toIso8601String(),
+        };
+      }
+      opinions.refresh();
+    }
+
+    // Seed sample calendar statuses similar to design
+    _seedCurrentMonthStatuses();
   }
 
   void loadDoctorData() {
@@ -110,6 +189,153 @@ class DoctorProfileController extends GetxController {
   void removeCertificateAt(int index) {
     if (index >= 0 && index < certificateImages.length) {
       certificateImages.removeAt(index);
+    }
+  }
+
+  // Address mutations
+  void addAddress({required bool isLink, String value = ''}) {
+    addresses.add({'value': value, 'isLink': isLink});
+  }
+
+  void removeAddressAt(int index) {
+    if (index >= 0 && index < addresses.length) {
+      addresses.removeAt(index);
+    }
+  }
+
+  void updateAddressValue(int index, String value) {
+    if (index >= 0 && index < addresses.length) {
+      addresses[index] = {
+        'value': value,
+        'isLink': addresses[index]['isLink'] as bool,
+      };
+      addresses.refresh();
+    }
+  }
+
+  void toggleAddressType(int index) {
+    if (index >= 0 && index < addresses.length) {
+      final current = addresses[index];
+      addresses[index] = {
+        'value': current['value'],
+        'isLink': !(current['isLink'] as bool),
+      };
+      addresses.refresh();
+    }
+  }
+
+  // Availability helpers
+  void _seedCurrentMonthStatuses() {
+    dayStatuses.clear();
+    // Example: days 8, 16, 26, 30 => available (green tint in UI)
+    for (final d in [8, 16, 26, 30]) {
+      dayStatuses[d] = 'available';
+    }
+    // days 10, 17, 31 => holiday
+    for (final d in [10, 17, 31]) {
+      dayStatuses[d] = 'holiday';
+    }
+    // days 11, 18, 19 => closed
+    for (final d in [11, 18, 19]) {
+      dayStatuses[d] = 'closed';
+    }
+    // the rest default to 'open' (light grey)
+  }
+
+  void nextMonth() {
+    final current = selectedMonth.value;
+    final next = DateTime(current.year, current.month + 1, 1);
+    selectedMonth.value = next;
+    _seedCurrentMonthStatuses();
+  }
+
+  void prevMonth() {
+    final current = selectedMonth.value;
+    final prev = DateTime(current.year, current.month - 1, 1);
+    selectedMonth.value = prev;
+    _seedCurrentMonthStatuses();
+  }
+
+  // Treated case mutations
+  void updateTreatedCaseName(String name) {
+    treatedCaseName.value = name;
+  }
+
+  void addTreatedCaseImage(String path) {
+    treatedCaseImages.add(path);
+  }
+
+  void removeTreatedCaseImageAt(int index) {
+    if (index >= 0 && index < treatedCaseImages.length) {
+      treatedCaseImages.removeAt(index);
+    }
+  }
+
+  void clearTreatedCase() {
+    treatedCaseImages.clear();
+    treatedCaseName.value = '';
+  }
+
+  // Managed cases form actions
+  void updateNewCaseName(String name) {
+    newCaseName.value = name;
+  }
+
+  void updateNewCaseImage(String path) {
+    newCaseImage.value = path;
+  }
+
+  bool get canAddCase => newCaseName.value.trim().isNotEmpty && newCaseImage.value.trim().isNotEmpty;
+
+  void addManagedCase() {
+    if (canAddCase) {
+      managedCases.add({'name': newCaseName.value.trim(), 'image': newCaseImage.value});
+      newCaseName.value = '';
+      newCaseImage.value = '';
+    }
+  }
+
+  void removeManagedCaseAt(int index) {
+    if (index >= 0 && index < managedCases.length) managedCases.removeAt(index);
+  }
+
+  void updateManagedCaseNameAt(int index, String name) {
+    if (index >= 0 && index < managedCases.length) {
+      final current = managedCases[index];
+      managedCases[index] = {
+        ...current,
+        'name': name.trim(),
+      };
+      managedCases.refresh();
+    }
+  }
+
+  void updateManagedCaseImageAt(int index, String path) {
+    if (index >= 0 && index < managedCases.length) {
+      final current = managedCases[index];
+      managedCases[index] = {
+        ...current,
+        'image': path,
+      };
+      managedCases.refresh();
+    }
+  }
+
+  // Opinions mutations
+  void toggleOpinionPublished(int index) {
+    if (index >= 0 && index < opinions.length) {
+      final current = opinions[index];
+      opinions[index] = {
+        ...current,
+        'published': !(current['published'] as bool? ?? false),
+      };
+      opinions.refresh();
+    }
+  }
+
+  void removeOpinionAt(int index) {
+    if (index >= 0 && index < opinions.length) {
+      opinions.removeAt(index);
     }
   }
 }

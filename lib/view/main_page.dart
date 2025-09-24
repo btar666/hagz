@@ -4,6 +4,7 @@ import '../controller/main_controller.dart';
 import '../widget/bottom_navigation.dart';
 import 'home/home_page.dart';
 import 'specialties/specialties_page.dart';
+import 'statistics/statistics_page.dart';
 import 'settings/settings_page.dart';
 
 class MainPage extends StatelessWidget {
@@ -19,6 +20,7 @@ class MainPage extends StatelessWidget {
         children: const [
           HomePage(),
           SpecialtiesPage(),
+          StatisticsPage(),
           SettingsPage(),
         ],
       )),
