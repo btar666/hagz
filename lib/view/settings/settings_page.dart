@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
-import '../auth/login_page.dart';
+// import '../auth/login_page.dart';
+import '../../controller/session_controller.dart';
+import 'doctor_profile_manage_page.dart';
+import 'secretary_accounts_page.dart';
+import '../appointments/past_appointments_page.dart';
+import 'user_profile_edit_page.dart';
+import '../onboarding/user_type_selection_page.dart';
 import '../../widget/confirm_dialogs.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -10,6 +16,8 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final SessionController session = Get.put(SessionController());
+    final bool isDoctor = session.role.value == 'doctor';
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
       appBar: AppBar(
@@ -29,6 +37,57 @@ class SettingsPage extends StatelessWidget {
         padding: EdgeInsets.all(16.w),
         child: Column(
           children: [
+            if (isDoctor) ...[
+              _buildSettingsItem(
+                icon: Icons.person,
+                title: 'إدارة حسابك الشخصي',
+                color: AppColors.secondary,
+                onTap: () {
+                  Get.to(() => DoctorProfileManagePage());
+                },
+              ),
+              SizedBox(height: 16.h),
+              _buildSettingsItem(
+                icon: Icons.people,
+                title: 'إدارة حسابات السكرتارية',
+                color: AppColors.secondary,
+                onTap: () {
+                  Get.to(() => const SecretaryAccountsPage());
+                },
+              ),
+              SizedBox(height: 16.h),
+              _buildSettingsItem(
+                icon: Icons.event_note_rounded,
+                title: 'المواعيد السابقة',
+                color: AppColors.secondary,
+                onTap: () {
+                  Get.to(() => const PastAppointmentsPage());
+                },
+              ),
+              SizedBox(height: 16.h),
+            ],
+
+            if (!isDoctor) ...[
+              _buildSettingsItem(
+                icon: Icons.person,
+                title: 'تعديل ملفك الشخصي',
+                color: AppColors.secondary,
+                onTap: () {
+                  Get.to(() => const UserProfileEditPage());
+                },
+              ),
+              SizedBox(height: 16.h),
+              _buildSettingsItem(
+                icon: Icons.event_note_rounded,
+                title: 'المواعيد السابقة',
+                color: AppColors.secondary,
+                onTap: () {
+                  Get.to(() => const PastAppointmentsPage());
+                },
+              ),
+              SizedBox(height: 16.h),
+            ],
+
             // Language change
             _buildSettingsItem(
               icon: Icons.language,
@@ -73,13 +132,18 @@ class SettingsPage extends StatelessWidget {
             ),
             SizedBox(height: 16.h),
 
-            // Login
+            // Logout for all roles
             _buildSettingsItem(
-              icon: Icons.login,
-              title: 'تسجيل الدخول',
+              icon: Icons.logout,
+              title: 'تسجيل الخروج',
               color: AppColors.secondary,
               onTap: () {
-                Get.to(() => const LoginPage());
+                showLogoutConfirmDialog(
+                  context,
+                  onConfirm: () {
+                    Get.offAll(() => const UserTypeSelectionPage());
+                  },
+                );
               },
             ),
             SizedBox(height: 32.h),
