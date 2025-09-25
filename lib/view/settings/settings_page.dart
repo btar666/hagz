@@ -2,11 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
-import 'doctor_profile_manage_page.dart';
-import 'secretary_accounts_page.dart';
-import '../../controller/session_controller.dart';
-import 'user_profile_edit_page.dart';
-import '../appointments/past_appointments_page.dart';
+import '../auth/login_page.dart';
 import '../../widget/confirm_dialogs.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -14,8 +10,6 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final SessionController session = Get.put(SessionController());
-    final bool isDoctor = session.role.value == 'doctor';
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
       appBar: AppBar(
@@ -35,45 +29,6 @@ class SettingsPage extends StatelessWidget {
         padding: EdgeInsets.all(16.w),
         child: Column(
           children: [
-            // Account/Profile management
-            _buildSettingsItem(
-              icon: Icons.person,
-              title: isDoctor ? 'إدارة حسابك الشخصي' : 'تعديل ملفك الشخصي',
-              color: AppColors.secondary,
-              onTap: () {
-                if (isDoctor) {
-                  Get.to(() => DoctorProfileManagePage());
-                } else {
-                  Get.to(() => const UserProfileEditPage());
-                }
-              },
-            ),
-            SizedBox(height: 16.h),
-
-            // Secretary accounts management (Doctor only)
-            if (isDoctor) ...[
-              _buildSettingsItem(
-                icon: Icons.people,
-                title: 'إدارة حسابات السكرتارية',
-                color: AppColors.secondary,
-                onTap: () {
-                  Get.to(() => const SecretaryAccountsPage());
-                },
-              ),
-              SizedBox(height: 16.h),
-            ],
-
-            // Past appointments (same design as others)
-            _buildSettingsItem(
-              icon: Icons.event_note_rounded,
-              title: 'المواعيد السابقة',
-              color: AppColors.secondary,
-              onTap: () {
-                Get.to(() => const PastAppointmentsPage());
-              },
-            ),
-            SizedBox(height: 16.h),
-
             // Language change
             _buildSettingsItem(
               icon: Icons.language,
@@ -118,13 +73,13 @@ class SettingsPage extends StatelessWidget {
             ),
             SizedBox(height: 16.h),
 
-            // Logout
+            // Login
             _buildSettingsItem(
-              icon: Icons.logout,
-              title: 'تسجيل الخروج',
+              icon: Icons.login,
+              title: 'تسجيل الدخول',
               color: AppColors.secondary,
               onTap: () {
-                _showLogoutDialog(context);
+                Get.to(() => const LoginPage());
               },
             ),
             SizedBox(height: 32.h),
@@ -233,14 +188,7 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
-    showLogoutConfirmDialog(
-      context,
-      onConfirm: () {
-        // TODO: Handle logout
-      },
-    );
-  }
+  // Removed logout UI in this version; keep helper available when needed.
 
   void _showDeleteAccountDialog(BuildContext context) {
     showDeleteAccountConfirmDialog(
