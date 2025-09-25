@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
 import 'doctor_profile_manage_page.dart';
 import 'secretary_accounts_page.dart';
+import '../../controller/session_controller.dart';
+import 'user_profile_edit_page.dart';
 import '../appointments/past_appointments_page.dart';
 import '../../widget/confirm_dialogs.dart';
 
@@ -12,6 +14,8 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final SessionController session = Get.put(SessionController());
+    final bool isDoctor = session.role.value == 'doctor';
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
       appBar: AppBar(
@@ -31,27 +35,33 @@ class SettingsPage extends StatelessWidget {
         padding: EdgeInsets.all(16.w),
         child: Column(
           children: [
-            // Account management section
+            // Account/Profile management
             _buildSettingsItem(
               icon: Icons.person,
-              title: 'إدارة حسابك الشخصي',
+              title: isDoctor ? 'إدارة حسابك الشخصي' : 'تعديل ملفك الشخصي',
               color: AppColors.secondary,
               onTap: () {
-                Get.to(() => DoctorProfileManagePage());
+                if (isDoctor) {
+                  Get.to(() => DoctorProfileManagePage());
+                } else {
+                  Get.to(() => const UserProfileEditPage());
+                }
               },
             ),
             SizedBox(height: 16.h),
 
-            // Secretary accounts management
-            _buildSettingsItem(
-              icon: Icons.people,
-              title: 'إدارة حسابات السكرتارية',
-              color: AppColors.secondary,
-              onTap: () {
-                Get.to(() => const SecretaryAccountsPage());
-              },
-            ),
-            SizedBox(height: 16.h),
+            // Secretary accounts management (Doctor only)
+            if (isDoctor) ...[
+              _buildSettingsItem(
+                icon: Icons.people,
+                title: 'إدارة حسابات السكرتارية',
+                color: AppColors.secondary,
+                onTap: () {
+                  Get.to(() => const SecretaryAccountsPage());
+                },
+              ),
+              SizedBox(height: 16.h),
+            ],
 
             // Past appointments (same design as others)
             _buildSettingsItem(
@@ -224,14 +234,20 @@ class SettingsPage extends StatelessWidget {
   }
 
   void _showLogoutDialog(BuildContext context) {
-    showLogoutConfirmDialog(context, onConfirm: () {
-      // TODO: Handle logout
-    });
+    showLogoutConfirmDialog(
+      context,
+      onConfirm: () {
+        // TODO: Handle logout
+      },
+    );
   }
 
   void _showDeleteAccountDialog(BuildContext context) {
-    showDeleteAccountConfirmDialog(context, onConfirm: () {
-      // TODO: Handle account deletion
-    });
+    showDeleteAccountConfirmDialog(
+      context,
+      onConfirm: () {
+        // TODO: Handle account deletion
+      },
+    );
   }
 }

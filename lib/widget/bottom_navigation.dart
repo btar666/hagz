@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controller/main_controller.dart';
 import '../utils/app_colors.dart';
+import '../controller/session_controller.dart';
 
 class BottomNavigationWidget extends StatelessWidget {
   const BottomNavigationWidget({Key? key}) : super(key: key);
@@ -10,6 +11,7 @@ class BottomNavigationWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final MainController controller = Get.find<MainController>();
 
+    final SessionController session = Get.find<SessionController>();
     return Obx(
       () => Container(
         decoration: BoxDecoration(
@@ -40,29 +42,61 @@ class BottomNavigationWidget extends StatelessWidget {
                 ),
                 Expanded(
                   child: _buildNavItem(
-                    assetIconPath: 'assets/icons/home/Category Icon.png',
-                    label: 'الاختصاصات',
+                    assetIconPath: session.role.value == 'secretary'
+                        ? 'assets/icons/home/alldates.png'
+                        : 'assets/icons/home/Category Icon.png',
+                    label: session.role.value == 'secretary'
+                        ? 'جميع المواعيد'
+                        : 'الاختصاصات',
                     index: 1,
                     isSelected: controller.currentIndex.value == 1,
                     onTap: () => controller.changeTab(1),
                   ),
                 ),
-                Expanded(
-                  child: _buildNavItem(
-                    assetIconPath: 'assets/icons/home/statistics_page_icon.png',
-                    label: 'الاحصائيات',
-                    index: 2,
-                    isSelected: controller.currentIndex.value == 2,
-                    onTap: () => controller.changeTab(2),
+                if (session.role.value == 'doctor')
+                  Expanded(
+                    child: _buildNavItem(
+                      assetIconPath:
+                          'assets/icons/home/statistics_page_icon.png',
+                      label: 'الاحصائيات',
+                      index: 2,
+                      isSelected: controller.currentIndex.value == 2,
+                      onTap: () => controller.changeTab(2),
+                    ),
                   ),
-                ),
+                if (session.role.value == 'secretary')
+                  Expanded(
+                    child: _buildNavItem(
+                      assetIconPath: 'assets/icons/home/Message_Icon_2.png',
+                      label: 'المحادثات',
+                      index: 2,
+                      isSelected: controller.currentIndex.value == 2,
+                      onTap: () => controller.changeTab(2),
+                    ),
+                  ),
                 Expanded(
                   child: _buildNavItem(
                     assetIconPath: 'assets/icons/home/Setting Icon.png',
                     label: 'الإعدادات',
-                    index: 3,
-                    isSelected: controller.currentIndex.value == 3,
-                    onTap: () => controller.changeTab(3),
+                    index: session.role.value == 'doctor'
+                        ? 3
+                        : session.role.value == 'secretary'
+                        ? 3
+                        : 2,
+                    isSelected:
+                        controller.currentIndex.value ==
+                        (session.role.value == 'doctor'
+                            ? 3
+                            : session.role.value == 'secretary'
+                            ? 3
+                            : 2),
+                    onTap: () => controller.changeTab(
+                      session.role.value == 'doctor'
+                          ? 3
+                          : session.role.value == 'secretary'
+                          ? 3
+                          : 2,
+                    ),
                   ),
                 ),
               ],

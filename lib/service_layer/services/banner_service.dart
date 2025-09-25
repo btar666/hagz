@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../model/banner_model.dart';
+import '../../model/banner_model.dart';
 
 class BannerService {
   // يجب تحديث هذا الرابط ليطابق API الخاص بك
@@ -23,11 +23,13 @@ class BannerService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        
+
         // تحديد بنية الاستجابة حسب API الخاص بك
         List<dynamic> bannersJson;
         if (data['data'] != null) {
-          bannersJson = data['data'] is List ? data['data'] : data['data']['items'] ?? [];
+          bannersJson = data['data'] is List
+              ? data['data']
+              : data['data']['items'] ?? [];
         } else {
           bannersJson = data['banners'] ?? [];
         }
@@ -42,7 +44,7 @@ class BannerService {
     } catch (e) {
       // في حالة عدم وجود اتصال بالإنترنت أو خطأ في API
       print('خطأ في جلب الإعلانات: $e');
-      
+
       // إرجاع بيانات وهمية للاختبار
       return _getMockBanners();
     }
@@ -58,10 +60,12 @@ class BannerService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        
+
         List<dynamic> bannersJson;
         if (data['data'] != null) {
-          bannersJson = data['data'] is List ? data['data'] : data['data']['items'] ?? [];
+          bannersJson = data['data'] is List
+              ? data['data']
+              : data['data']['items'] ?? [];
         } else {
           bannersJson = data['banners'] ?? [];
         }
@@ -92,7 +96,7 @@ class BannerService {
       BannerModel(
         id: 2,
         image: 'assets/icons/home/news1.png',
-        title: 'إعلان طبي 2', 
+        title: 'إعلان طبي 2',
         description: 'خصم 20% على جميع الفحوصات',
         url: 'https://example.com/medical-tests',
         isActive: true,
@@ -114,9 +118,7 @@ class BannerService {
       final response = await http.patch(
         Uri.parse('$baseUrl$bannersEndpoint/$bannerId'),
         headers: headers,
-        body: json.encode({
-          'is_active': isActive ? 1 : 0,
-        }),
+        body: json.encode({'is_active': isActive ? 1 : 0}),
       );
 
       return response.statusCode == 200;

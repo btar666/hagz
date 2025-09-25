@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 import '../auth/login_page.dart';
+import '../../controller/session_controller.dart';
 
 class UserTypeSelectionPage extends StatefulWidget {
   const UserTypeSelectionPage({super.key});
@@ -18,7 +19,21 @@ class _UserTypeSelectionPageState extends State<UserTypeSelectionPage> {
   int _selectedIndex = 1; // default like screenshot: Doctor selected
 
   void _onNext() {
-    // navigate to login after choosing type; keep back to selection
+    final session = Get.find<SessionController>();
+    switch (_selectedIndex) {
+      case 0:
+        session.setRole('user');
+        break;
+      case 1:
+        session.setRole('doctor');
+        break;
+      case 2:
+        session.setRole('secretary');
+        break;
+      case 3:
+        session.setRole('delegate');
+        break;
+    }
     Get.to(() => const LoginPage());
   }
 

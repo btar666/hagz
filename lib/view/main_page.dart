@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controller/main_controller.dart';
+import '../controller/session_controller.dart';
 import '../widget/bottom_navigation.dart';
 import 'home/home_page.dart';
 import 'specialties/specialties_page.dart';
 import 'statistics/statistics_page.dart';
 import 'settings/settings_page.dart';
+import 'chat/chats_page.dart';
+import 'secretary/secretary_home_page.dart';
+import 'secretary/secretary_all_appointments_page.dart';
 
 class MainPage extends StatelessWidget {
   const MainPage({Key? key}) : super(key: key);
@@ -13,18 +17,36 @@ class MainPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final MainController controller = Get.find<MainController>();
-    
-    return Scaffold(
-      body: Obx(() => IndexedStack(
-        index: controller.currentIndex.value,
-        children: const [
+    final SessionController session = Get.find<SessionController>();
+
+    return Obx(() {
+      final String role = session.role.value;
+      late final List<Widget> pages;
+      if (role == 'doctor') {
+        pages = const [
           HomePage(),
           SpecialtiesPage(),
           StatisticsPage(),
           SettingsPage(),
-        ],
-      )),
-      bottomNavigationBar: const BottomNavigationWidget(),
-    );
+        ];
+      } else if (role == 'secretary') {
+        pages = const [
+          SecretaryHomePage(),
+          SecretaryAllAppointmentsPage(),
+          ChatsPage(),
+          SettingsPage(),
+        ];
+      } else {
+        pages = const [HomePage(), SpecialtiesPage(), SettingsPage()];
+      }
+      int index = controller.currentIndex.value;
+      if (index > pages.length - 1) {
+        index = pages.length - 1;
+      }
+      return Scaffold(
+        body: IndexedStack(index: index, children: pages),
+        bottomNavigationBar: const BottomNavigationWidget(),
+      );
+    });
   }
 }

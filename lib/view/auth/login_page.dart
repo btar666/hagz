@@ -115,6 +115,9 @@ class _LoginPageState extends State<LoginPage> {
                 height: 64.h,
                 child: ElevatedButton(
                   onPressed: () {
+                    // Here we could branch to different initial pages per role if needed.
+                    // For now, both roles land on MainPage; role affects visible items.
+                    // role already set in SessionController from user type selection
                     Get.offAll(() => const MainPage());
                   },
                   style: ElevatedButton.styleFrom(

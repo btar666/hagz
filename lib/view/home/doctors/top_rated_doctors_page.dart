@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../utils/app_colors.dart';
 import '../../../widget/my_text.dart';
 import '../../../widget/specialty_text.dart';
+import '../../../widget/doctors_filter_dialog.dart';
 import 'doctor_profile_page.dart';
 
 class TopRatedDoctorsPage extends StatelessWidget {
@@ -42,15 +43,20 @@ class TopRatedDoctorsPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFFF4FEFF),
         elevation: 0,
-        leading: Container(
-          margin: EdgeInsets.all(8.w),
-          width: 48.w,
-          height: 48.w,
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(20.r),
+        leading: GestureDetector(
+          onTap: () async {
+            await Get.dialog(const DoctorsFilterDialog());
+          },
+          child: Container(
+            margin: EdgeInsets.all(8.w),
+            width: 48.w,
+            height: 48.w,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(20.r),
+            ),
+            child: const Icon(Icons.tune, color: Colors.white, size: 20),
           ),
-          child: const Icon(Icons.tune, color: Colors.white, size: 20),
         ),
         title: MyText(
           'الأطباء الأعلى تقييماً',

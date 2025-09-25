@@ -6,9 +6,12 @@ import 'package:hagz/view/home/complex/complex_details_page.dart';
 import '../../controller/main_controller.dart';
 import '../../utils/app_colors.dart';
 import '../../widget/search_widget.dart';
+import 'search_page.dart';
 import '../../widget/banner_carousel.dart';
 import '../../widget/my_text.dart';
 import '../../widget/specialty_text.dart';
+import '../../widget/doctors_filter_dialog.dart';
+import '../chat/chats_page.dart';
 import 'doctors/top_rated_doctors_page.dart';
 import 'doctors/doctor_profile_page.dart';
 
@@ -31,27 +34,29 @@ class HomePage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // Chat icon
-                  Container(
-                    width: 48.w,
-                    height: 48.w,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(20.r),
-                    ),
-                    child: Center(
-                      child: Image.asset(
-                        'assets/icons/home/Message Icon.png',
-                        width: 24,
-                        height: 24,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          // أيقونة احتياطية في حالة عدم وجود الملف
-                          return const Icon(
-                            Icons.chat_bubble_outline,
-                            color: Colors.white,
-                            size: 22,
-                          );
-                        },
+                  GestureDetector(
+                    onTap: () => Get.to(() => const ChatsPage()),
+                    child: Container(
+                      width: 48.w,
+                      height: 48.w,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      child: Center(
+                        child: Image.asset(
+                          'assets/icons/home/Message Icon.png',
+                          width: 24,
+                          height: 24,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.chat_bubble_outline,
+                              color: Colors.white,
+                              size: 22,
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -59,7 +64,11 @@ class HomePage extends StatelessWidget {
 
                   // Search bar (expanded to take remaining space)
                   Expanded(
-                    child: SearchWidget(hint: 'ابحث عن طبيب أو مستشفى...'),
+                    child: SearchWidget(
+                      hint: 'ابحث عن طبيب أو مستشفى...',
+                      readOnly: true,
+                      onTap: () => Get.to(() => const SearchPage()),
+                    ),
                   ),
                   SizedBox(width: 16.w),
 
@@ -160,7 +169,15 @@ class HomePage extends StatelessWidget {
           textAlign: TextAlign.start,
         ),
         const Spacer(),
-        Icon(Icons.tune, color: AppColors.textSecondary, size: 24.sp),
+        GestureDetector(
+          onTap: () async {
+            final result = await Get.dialog(const DoctorsFilterDialog());
+            if (result is Map) {
+              // TODO: apply filters to data source if needed
+            }
+          },
+          child: Icon(Icons.tune, color: AppColors.textSecondary, size: 24.sp),
+        ),
       ],
     );
   }
@@ -444,7 +461,8 @@ class HomePage extends StatelessWidget {
         Get.to(
           () => ComplexDetailsPage(
             complexName: _complexNames[index % _complexNames.length],
-            complexLocation: _complexLocations[index % _complexLocations.length],
+            complexLocation:
+                _complexLocations[index % _complexLocations.length],
           ),
         );
       },
