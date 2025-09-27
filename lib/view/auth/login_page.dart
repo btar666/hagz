@@ -6,6 +6,8 @@ import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 import 'register_page.dart';
 import '../main_page.dart';
+import '../../controller/session_controller.dart';
+import '../delegate/delegate_terms_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -138,7 +140,15 @@ class _LoginPageState extends State<LoginPage> {
               SizedBox(height: 20.h),
               Center(
                 child: GestureDetector(
-                  onTap: () => Get.to(() => const RegisterPage()),
+                  onTap: () {
+                    final SessionController session =
+                        Get.find<SessionController>();
+                    if (session.role.value == 'delegate') {
+                      Get.to(() => const DelegateTermsPage());
+                    } else {
+                      Get.to(() => const RegisterPage());
+                    }
+                  },
                   child: RichText(
                     text: TextSpan(
                       style: TextStyle(

@@ -18,6 +18,7 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final SessionController session = Get.put(SessionController());
     final bool isDoctor = session.role.value == 'doctor';
+    final bool isUser = session.role.value == 'user';
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
       appBar: AppBar(
@@ -67,7 +68,7 @@ class SettingsPage extends StatelessWidget {
               SizedBox(height: 16.h),
             ],
 
-            if (!isDoctor) ...[
+            if (isUser) ...[
               _buildSettingsItem(
                 icon: Icons.person,
                 title: 'تعديل ملفك الشخصي',

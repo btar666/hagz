@@ -10,6 +10,9 @@ import 'settings/settings_page.dart';
 import 'chat/chats_page.dart';
 import 'secretary/secretary_home_page.dart';
 import 'secretary/secretary_all_appointments_page.dart';
+import 'delegate/delegate_home_page.dart';
+import 'delegate/delegate_all_visits_page.dart';
+import 'delegate/delegate_statistics_page.dart';
 
 class MainPage extends StatelessWidget {
   const MainPage({Key? key}) : super(key: key);
@@ -34,6 +37,13 @@ class MainPage extends StatelessWidget {
           SecretaryHomePage(),
           SecretaryAllAppointmentsPage(),
           ChatsPage(),
+          SettingsPage(),
+        ];
+      } else if (role == 'delegate') {
+        pages = const [
+          DelegateHomePage(),
+          DelegateAllVisitsPage(),
+          DelegateStatisticsPage(),
           SettingsPage(),
         ];
       } else {

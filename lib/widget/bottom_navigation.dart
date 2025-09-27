@@ -44,9 +44,13 @@ class BottomNavigationWidget extends StatelessWidget {
                   child: _buildNavItem(
                     assetIconPath: session.role.value == 'secretary'
                         ? 'assets/icons/home/alldates.png'
+                        : session.role.value == 'delegate'
+                        ? 'assets/icons/home/person_icon.png'
                         : 'assets/icons/home/Category Icon.png',
                     label: session.role.value == 'secretary'
                         ? 'جميع المواعيد'
+                        : session.role.value == 'delegate'
+                        ? 'جميع الزيارات'
                         : 'الاختصاصات',
                     index: 1,
                     isSelected: controller.currentIndex.value == 1,
@@ -74,6 +78,17 @@ class BottomNavigationWidget extends StatelessWidget {
                       onTap: () => controller.changeTab(2),
                     ),
                   ),
+                if (session.role.value == 'delegate')
+                  Expanded(
+                    child: _buildNavItem(
+                      assetIconPath:
+                          'assets/icons/home/statistics_page_icon.png',
+                      label: 'الاحصائيات',
+                      index: 2,
+                      isSelected: controller.currentIndex.value == 2,
+                      onTap: () => controller.changeTab(2),
+                    ),
+                  ),
                 Expanded(
                   child: _buildNavItem(
                     assetIconPath: 'assets/icons/home/Setting Icon.png',
@@ -82,6 +97,8 @@ class BottomNavigationWidget extends StatelessWidget {
                         ? 3
                         : session.role.value == 'secretary'
                         ? 3
+                        : session.role.value == 'delegate'
+                        ? 3
                         : 2,
                     isSelected:
                         controller.currentIndex.value ==
@@ -89,11 +106,15 @@ class BottomNavigationWidget extends StatelessWidget {
                             ? 3
                             : session.role.value == 'secretary'
                             ? 3
+                            : session.role.value == 'delegate'
+                            ? 3
                             : 2),
                     onTap: () => controller.changeTab(
                       session.role.value == 'doctor'
                           ? 3
                           : session.role.value == 'secretary'
+                          ? 3
+                          : session.role.value == 'delegate'
                           ? 3
                           : 2,
                     ),
