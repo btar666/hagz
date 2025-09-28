@@ -6,6 +6,8 @@ import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 import 'login_page.dart';
 import '../main_page.dart';
+import '../../controller/auth_controller.dart';
+import '../../controller/session_controller.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -18,14 +20,17 @@ class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameCtrl = TextEditingController();
   final TextEditingController _phoneCtrl = TextEditingController();
+  final TextEditingController _passwordCtrl = TextEditingController();
+  final TextEditingController _cityCtrl = TextEditingController();
   int? _genderIndex; // 0 male, 1 female
   String? _age; // kept for future submission
-  String? _city; // kept for future submission
 
   @override
   void dispose() {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
+    _passwordCtrl.dispose();
+    _cityCtrl.dispose();
     super.dispose();
   }
 
@@ -134,20 +139,55 @@ class _RegisterPageState extends State<RegisterPage> {
                       : null,
                 ),
 
+                SizedBox(height: 12.h),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: MyText(
+                    'كلمة المرور',
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                _roundedField(
+                  controller: _passwordCtrl,
+                  hint: '••••••••',
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'هذا الحقل مطلوب !'
+                      : null,
+                ),
+
                 SizedBox(height: 16.h),
                 Row(
                   children: [
                     Expanded(
-                      child: _dropdownField(
-                        'العمر',
-                        (value) => setState(() => _age = value),
+                      child: _ageDropdown(
+                        onChanged: (value) => setState(() => _age = value),
                       ),
                     ),
                     SizedBox(width: 16.w),
                     Expanded(
-                      child: _dropdownField(
-                        'المدينة',
-                        (value) => setState(() => _city = value),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          MyText(
+                            'المدينة',
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                            textAlign: TextAlign.right,
+                          ),
+                          SizedBox(height: 8.h),
+                          _roundedField(
+                            controller: _cityCtrl,
+                            hint: 'مثل: القاهرة',
+                            validator: (v) => (v == null || v.trim().isEmpty)
+                                ? 'هذا الحقل مطلوب !'
+                                : null,
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -159,7 +199,21 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        Get.offAll(() => const MainPage());
+                        final session = Get.find<SessionController>();
+                        if (session.role.value == 'user') {
+                          final auth = Get.put(AuthController());
+                          auth.nameCtrl.text = _nameCtrl.text.trim();
+                          auth.regPhoneCtrl.text = _phoneCtrl.text.trim();
+                          auth.regPasswordCtrl.text = _passwordCtrl.text.trim();
+                          auth.cityCtrl.text = _cityCtrl.text.trim();
+                          auth.gender.value = _genderIndex == 0
+                              ? 'ذكر'
+                              : 'انثى';
+                          auth.age.value = int.tryParse(_age ?? '18') ?? 18;
+                          auth.registerUser();
+                        } else {
+                          Get.offAll(() => const MainPage());
+                        }
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -222,11 +276,13 @@ class _RegisterPageState extends State<RegisterPage> {
     TextInputType? keyboardType,
     required String hint,
     FormFieldValidator<String>? validator,
+    bool isPassword = false,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       textAlign: TextAlign.center,
+      obscureText: isPassword,
       validator: validator,
       decoration: InputDecoration(
         hintText: hint,
@@ -287,12 +343,15 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget _dropdownField(String label, ValueChanged<String?> onChanged) {
+  // Removed unused generic dropdown; age and city have dedicated widgets
+
+  Widget _ageDropdown({required ValueChanged<String?> onChanged}) {
+    final List<String> ages = [for (int i = 18; i <= 100; i++) i.toString()];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         MyText(
-          label,
+          'العمر',
           fontSize: 16.sp,
           fontWeight: FontWeight.w800,
           color: AppColors.textPrimary,
@@ -314,11 +373,9 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
           child: DropdownButtonFormField<String>(
             value: null,
-            items: const [
-              DropdownMenuItem(value: 'اختر', child: Text('اختر')),
-              DropdownMenuItem(value: '1', child: Text('1')),
-              DropdownMenuItem(value: '2', child: Text('2')),
-            ],
+            items: ages
+                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                .toList(),
             onChanged: onChanged,
             decoration: const InputDecoration(border: InputBorder.none),
             icon: const Icon(Icons.keyboard_arrow_down_rounded),

@@ -7,6 +7,7 @@ import '../../widget/my_text.dart';
 import 'register_page.dart';
 import '../main_page.dart';
 import '../../controller/session_controller.dart';
+import '../../controller/auth_controller.dart';
 import '../delegate/delegate_terms_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -18,10 +19,12 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _phoneCtrl = TextEditingController();
+  final TextEditingController _passwordCtrl = TextEditingController();
 
   @override
   void dispose() {
     _phoneCtrl.dispose();
+    _passwordCtrl.dispose();
     super.dispose();
   }
 
@@ -112,15 +115,66 @@ class _LoginPageState extends State<LoginPage> {
                   style: TextStyle(fontSize: 18.sp, fontFamily: 'Expo Arabic'),
                 ),
               ),
+              SizedBox(height: 16.h),
+              Align(
+                alignment: Alignment.centerRight,
+                child: MyText(
+                  'كلمة المرور',
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                  textAlign: TextAlign.right,
+                ),
+              ),
+              SizedBox(height: 8.h),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.shadow,
+                      blurRadius: 10.r,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: _passwordCtrl,
+                  obscureText: true,
+                  textAlign: TextAlign.center,
+                  decoration: InputDecoration(
+                    hintText: '••••••••',
+                    hintStyle: TextStyle(
+                      color: AppColors.textLight,
+                      fontSize: 18.sp,
+                      fontFamily: 'Expo Arabic',
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20.r),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: EdgeInsets.symmetric(vertical: 18.h),
+                  ),
+                  style: TextStyle(fontSize: 18.sp, fontFamily: 'Expo Arabic'),
+                ),
+              ),
               SizedBox(height: 24.h),
               SizedBox(
                 height: 64.h,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Here we could branch to different initial pages per role if needed.
-                    // For now, both roles land on MainPage; role affects visible items.
-                    // role already set in SessionController from user type selection
-                    Get.offAll(() => const MainPage());
+                    final session = Get.find<SessionController>();
+                    if (session.role.value == 'user') {
+                      final auth = Get.put(AuthController());
+                      auth.phoneCtrl.text = _phoneCtrl.text.trim();
+                      auth.passwordCtrl.text = _passwordCtrl.text.trim();
+                      auth.login();
+                    } else {
+                      Get.offAll(() => const MainPage());
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
