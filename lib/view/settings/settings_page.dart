@@ -142,6 +142,7 @@ class SettingsPage extends StatelessWidget {
                 showLogoutConfirmDialog(
                   context,
                   onConfirm: () {
+                    session.clearSession();
                     Get.offAll(() => const UserTypeSelectionPage());
                   },
                 );

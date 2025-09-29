@@ -22,6 +22,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _phoneCtrl = TextEditingController();
   final TextEditingController _passwordCtrl = TextEditingController();
   final TextEditingController _cityCtrl = TextEditingController();
+  final TextEditingController _specializationCtrl = TextEditingController();
   int? _genderIndex; // 0 male, 1 female
   String? _age; // kept for future submission
 
@@ -31,6 +32,7 @@ class _RegisterPageState extends State<RegisterPage> {
     _phoneCtrl.dispose();
     _passwordCtrl.dispose();
     _cityCtrl.dispose();
+    _specializationCtrl.dispose();
     super.dispose();
   }
 
@@ -193,6 +195,41 @@ class _RegisterPageState extends State<RegisterPage> {
                   ],
                 ),
 
+                SizedBox(height: 16.h),
+                Builder(
+                  builder: (context) {
+                    final session = Get.find<SessionController>();
+                    if (session.role.value != 'doctor') {
+                      return const SizedBox.shrink();
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        MyText(
+                          'التخصص',
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                          textAlign: TextAlign.right,
+                        ),
+                        SizedBox(height: 8.h),
+                        _roundedField(
+                          controller: _specializationCtrl,
+                          hint: 'مثل: طب الأطفال',
+                          validator: (v) {
+                            final session = Get.find<SessionController>();
+                            if (session.role.value == 'doctor' &&
+                                (v == null || v.trim().isEmpty)) {
+                              return 'هذا الحقل مطلوب للطبيب!';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                ),
+
                 SizedBox(height: 24.h),
                 SizedBox(
                   height: 64.h,
@@ -200,7 +237,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
                         final session = Get.find<SessionController>();
-                        if (session.role.value == 'user') {
+                        if (session.role.value == 'user' ||
+                            session.role.value == 'doctor' ||
+                            session.role.value == 'secretary') {
                           final auth = Get.put(AuthController());
                           auth.nameCtrl.text = _nameCtrl.text.trim();
                           auth.regPhoneCtrl.text = _phoneCtrl.text.trim();
@@ -210,6 +249,11 @@ class _RegisterPageState extends State<RegisterPage> {
                               ? 'ذكر'
                               : 'انثى';
                           auth.age.value = int.tryParse(_age ?? '18') ?? 18;
+                          if (session.role.value == 'doctor') {
+                            auth.specializationCtrl.text = _specializationCtrl
+                                .text
+                                .trim();
+                          }
                           auth.registerUser();
                         } else {
                           Get.offAll(() => const MainPage());

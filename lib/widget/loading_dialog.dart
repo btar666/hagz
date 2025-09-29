@@ -11,7 +11,7 @@ class LoadingDialog {
   static Future<void> show({String message = 'جاري التحميل...'}) async {
     if (_isShowing) return;
     _isShowing = true;
-    await Get.dialog(
+    Get.dialog(
       Dialog(
         insetPadding: EdgeInsets.symmetric(horizontal: 24.w),
         backgroundColor: const Color(0xFFF4FEFF),

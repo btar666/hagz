@@ -6,6 +6,8 @@ import 'controller/main_controller.dart';
 import 'utils/app_colors.dart';
 import 'controller/session_controller.dart';
 import 'view/onboarding/onboarding_page.dart';
+import 'view/main_page.dart';
+import 'service_layer/services/get_storage_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +17,9 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+
+  // init persistent storage
+  await GetStorageService().init();
 
   runApp(const MedicalApp());
 }
@@ -43,7 +48,7 @@ class MedicalApp extends StatelessWidget {
             ),
             fontFamily: 'Arial', // You can add Arabic fonts later
           ),
-          home: const OnboardingPage(),
+          home: _resolveStartPage(),
           locale: const Locale('ar'),
           fallbackLocale: const Locale('ar'),
           onInit: () {
@@ -55,4 +60,13 @@ class MedicalApp extends StatelessWidget {
       },
     );
   }
+}
+
+Widget _resolveStartPage() {
+  final storage = GetStorageService();
+  final savedToken = storage.read<String>('auth_token');
+  if ((savedToken ?? '').isNotEmpty) {
+    return const MainPage();
+  }
+  return const OnboardingPage();
 }

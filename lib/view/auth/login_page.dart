@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 import 'register_page.dart';
-import '../main_page.dart';
 import '../../controller/session_controller.dart';
 import '../../controller/auth_controller.dart';
 import '../delegate/delegate_terms_page.dart';
@@ -166,15 +165,10 @@ class _LoginPageState extends State<LoginPage> {
                 height: 64.h,
                 child: ElevatedButton(
                   onPressed: () {
-                    final session = Get.find<SessionController>();
-                    if (session.role.value == 'user') {
-                      final auth = Get.put(AuthController());
-                      auth.phoneCtrl.text = _phoneCtrl.text.trim();
-                      auth.passwordCtrl.text = _passwordCtrl.text.trim();
-                      auth.login();
-                    } else {
-                      Get.offAll(() => const MainPage());
-                    }
+                    final auth = Get.put(AuthController());
+                    auth.phoneCtrl.text = _phoneCtrl.text.trim();
+                    auth.passwordCtrl.text = _passwordCtrl.text.trim();
+                    auth.login();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,

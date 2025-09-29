@@ -24,15 +24,27 @@ class AuthController extends GetxController {
   final TextEditingController cityCtrl = TextEditingController();
   final TextEditingController regPhoneCtrl = TextEditingController();
   final TextEditingController regPasswordCtrl = TextEditingController();
+  final TextEditingController specializationCtrl = TextEditingController();
   final RxString gender = ''.obs; // 'ذكر' | 'انثى'
   final RxInt age = 18.obs; // default
 
-  Future<void> login() async {
-    if (_session.role.value != 'user') {
-      // keep existing flow for non-user roles
-      Get.offAll(() => const MainPage());
-      return;
+  String _mapApiUserTypeToInternal(String? apiUserType) {
+    switch (apiUserType) {
+      case 'User':
+        return 'user';
+      case 'Doctor':
+        return 'doctor';
+      case 'Secretary':
+        return 'secretary';
+      case 'Representative':
+      case 'Delegate':
+        return 'delegate';
+      default:
+        return '';
     }
+  }
+
+  Future<void> login() async {
     if (phoneCtrl.text.trim().isEmpty || passwordCtrl.text.trim().isEmpty) {
       _showSnack('يرجى إدخال الهاتف وكلمة المرور');
       return;
@@ -51,6 +63,21 @@ class AuthController extends GetxController {
         LoadingDialog.hide();
         final data = res['data'] as Map<String, dynamic>;
         final token = data['token'] ?? data['data']?['token'];
+        final serverUserType = data['data']?['userType']?.toString();
+        final internalType = _mapApiUserTypeToInternal(serverUserType);
+
+        if (internalType.isNotEmpty && internalType != _session.role.value) {
+          await showStatusDialog(
+            title: 'لا يوجد حساب بهذه المعلومات',
+            message:
+                'نوع المستخدم المختار لا يطابق نوع الحساب. الرجاء اختيار النوع الصحيح أو استخدام بيانات الحساب المطابقة.',
+            color: const Color(0xFFFF3B30),
+            icon: Icons.error_outline,
+            buttonText: 'حسناً',
+          );
+          return;
+        }
+
         _session.setToken(token?.toString());
         Get.offAll(() => const MainPage());
       } else {
@@ -79,8 +106,9 @@ class AuthController extends GetxController {
   }
 
   Future<void> registerUser() async {
-    if (_session.role.value != 'user') {
-      _showSnack('التسجيل الحالي مخصص لحساب المستخدم فقط');
+    if (_session.role.value == 'doctor' &&
+        (specializationCtrl.text.trim().isEmpty)) {
+      _showSnack('يرجى إدخال التخصص للطبيب');
       return;
     }
     if (nameCtrl.text.trim().isEmpty ||
@@ -102,8 +130,10 @@ class AuthController extends GetxController {
         gender: gender.value,
         age: age.value,
         city: cityCtrl.text.trim(),
-        userType: _session.apiUserType, // 'User'
-        specialization: '',
+        userType: _session.apiUserType, // 'User' | 'Doctor'
+        specialization: _session.role.value == 'doctor'
+            ? specializationCtrl.text.trim()
+            : '',
         company: '',
         deviceToken: deviceToken,
       );
@@ -114,6 +144,21 @@ class AuthController extends GetxController {
         // optional: auto login if token returned
         final data = res['data'] as Map<String, dynamic>;
         final token = data['token'] ?? data['data']?['token'];
+        final serverUserType = data['data']?['userType']?.toString();
+        final internalType = _mapApiUserTypeToInternal(serverUserType);
+
+        if (internalType.isNotEmpty && internalType != _session.role.value) {
+          await showStatusDialog(
+            title: 'لا يوجد حساب بهذه المعلومات',
+            message:
+                'نوع المستخدم المختار لا يطابق نوع الحساب. الرجاء اختيار النوع الصحيح أو استخدام بيانات الحساب المطابقة.',
+            color: const Color(0xFFFF3B30),
+            icon: Icons.error_outline,
+            buttonText: 'حسناً',
+          );
+          return;
+        }
+
         if (token != null) {
           _session.setToken(token.toString());
         }
