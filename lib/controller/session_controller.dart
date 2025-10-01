@@ -1,14 +1,18 @@
 import 'package:get/get.dart';
 import '../service_layer/services/get_storage_service.dart';
+import '../model/user_model.dart';
 
 class SessionController extends GetxController {
   // Roles: 'doctor', 'user', 'secretary', 'delegate'
   var role = 'doctor'.obs;
   // Auth token (in-memory)
   final RxnString token = RxnString();
+  // Current logged-in user profile
+  final Rxn<UserModel> currentUser = Rxn<UserModel>();
 
   static const String _kTokenKey = 'auth_token';
   static const String _kRoleKey = 'user_role';
+  static const String _kUserKey = 'current_user';
   final GetStorageService _storage = GetStorageService();
 
   @override
@@ -31,9 +35,19 @@ class SessionController extends GetxController {
     }
   }
 
+  void setCurrentUser(UserModel? user) {
+    currentUser.value = user;
+    if (user != null) {
+      _storage.write(_kUserKey, user.toJson());
+    } else {
+      _storage.remove(_kUserKey);
+    }
+  }
+
   void clearSession() {
     token.value = null;
     _storage.remove(_kTokenKey);
+    setCurrentUser(null);
   }
 
   bool get isAuthenticated => (token.value ?? '').isNotEmpty;
@@ -57,11 +71,19 @@ class SessionController extends GetxController {
   void _loadPersistedSession() {
     final savedToken = _storage.read<String>(_kTokenKey);
     final savedRole = _storage.read<String>(_kRoleKey);
+    final savedUser = _storage.read<Map<String, dynamic>>(_kUserKey);
     if ((savedToken ?? '').isNotEmpty) {
       token.value = savedToken;
     }
     if ((savedRole ?? '').isNotEmpty) {
       role.value = savedRole!;
+    }
+    if (savedUser != null && savedUser.isNotEmpty) {
+      try {
+        currentUser.value = UserModel.fromJson(savedUser);
+      } catch (_) {
+        // ignore corrupted data
+      }
     }
   }
 }

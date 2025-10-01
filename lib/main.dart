@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'controller/main_controller.dart';
+import 'bindings/home_binding.dart';
 import 'utils/app_colors.dart';
 import 'controller/session_controller.dart';
 import 'view/onboarding/onboarding_page.dart';
@@ -55,6 +56,8 @@ class MedicalApp extends StatelessWidget {
             // Initialize controllers
             Get.put(MainController());
             Get.put(SessionController());
+            // Global bindings for first home entry
+            HomeBinding().dependencies();
           },
         );
       },

@@ -4,6 +4,11 @@ import 'package:get/get.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
+import '../../controller/session_controller.dart';
+import '../../model/user_model.dart';
+import '../../service_layer/services/user_service.dart';
+import '../../widget/loading_dialog.dart';
+import '../../widget/status_dialog.dart';
 
 class UserProfileEditPage extends StatefulWidget {
   const UserProfileEditPage({super.key});
@@ -13,14 +18,67 @@ class UserProfileEditPage extends StatefulWidget {
 }
 
 class _UserProfileEditPageState extends State<UserProfileEditPage> {
-  final _nameCtrl = TextEditingController(text: 'آرين');
-  final _phoneCtrl = TextEditingController(text: '0000 0000 0000');
+  final _nameCtrl = TextEditingController(text: '');
+  final _phoneCtrl = TextEditingController(text: '');
   int _genderIndex = 1; // 0 ذكر - 1 انثى
   String _city = 'دهوك';
   String _age = '22';
 
-  final List<String> _cities = const ['دهوك', 'أربيل', 'السليمانية', 'بغداد'];
+  final SessionController _session = Get.find<SessionController>();
+  final UserService _userService = UserService();
+
+  final List<String> _cities = ['دهوك', 'أربيل', 'السليمانية', 'بغداد'];
   final List<String> _ages = [for (int i = 10; i <= 80; i++) i.toString()];
+
+  @override
+  void initState() {
+    super.initState();
+    _prefillFromSession();
+    _fetchLatestUser();
+  }
+
+  void _prefillFromSession() {
+    final UserModel? user = _session.currentUser.value;
+    if (user == null) return;
+
+    _nameCtrl.text = user.name;
+    _phoneCtrl.text = user.phone;
+    _age = (user.age > 0 ? user.age : int.tryParse(_age) ?? 22).toString();
+
+    final String g = user.gender.trim().toLowerCase();
+    if (g == 'male' || g == 'ذكر') {
+      _genderIndex = 0;
+    } else if (g == 'female' || g == 'انثى' || g == 'أنثى') {
+      _genderIndex = 1;
+    }
+
+    if (user.city.trim().isNotEmpty) {
+      if (!_cities.contains(user.city)) {
+        _cities.add(user.city);
+      }
+      _city = user.city;
+    }
+    setState(() {});
+  }
+
+  Future<void> _fetchLatestUser() async {
+    await LoadingDialog.show(message: 'جاري جلب معلومات الحساب...');
+    try {
+      final res = await _userService.getUserInfo();
+      if (res['ok'] == true) {
+        _prefillFromSession();
+      } else {
+        await showStatusDialog(
+          title: 'تعذر جلب البيانات',
+          message: 'يرجى المحاولة لاحقاً',
+          color: const Color(0xFFFF3B30),
+          icon: Icons.error_outline,
+        );
+      }
+    } finally {
+      LoadingDialog.hide();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +189,28 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        // TODO: send update to backend
+                        final current = _session.currentUser.value;
+                        final updated =
+                            (current ??
+                                    UserModel(
+                                      id: (current?.id ?? '').toString(),
+                                      name: _nameCtrl.text.trim(),
+                                      phone: _phoneCtrl.text.trim(),
+                                      gender: _genderIndex == 0
+                                          ? 'ذكر'
+                                          : 'انثى',
+                                      age: int.tryParse(_age) ?? 0,
+                                      city: _city,
+                                      userType: _session.apiUserType,
+                                    ))
+                                .copyWith(
+                                  name: _nameCtrl.text.trim(),
+                                  phone: _phoneCtrl.text.trim(),
+                                  gender: _genderIndex == 0 ? 'ذكر' : 'انثى',
+                                  age: int.tryParse(_age) ?? 0,
+                                  city: _city,
+                                );
+                        _session.setCurrentUser(updated);
                         Get.back();
                       },
                       style: ElevatedButton.styleFrom(

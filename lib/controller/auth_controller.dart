@@ -6,6 +6,7 @@ import '../widget/my_text.dart';
 import '../view/main_page.dart';
 import '../controller/session_controller.dart';
 import '../service_layer/services/auth_service.dart';
+import '../model/user_model.dart';
 import '../service_layer/services/device_token_service.dart';
 import '../widget/loading_dialog.dart';
 import '../widget/status_dialog.dart';
@@ -77,8 +78,20 @@ class AuthController extends GetxController {
           );
           return;
         }
-
+        // Persist token and user model if available
         _session.setToken(token?.toString());
+        try {
+          // Many APIs return the user data either at root or in data.data.user
+          final Map<String, dynamic> userJson =
+              (data['user'] as Map<String, dynamic>?) ??
+              (data['data']?['user'] as Map<String, dynamic>?) ??
+              (data['data'] as Map<String, dynamic>?) ??
+              data;
+          final user = UserModel.fromJson(userJson);
+          _session.setCurrentUser(user);
+        } catch (_) {
+          // ignore parse errors silently
+        }
         Get.offAll(() => const MainPage());
       } else {
         LoadingDialog.hide();
@@ -162,6 +175,15 @@ class AuthController extends GetxController {
         if (token != null) {
           _session.setToken(token.toString());
         }
+        try {
+          final Map<String, dynamic> userJson =
+              (data['user'] as Map<String, dynamic>?) ??
+              (data['data']?['user'] as Map<String, dynamic>?) ??
+              (data['data'] as Map<String, dynamic>?) ??
+              data;
+          final user = UserModel.fromJson(userJson);
+          _session.setCurrentUser(user);
+        } catch (_) {}
         Get.offAll(() => const MainPage());
       } else {
         LoadingDialog.hide();

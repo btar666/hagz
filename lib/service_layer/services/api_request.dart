@@ -45,6 +45,19 @@ class ApiRequest {
     return _decode(res);
   }
 
+  Future<Map<String, dynamic>> put(
+    String url,
+    Map<String, dynamic> body, {
+    Map<String, String>? headers,
+  }) async {
+    final res = await http.put(
+      Uri.parse(url),
+      headers: _headers(extra: headers),
+      body: jsonEncode(body),
+    );
+    return _decode(res);
+  }
+
   Map<String, dynamic> _decode(http.Response res) {
     final decoded = _safeDecode(res.bodyBytes);
     return {

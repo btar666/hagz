@@ -8,6 +8,8 @@ import 'doctor_profile_manage_page.dart';
 import 'secretary_accounts_page.dart';
 import '../appointments/past_appointments_page.dart';
 import 'user_profile_edit_page.dart';
+import 'change_password_page.dart';
+import '../../bindings/change_password_binding.dart';
 import '../onboarding/user_type_selection_page.dart';
 import '../../widget/confirm_dialogs.dart';
 
@@ -16,7 +18,7 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final SessionController session = Get.put(SessionController());
+    final SessionController session = Get.find<SessionController>();
     final bool isDoctor = session.role.value == 'doctor';
     final bool isUser = session.role.value == 'user';
     return Scaffold(
@@ -75,6 +77,18 @@ class SettingsPage extends StatelessWidget {
                 color: AppColors.secondary,
                 onTap: () {
                   Get.to(() => const UserProfileEditPage());
+                },
+              ),
+              SizedBox(height: 16.h),
+              _buildSettingsItem(
+                icon: Icons.lock,
+                title: 'تغيير كلمة السر',
+                color: AppColors.secondary,
+                onTap: () {
+                  Get.to(
+                    () => const ChangePasswordPage(),
+                    binding: ChangePasswordBinding(),
+                  );
                 },
               ),
               SizedBox(height: 16.h),
