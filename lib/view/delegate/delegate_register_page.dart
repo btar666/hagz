@@ -5,6 +5,13 @@ import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 import 'delegate_success_page.dart';
+import '../../service_layer/services/auth_service.dart';
+import '../../service_layer/services/device_token_service.dart';
+import '../../widget/loading_dialog.dart';
+import '../../widget/status_dialog.dart';
+import '../../service_layer/services/upload_service.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class DelegateRegisterPage extends StatefulWidget {
   const DelegateRegisterPage({super.key});
@@ -17,13 +24,26 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameCtrl = TextEditingController();
   final TextEditingController _phoneCtrl = TextEditingController();
-  String? _degree;
+  final TextEditingController _passwordCtrl = TextEditingController();
+  final TextEditingController _certificateCtrl = TextEditingController();
+  final TextEditingController _idFrontCtrl = TextEditingController();
+  final TextEditingController _idBackCtrl = TextEditingController();
+  int? _age;
   final List<String> _attachments = [];
+  final AuthService _auth = AuthService();
+  final UploadService _upload = UploadService();
+  final ImagePicker _picker = ImagePicker();
+  String _idFrontUrl = '';
+  String _idBackUrl = '';
 
   @override
   void dispose() {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
+    _passwordCtrl.dispose();
+    _certificateCtrl.dispose();
+    _idFrontCtrl.dispose();
+    _idBackCtrl.dispose();
     super.dispose();
   }
 
@@ -117,6 +137,26 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
                 ),
 
                 SizedBox(height: 16.h),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: MyText(
+                    'كلمة المرور',
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                _roundedField(
+                  controller: _passwordCtrl,
+                  hint: 'ادخل كلمة المرور',
+                  keyboardType: TextInputType.visiblePassword,
+                  validator: (v) => (v == null || v.trim().length < 6)
+                      ? 'كلمة المرور 6 أحرف على الأقل'
+                      : null,
+                ),
+
+                SizedBox(height: 16.h),
                 _twoDropdownsRow(),
 
                 SizedBox(height: 20.h),
@@ -131,10 +171,10 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
                 ),
                 SizedBox(height: 8.h),
                 _roundedField(
-                  controller: TextEditingController(text: _degree ?? ''),
+                  controller: _certificateCtrl,
                   hint: 'اكتب تحصيلك العلمي',
                   validator: (_) => null,
-                  onChanged: (v) => _degree = v,
+                  onChanged: (_) {},
                 ),
 
                 SizedBox(height: 20.h),
@@ -148,8 +188,9 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
                   ),
                 ),
                 SizedBox(height: 12.h),
-                _uploadRow(),
+                if (_attachments.length < 2) _uploadRow(),
 
+                SizedBox(height: 16.h),
                 SizedBox(height: 16.h),
                 ..._attachments
                     .asMap()
@@ -161,11 +202,7 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
                 SizedBox(
                   height: 64.h,
                   child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        Get.offAll(() => const DelegateSuccessPage());
-                      }
-                    },
+                    onPressed: _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(
@@ -192,7 +229,17 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
   }
 
   Widget _twoDropdownsRow() {
-    return Row(children: [Expanded(child: _ageDropdownField((v) {}))]);
+    return Row(
+      children: [
+        Expanded(
+          child: _ageDropdownField((v) {
+            setState(() {
+              _age = int.tryParse((v ?? '').trim());
+            });
+          }),
+        ),
+      ],
+    );
   }
 
   Widget _roundedField({
@@ -237,6 +284,126 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
       ),
       style: TextStyle(fontSize: 16.sp, fontFamily: 'Expo Arabic'),
     );
+  }
+
+  Future<void> _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (_age == null) {
+      await showStatusDialog(
+        title: 'العمر مطلوب',
+        message: 'يرجى اختيار العمر',
+        color: const Color(0xFFFF3B30),
+        icon: Icons.error_outline,
+      );
+      return;
+    }
+    await LoadingDialog.show(message: 'جاري إنشاء حساب المندوب...');
+    try {
+      final deviceToken = await DeviceTokenService.getOrCreateToken();
+      final res = await _auth.registerDelegate(
+        name: _nameCtrl.text.trim(),
+        phone: _phoneCtrl.text.trim(),
+        password: _passwordCtrl.text.trim(),
+        age: _age!,
+        certificate: _certificateCtrl.text.trim(),
+        idFrontImage: (_idFrontCtrl.text.trim().isNotEmpty
+            ? _idFrontCtrl.text.trim()
+            : _idFrontUrl),
+        idBackImage: (_idBackCtrl.text.trim().isNotEmpty
+            ? _idBackCtrl.text.trim()
+            : _idBackUrl),
+        deviceToken: deviceToken,
+      );
+      if (res['ok'] == true) {
+        LoadingDialog.hide();
+        Get.offAll(() => const DelegateSuccessPage());
+      } else {
+        LoadingDialog.hide();
+        await showStatusDialog(
+          title: 'فشل إنشاء الحساب',
+          message:
+              res['error']?.toString() ?? 'تحقق من البيانات وحاول مرة أخرى',
+          color: const Color(0xFFFF3B30),
+          icon: Icons.error_outline,
+          buttonText: 'حسناً',
+        );
+      }
+    } catch (_) {
+      LoadingDialog.hide();
+      await showStatusDialog(
+        title: 'خطأ غير متوقع',
+        message: 'حدث خطأ أثناء إنشاء الحساب',
+        color: const Color(0xFFFF3B30),
+        icon: Icons.error_outline,
+      );
+    }
+  }
+
+  Future<void> _pickAndUpload({required bool isFront}) async {
+    try {
+      final XFile? picked = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
+      await LoadingDialog.show(message: 'جاري رفع الصورة...');
+      final res = await _upload.uploadImage(File(picked.path));
+      LoadingDialog.hide();
+      if (res['ok'] == true) {
+        final data = res['data'] as Map<String, dynamic>?;
+        final url = data?['data']?['url']?.toString() ?? '';
+        if (url.isNotEmpty) {
+          setState(() {
+            if (isFront) {
+              _idFrontUrl = url;
+              _idFrontCtrl.text = url;
+            } else {
+              _idBackUrl = url;
+              _idBackCtrl.text = url;
+            }
+            final uri = Uri.tryParse(url);
+            final fileName = (uri != null && uri.pathSegments.isNotEmpty)
+                ? uri.pathSegments.last
+                : 'image.jpg';
+            if (!_attachments.contains(fileName)) {
+              _attachments.add(fileName);
+            }
+          });
+          await showStatusDialog(
+            title: 'تم الرفع',
+            message: (res['message']?.toString().isNotEmpty == true)
+                ? res['message'] as String
+                : 'تم رفع الصورة بنجاح',
+            color: AppColors.primary,
+            icon: Icons.check_circle_outline,
+          );
+        } else {
+          await showStatusDialog(
+            title: 'فشل الرفع',
+            message: 'تعذر الحصول على الرابط من الخادم',
+            color: const Color(0xFFFF3B30),
+            icon: Icons.error_outline,
+          );
+        }
+      } else {
+        await showStatusDialog(
+          title: 'فشل الرفع',
+          message: (res['message']?.toString().isNotEmpty == true)
+              ? res['message'] as String
+              : 'يرجى المحاولة لاحقاً',
+          color: const Color(0xFFFF3B30),
+          icon: Icons.error_outline,
+        );
+      }
+    } catch (_) {
+      LoadingDialog.hide();
+      await showStatusDialog(
+        title: 'فشل الرفع',
+        message: 'حدث خطأ أثناء رفع الصورة',
+        color: const Color(0xFFFF3B30),
+        icon: Icons.error_outline,
+      );
+    }
   }
 
   Widget _dropdownField(String label, ValueChanged<String?> onChanged) {
@@ -344,8 +511,8 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
   Widget _uploadTile(String label) {
     return InkWell(
       onTap: () async {
-        // In this version, just add a placeholder filename.
-        setState(() => _attachments.add('128.JPGG'));
+        final bool isFront = label.contains('الأمامي');
+        await _pickAndUpload(isFront: isFront);
       },
       child: Container(
         height: 110.h,
@@ -388,7 +555,13 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
       child: Row(
         children: [
           InkWell(
-            onTap: () => setState(() => _attachments.removeAt(index)),
+            onTap: () => setState(() {
+              final removed = _attachments.removeAt(index);
+              final frontName = Uri.tryParse(_idFrontUrl)?.pathSegments.last;
+              final backName = Uri.tryParse(_idBackUrl)?.pathSegments.last;
+              if (removed == frontName) _idFrontUrl = '';
+              if (removed == backName) _idBackUrl = '';
+            }),
             child: const Icon(Icons.close, color: Colors.redAccent),
           ),
           SizedBox(width: 10.w),

@@ -188,31 +188,7 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
                   SizedBox(width: 16.w),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        final current = _session.currentUser.value;
-                        final updated =
-                            (current ??
-                                    UserModel(
-                                      id: (current?.id ?? '').toString(),
-                                      name: _nameCtrl.text.trim(),
-                                      phone: _phoneCtrl.text.trim(),
-                                      gender: _genderIndex == 0
-                                          ? 'ذكر'
-                                          : 'انثى',
-                                      age: int.tryParse(_age) ?? 0,
-                                      city: _city,
-                                      userType: _session.apiUserType,
-                                    ))
-                                .copyWith(
-                                  name: _nameCtrl.text.trim(),
-                                  phone: _phoneCtrl.text.trim(),
-                                  gender: _genderIndex == 0 ? 'ذكر' : 'انثى',
-                                  age: int.tryParse(_age) ?? 0,
-                                  city: _city,
-                                );
-                        _session.setCurrentUser(updated);
-                        Get.back();
-                      },
+                      onPressed: _onSave,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFFB74D),
                         padding: EdgeInsets.symmetric(vertical: 16.h),
@@ -344,5 +320,71 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
         onChanged: onChanged,
       ),
     );
+  }
+
+  Future<void> _onSave() async {
+    await LoadingDialog.show(message: 'جاري حفظ التعديلات...');
+    try {
+      final name = _nameCtrl.text.trim();
+      final phone = _phoneCtrl.text.trim();
+      final gender = _genderIndex == 0 ? 'ذكر' : 'انثى';
+      final age = int.tryParse(_age) ?? 0;
+      final res = await _userService.updateUserInfo(
+        name: name,
+        city: _city,
+        phone: phone,
+        gender: gender,
+        age: age,
+      );
+      if (res['ok'] == true) {
+        // حدث جلسة المستخدم
+        final current = _session.currentUser.value;
+        final updated =
+            (current ??
+                    UserModel(
+                      id: (current?.id ?? '').toString(),
+                      name: name,
+                      phone: phone,
+                      gender: gender,
+                      age: age,
+                      city: _city,
+                      userType: _session.apiUserType,
+                    ))
+                .copyWith(
+                  name: name,
+                  phone: phone,
+                  gender: gender,
+                  age: age,
+                  city: _city,
+                );
+        _session.setCurrentUser(updated);
+        Get.back();
+        await showStatusDialog(
+          title: 'تم الحفظ',
+          message: 'تم تحديث معلوماتك بنجاح',
+          color: AppColors.primary,
+          icon: Icons.check_circle_outline,
+          buttonText: 'حسناً',
+        );
+      } else {
+        await showStatusDialog(
+          title: 'تعذر الحفظ',
+          message: 'يرجى المحاولة لاحقاً',
+          color: const Color(0xFFFF3B30),
+          icon: Icons.error_outline,
+          buttonText: 'حسناً',
+        );
+      }
+    } catch (_) {
+      await showStatusDialog(
+        title: 'تعذر الحفظ',
+        message: 'يرجى المحاولة لاحقاً',
+        color: const Color(0xFFFF3B30),
+        icon: Icons.error_outline,
+        buttonText: 'حسناً',
+      );
+    } finally {
+      LoadingDialog.hide();
+    }
   }
 }

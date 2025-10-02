@@ -8,4 +8,6 @@ class ApiConstants {
   static const String changePassword = '$baseUrl/api/users/change-password';
   static const String doctors = '$baseUrl/api/users/doctors/';
   static const String hospitals = '$baseUrl/api/hospitals/';
+  static const String uploads = '$baseUrl/api/uploads/';
+  static const String sliders = '$baseUrl/api/sliders/';
 }

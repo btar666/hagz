@@ -18,14 +18,19 @@ class BannerModel {
   });
 
   factory BannerModel.fromJson(Map<String, dynamic> json) {
+    final String stringId = (json['_id'] ?? json['id'] ?? '').toString();
+    final int safeId = stringId.isNotEmpty
+        ? stringId.hashCode
+        : (json['id'] is int ? json['id'] as int : 0);
+
     return BannerModel(
-      id: json['id'] ?? 0,
-      image: json['image'] ?? '',
-      title: json['title']?.toString(),
+      id: safeId,
+      image: (json['image'] ?? '').toString(),
+      title: (json['name'] ?? json['title'])?.toString(),
       description: json['description']?.toString(),
       url: json['url']?.toString(),
-      isActive: json['is_active'] == 1 || json['is_active'] == true,
-      createdAt: json['created_at']?.toString(),
+      isActive: true,
+      createdAt: (json['createdAt'] ?? json['created_at'])?.toString(),
     );
   }
 

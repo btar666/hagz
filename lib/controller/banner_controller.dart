@@ -1,13 +1,14 @@
 import 'package:get/get.dart';
 import '../model/banner_model.dart';
+import '../service_layer/services/banner_service.dart';
 
 class BannerController extends GetxController {
   // قائمة الإعلانات
   RxList<BannerModel> banners = <BannerModel>[].obs;
-  
+
   // حالة التحميل
   RxBool isLoading = false.obs;
-  
+
   // فهرس الإعلان النشط في الكاروسيل
   RxInt activeIndex = 0.obs;
 
@@ -18,14 +19,16 @@ class BannerController extends GetxController {
   }
 
   /// تحميل الإعلانات (حالياً من البيانات المحلية)
-  void loadBanners() {
+  Future<void> loadBanners() async {
     isLoading.value = true;
-    
-    // محاكاة تأخير التحميل
-    Future.delayed(const Duration(milliseconds: 500), () {
+    try {
+      final service = BannerService();
+      final fetched = await service.getActiveBanners();
+      banners.value = fetched;
+    } catch (_) {
       banners.value = _getLocalBanners();
-      isLoading.value = false;
-    });
+    }
+    isLoading.value = false;
   }
 
   /// الحصول على البيانات المحلية للإعلانات

@@ -8,4 +8,10 @@ class HospitalService {
     final res = await _api.get(ApiConstants.hospitals);
     return res;
   }
+
+  Future<Map<String, dynamic>> getHospitalById(String id) async {
+    final url = '${ApiConstants.hospitals}$id';
+    final res = await _api.get(url);
+    return res;
+  }
 }

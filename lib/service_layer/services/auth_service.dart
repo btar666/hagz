@@ -76,6 +76,49 @@ class AuthService {
     };
   }
 
+  Future<Map<String, dynamic>> registerDelegate({
+    required String name,
+    required String phone,
+    required String password,
+    required int age,
+    String certificate = '',
+    String idFrontImage = '',
+    String idBackImage = '',
+    String deviceToken = '',
+  }) async {
+    final uri = Uri.parse(ApiConstants.register);
+    final payload = {
+      'name': name,
+      'phone': phone,
+      'password': password,
+      'age': age,
+      'userType': 'Representative',
+      'certificate': certificate,
+      'idFrontImage': idFrontImage,
+      'idBackImage': idBackImage,
+      'deviceToken': deviceToken,
+    };
+
+    final response = await http.post(
+      uri,
+      headers: const {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode(payload),
+    );
+
+    final decoded = _decodeBody(response.bodyBytes);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return {'ok': true, 'data': decoded};
+    }
+    return {
+      'ok': false,
+      'error': decoded['message'] ?? 'فشل إنشاء الحساب',
+      'data': decoded,
+    };
+  }
+
   Map<String, dynamic> _decodeBody(List<int> bodyBytes) {
     try {
       return jsonDecode(utf8.decode(bodyBytes)) as Map<String, dynamic>;

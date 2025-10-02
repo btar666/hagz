@@ -1,42 +1,29 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../model/banner_model.dart';
+import '../../utils/constants.dart';
 
 class BannerService {
-  // يجب تحديث هذا الرابط ليطابق API الخاص بك
-  static const String baseUrl = 'https://your-api-url.com/api';
-  static const String bannersEndpoint = '/banners';
-
-  // Headers افتراضية
-  static const Map<String, String> headers = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  };
+  static const String baseUrl = ApiConstants.sliders;
+  static const String bannersEndpoint = '';
+  static const Map<String, String> headers = {'Accept': 'application/json'};
 
   /// جلب جميع الإعلانات النشطة
   Future<List<BannerModel>> getActiveBanners() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl$bannersEndpoint?active=1'),
-        headers: headers,
+      final uri = Uri.parse('$baseUrl$bannersEndpoint');
+      final response = await http.get(uri, headers: headers);
+      // ignore: avoid_print
+      print(
+        'SLIDERS RESPONSE (active): ${response.statusCode} ${response.body}',
       );
-
-      if (response.statusCode == 200) {
+      if (response.statusCode >= 200 && response.statusCode < 300) {
         final Map<String, dynamic> data = json.decode(response.body);
-
-        // تحديد بنية الاستجابة حسب API الخاص بك
-        List<dynamic> bannersJson;
-        if (data['data'] != null) {
-          bannersJson = data['data'] is List
-              ? data['data']
-              : data['data']['items'] ?? [];
-        } else {
-          bannersJson = data['banners'] ?? [];
-        }
-
+        // ignore: avoid_print
+        print('SLIDERS DATA: ' + data.toString());
+        final List<dynamic> bannersJson = (data['data'] as List? ?? []);
         return bannersJson
             .map((json) => BannerModel.fromJson(json as Map<String, dynamic>))
-            .where((banner) => banner.isActive) // تصفية الإعلانات النشطة فقط
             .toList();
       } else {
         throw Exception('فشل في جلب الإعلانات: ${response.statusCode}');
@@ -53,23 +40,15 @@ class BannerService {
   /// جلب جميع الإعلانات (نشطة وغير نشطة)
   Future<List<BannerModel>> getAllBanners() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl$bannersEndpoint'),
-        headers: headers,
-      );
-
-      if (response.statusCode == 200) {
+      final uri = Uri.parse('$baseUrl$bannersEndpoint');
+      final response = await http.get(uri, headers: headers);
+      // ignore: avoid_print
+      print('SLIDERS RESPONSE (all): ${response.statusCode} ${response.body}');
+      if (response.statusCode >= 200 && response.statusCode < 300) {
         final Map<String, dynamic> data = json.decode(response.body);
-
-        List<dynamic> bannersJson;
-        if (data['data'] != null) {
-          bannersJson = data['data'] is List
-              ? data['data']
-              : data['data']['items'] ?? [];
-        } else {
-          bannersJson = data['banners'] ?? [];
-        }
-
+        // ignore: avoid_print
+        print('SLIDERS DATA: ' + data.toString());
+        final List<dynamic> bannersJson = (data['data'] as List? ?? []);
         return bannersJson
             .map((json) => BannerModel.fromJson(json as Map<String, dynamic>))
             .toList();

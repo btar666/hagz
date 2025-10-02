@@ -4,23 +4,18 @@ import 'package:get/get.dart';
 import 'package:hagz/utils/app_colors.dart';
 import 'package:hagz/widget/my_text.dart';
 import '../../../controller/hospital_details_controller.dart';
+import 'package:url_launcher/url_launcher_string.dart';
+import '../../../widget/status_dialog.dart';
 
 class HospitalDetailsPage extends StatelessWidget {
-  final String hospitalName;
-  final String hospitalLocation;
-
-  const HospitalDetailsPage({
-    super.key,
-    required this.hospitalName,
-    required this.hospitalLocation,
-  });
+  const HospitalDetailsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(HospitalDetailsController());
+    final controller = Get.find<HospitalDetailsController>();
 
     return Scaffold(
-        backgroundColor: const Color(0xFFF4FEFF),
+      backgroundColor: const Color(0xFFF4FEFF),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -30,7 +25,16 @@ class HospitalDetailsPage extends StatelessWidget {
             SizedBox(height: 20.h),
 
             // Main content section
-            _buildMainContent(),
+            Obx(() {
+              if (controller.isLoading.value ||
+                  controller.hospital.value == null) {
+                return const Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                );
+              }
+              return _buildMainContent(controller);
+            }),
 
             SizedBox(height: 20.h),
 
@@ -102,14 +106,14 @@ class HospitalDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildMainContent() {
+  Widget _buildMainContent(HospitalDetailsController controller) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Hospital info section
-          Expanded(child: _buildHospitalInfoCard()),
+          Expanded(child: _buildHospitalInfoCard(controller)),
 
           SizedBox(width: 20.w),
           // Social media icons column
@@ -120,6 +124,7 @@ class HospitalDetailsPage extends StatelessWidget {
   }
 
   Widget _buildSocialMediaColumn() {
+    final controller = Get.find<HospitalDetailsController>();
     return Container(
       width: 70.w,
       decoration: BoxDecoration(
@@ -137,24 +142,162 @@ class HospitalDetailsPage extends StatelessWidget {
         padding: EdgeInsets.symmetric(vertical: 15.h),
         child: Column(
           children: [
-            _buildSocialIconItem(
-              'assets/icons/home/instgram.png',
-              const Color(0xFFE4405F),
+            GestureDetector(
+              onTap: () async {
+                final url = controller.hospital.value?.instagram ?? '';
+                if (url.isEmpty) {
+                  await showStatusDialog(
+                    title: 'لا يوجد رابط',
+                    message: 'لا يتوفر رابط إنستغرام',
+                    color: const Color(0xFFFF3B30),
+                    icon: Icons.error_outline,
+                  );
+                  return;
+                }
+                try {
+                  final ok = await launchUrlString(
+                    url,
+                    mode: LaunchMode.externalApplication,
+                  );
+                  if (!ok) {
+                    await showStatusDialog(
+                      title: 'لا يمكن فتح الرابط',
+                      message: 'تحقق من الرابط أو التطبيق المثبت',
+                      color: const Color(0xFFFF3B30),
+                      icon: Icons.error_outline,
+                    );
+                  }
+                } catch (_) {
+                  await showStatusDialog(
+                    title: 'خطأ في فتح الرابط',
+                    message: 'حاول لاحقاً',
+                    color: const Color(0xFFFF3B30),
+                    icon: Icons.error_outline,
+                  );
+                }
+              },
+              child: _buildSocialIconItem(
+                'assets/icons/home/instgram.png',
+                const Color(0xFFE4405F),
+              ),
             ),
             SizedBox(height: 12.h),
-            _buildSocialIconItem(
-              'assets/icons/home/phone.png',
-              const Color(0xFFFF3040),
+            GestureDetector(
+              onTap: () async {
+                final phone = controller.hospital.value?.phone ?? '';
+                if (phone.isEmpty) {
+                  await showStatusDialog(
+                    title: 'لا يوجد رقم',
+                    message: 'لا يتوفر رقم هاتف',
+                    color: const Color(0xFFFF3B30),
+                    icon: Icons.error_outline,
+                  );
+                  return;
+                }
+                final uri = 'tel:$phone';
+                try {
+                  final ok = await launchUrlString(uri);
+                  if (!ok) {
+                    await showStatusDialog(
+                      title: 'تعذر إجراء الاتصال',
+                      message: 'تحقق من إذن الاتصال أو صحة الرقم',
+                      color: const Color(0xFFFF3B30),
+                      icon: Icons.error_outline,
+                    );
+                  }
+                } catch (_) {
+                  await showStatusDialog(
+                    title: 'تعذر إجراء الاتصال',
+                    message: 'حاول لاحقاً',
+                    color: const Color(0xFFFF3B30),
+                    icon: Icons.error_outline,
+                  );
+                }
+              },
+              child: _buildSocialIconItem(
+                'assets/icons/home/phone.png',
+                const Color(0xFFFF3040),
+              ),
             ),
             SizedBox(height: 12.h),
-            _buildSocialIconItem(
-              'assets/icons/home/watsapp.png',
-              const Color(0xFF25D366),
+            GestureDetector(
+              onTap: () async {
+                final wa = controller.hospital.value?.whatsapp ?? '';
+                if (wa.isEmpty) {
+                  await showStatusDialog(
+                    title: 'لا يوجد رابط',
+                    message: 'لا يتوفر رابط واتساب',
+                    color: const Color(0xFFFF3B30),
+                    icon: Icons.error_outline,
+                  );
+                  return;
+                }
+                try {
+                  final ok = await launchUrlString(
+                    wa,
+                    mode: LaunchMode.externalApplication,
+                  );
+                  if (!ok) {
+                    await showStatusDialog(
+                      title: 'لا يمكن فتح واتساب',
+                      message: 'تأكد من تثبيت التطبيق أو صحة الرابط',
+                      color: const Color(0xFFFF3B30),
+                      icon: Icons.error_outline,
+                    );
+                  }
+                } catch (_) {
+                  await showStatusDialog(
+                    title: 'لا يمكن فتح واتساب',
+                    message: 'حاول لاحقاً',
+                    color: const Color(0xFFFF3B30),
+                    icon: Icons.error_outline,
+                  );
+                }
+              },
+              child: _buildSocialIconItem(
+                'assets/icons/home/watsapp.png',
+                const Color(0xFF25D366),
+              ),
             ),
             SizedBox(height: 12.h),
-            _buildSocialIconItem(
-              'assets/icons/home/facebook.png',
-              const Color(0xFF1877F2),
+            GestureDetector(
+              onTap: () async {
+                final url = controller.hospital.value?.facebook ?? '';
+                if (url.isEmpty) {
+                  await showStatusDialog(
+                    title: 'لا يوجد رابط',
+                    message: 'لا يتوفر رابط فيسبوك',
+                    color: const Color(0xFFFF3B30),
+                    icon: Icons.error_outline,
+                  );
+                  return;
+                }
+                try {
+                  final ok = await launchUrlString(
+                    url,
+                    mode: LaunchMode.externalApplication,
+                  );
+                  if (!ok) {
+                    await showStatusDialog(
+                      title: 'لا يمكن فتح الرابط',
+                      message: 'تحقق من الرابط أو التطبيق المثبت',
+                      color: const Color(0xFFFF3B30),
+                      icon: Icons.error_outline,
+                    );
+                  }
+                } catch (_) {
+                  await showStatusDialog(
+                    title: 'خطأ في فتح الرابط',
+                    message: 'حاول لاحقاً',
+                    color: const Color(0xFFFF3B30),
+                    icon: Icons.error_outline,
+                  );
+                }
+              },
+              child: _buildSocialIconItem(
+                'assets/icons/home/facebook.png',
+                const Color(0xFF1877F2),
+              ),
             ),
             SizedBox(height: 12.h),
             _buildSocialIconItem('assets/icons/home/link.png', Colors.grey),
@@ -198,7 +341,8 @@ class HospitalDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildHospitalInfoCard() {
+  Widget _buildHospitalInfoCard(HospitalDetailsController controller) {
+    final h = controller.hospital.value!;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -269,7 +413,7 @@ class HospitalDetailsPage extends StatelessWidget {
 
             // Hospital name
             MyText(
-              hospitalName,
+              h.name,
               fontSize: 18.sp,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
@@ -300,7 +444,7 @@ class HospitalDetailsPage extends StatelessWidget {
                 SizedBox(width: 8.w),
                 Expanded(
                   child: MyText(
-                    hospitalLocation,
+                    h.address,
                     fontSize: 12.sp,
                     color: const Color(0xFF7FC8D6),
                     textAlign: TextAlign.right,
@@ -330,7 +474,7 @@ class HospitalDetailsPage extends StatelessWidget {
                     ),
                     SizedBox(width: 5.w),
                     MyText(
-                      '0770 000 0000',
+                      h.phone.isEmpty ? '—' : h.phone,
                       fontSize: 14.sp,
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFF7FC8D6),

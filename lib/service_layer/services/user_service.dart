@@ -48,4 +48,22 @@ class UserService {
     final res = await _api.get(uri.toString());
     return res;
   }
+
+  Future<Map<String, dynamic>> updateUserInfo({
+    required String name,
+    required String city,
+    required String phone,
+    required String gender,
+    required int age,
+  }) async {
+    final body = {
+      'name': name,
+      'city': city,
+      'phone': phone,
+      'gender': gender,
+      'age': age,
+    };
+    final res = await _api.put(ApiConstants.userInfo, body);
+    return res;
+  }
 }

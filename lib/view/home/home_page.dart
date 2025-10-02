@@ -6,6 +6,7 @@ import 'package:hagz/view/home/complex/complex_details_page.dart';
 import '../../controller/main_controller.dart';
 import '../../controller/home_controller.dart';
 import '../../controller/hospitals_controller.dart';
+import '../../bindings/hospital_details_binding.dart';
 import '../../utils/app_colors.dart';
 import '../../widget/search_widget.dart';
 import 'search_page.dart';
@@ -359,10 +360,9 @@ class HomePage extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         Get.to(
-          () => HospitalDetailsPage(
-            hospitalName: name,
-            hospitalLocation: hospital.address,
-          ),
+          () => const HospitalDetailsPage(),
+          arguments: {'id': hospital.id},
+          binding: HospitalDetailsBinding(),
         );
       },
       child: Container(
@@ -423,7 +423,7 @@ class HomePage extends StatelessWidget {
                 fontWeight: FontWeight.w700,
                 height: 1.0,
                 letterSpacing: 0,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
               ),

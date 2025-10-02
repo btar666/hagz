@@ -19,7 +19,7 @@ class _BannerCarouselState extends State<BannerCarousel>
   final PageController _pageController = PageController();
   Timer? _timer;
   bool _isUserScrolling = false;
-  
+
   @override
   void initState() {
     super.initState();
@@ -37,12 +37,14 @@ class _BannerCarouselState extends State<BannerCarousel>
     _timer = Timer.periodic(const Duration(seconds: 4), (timer) {
       // إيقاف التشغيل التلقائي إذا كان المستخدم يتفاعل
       if (_isUserScrolling) return;
-      
+
       final bannerController = Get.find<BannerController>();
-      if (bannerController.activeBanners.isNotEmpty && _pageController.hasClients) {
+      if (bannerController.activeBanners.isNotEmpty &&
+          _pageController.hasClients) {
         final currentIndex = bannerController.activeIndex.value;
-        final nextIndex = (currentIndex + 1) % bannerController.activeBanners.length;
-        
+        final nextIndex =
+            (currentIndex + 1) % bannerController.activeBanners.length;
+
         _pageController.animateToPage(
           nextIndex,
           duration: const Duration(milliseconds: 500),
@@ -51,13 +53,13 @@ class _BannerCarouselState extends State<BannerCarousel>
       }
     });
   }
-  
+
   void _onUserInteractionStart() {
     setState(() {
       _isUserScrolling = true;
     });
   }
-  
+
   void _onUserInteractionEnd() {
     // إعادة تشغيل التمرير التلقائي بعد ثانيتين من توقف التفاعل
     Timer(const Duration(seconds: 2), () {
@@ -86,7 +88,10 @@ class _BannerCarouselState extends State<BannerCarousel>
     });
   }
 
-  Widget _buildCarousel(BannerController bannerController, BuildContext context) {
+  Widget _buildCarousel(
+    BannerController bannerController,
+    BuildContext context,
+  ) {
     return SizedBox(
       height: 180.h, // الارتفاع الأصلي
       width: double.infinity,
@@ -104,7 +109,8 @@ class _BannerCarouselState extends State<BannerCarousel>
             child: PageView.builder(
               controller: _pageController,
               itemCount: bannerController.activeBanners.length,
-              physics: const BouncingScrollPhysics(), // تأثير ارتداد عند الوصول للنهاية
+              physics:
+                  const BouncingScrollPhysics(), // تأثير ارتداد عند الوصول للنهاية
               pageSnapping: true, // تأكيد الانتقال إلى الصفحة التالية
               allowImplicitScrolling: true,
               onPageChanged: (index) {
@@ -123,9 +129,7 @@ class _BannerCarouselState extends State<BannerCarousel>
               bottom: 20.h,
               left: 0,
               right: 0,
-              child: Center(
-                child: _buildIndicators(bannerController),
-              ),
+              child: Center(child: _buildIndicators(bannerController)),
             ),
         ],
       ),
@@ -143,7 +147,7 @@ class _BannerCarouselState extends State<BannerCarousel>
         } else {
           value = index == 0 ? 1.0 : 0.0;
         }
-        
+
         return Transform.scale(
           scale: Curves.easeOut.transform(value),
           child: Container(
@@ -176,22 +180,39 @@ class _BannerCarouselState extends State<BannerCarousel>
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.asset(
-                        banner.image,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: AppColors.primaryLight,
-                            child: const Center(
-                              child: Icon(
-                                Icons.image,
-                                color: Colors.white,
-                                size: 48,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                      (banner.image.startsWith('http')
+                          ? Image.network(
+                              banner.image,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: AppColors.primaryLight,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.image,
+                                      color: Colors.white,
+                                      size: 48,
+                                    ),
+                                  ),
+                                );
+                              },
+                            )
+                          : Image.asset(
+                              banner.image,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: AppColors.primaryLight,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.image,
+                                      color: Colors.white,
+                                      size: 48,
+                                    ),
+                                  ),
+                                );
+                              },
+                            )),
                       // تأثير لوني خفيف عند عدم التركيز
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
@@ -215,18 +236,20 @@ class _BannerCarouselState extends State<BannerCarousel>
       return const SizedBox.shrink();
     }
 
-    return Obx(() => AnimatedSmoothIndicator(
-      activeIndex: bannerController.activeIndex.value,
-      count: bannerController.activeBanners.length,
-      effect: ExpandingDotsEffect(
-        dotHeight: 10.h,
-        dotWidth: 10.w,
-        activeDotColor: Colors.white,
-        dotColor: Colors.white.withOpacity(0.5),
-        expansionFactor: 2.5,
-        spacing: 6.w,
+    return Obx(
+      () => AnimatedSmoothIndicator(
+        activeIndex: bannerController.activeIndex.value,
+        count: bannerController.activeBanners.length,
+        effect: ExpandingDotsEffect(
+          dotHeight: 10.h,
+          dotWidth: 10.w,
+          activeDotColor: Colors.white,
+          dotColor: Colors.white.withOpacity(0.5),
+          expansionFactor: 2.5,
+          spacing: 6.w,
+        ),
       ),
-    ));
+    );
   }
 
   Widget _buildLoadingSkeleton(BuildContext context) {
@@ -238,9 +261,7 @@ class _BannerCarouselState extends State<BannerCarousel>
         color: Colors.grey[300],
         borderRadius: BorderRadius.circular(16.r),
       ),
-      child: const Center(
-        child: CircularProgressIndicator(),
-      ),
+      child: const Center(child: CircularProgressIndicator()),
     );
   }
 }
