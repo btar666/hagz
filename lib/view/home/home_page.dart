@@ -254,12 +254,14 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildDoctorCardFromData(Map<String, dynamic> doctor) {
+    final String id = (doctor['id'] ?? doctor['_id'] ?? '').toString();
     final String name = (doctor['name'] ?? '').toString();
     final String specialization = (doctor['specialization'] ?? '').toString();
     return GestureDetector(
       onTap: () {
         Get.to(
           () => DoctorProfilePage(
+            doctorId: id,
             doctorName: name,
             specialization: specialization.isEmpty ? '—' : specialization,
           ),
@@ -598,6 +600,7 @@ class HomePage extends StatelessWidget {
         // الانتقال إلى صفحة تفاصيل الطبيب
         Get.to(
           () => DoctorProfilePage(
+            doctorId: 'unknown',
             doctorName: doctorNames[index],
             specialization: specialties[index],
           ),

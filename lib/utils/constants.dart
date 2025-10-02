@@ -10,4 +10,5 @@ class ApiConstants {
   static const String hospitals = '$baseUrl/api/hospitals/';
   static const String uploads = '$baseUrl/api/uploads/';
   static const String sliders = '$baseUrl/api/sliders/';
+  static const String opinions = '$baseUrl/api/opinions/';
 }

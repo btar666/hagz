@@ -28,7 +28,10 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
   final TextEditingController _certificateCtrl = TextEditingController();
   final TextEditingController _idFrontCtrl = TextEditingController();
   final TextEditingController _idBackCtrl = TextEditingController();
+  final TextEditingController _cityCtrl = TextEditingController();
+  final TextEditingController _companyCtrl = TextEditingController();
   int? _age;
+  String _gender = '';
   final List<String> _attachments = [];
   final AuthService _auth = AuthService();
   final UploadService _upload = UploadService();
@@ -44,6 +47,8 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
     _certificateCtrl.dispose();
     _idFrontCtrl.dispose();
     _idBackCtrl.dispose();
+    _cityCtrl.dispose();
+    _companyCtrl.dispose();
     super.dispose();
   }
 
@@ -159,6 +164,42 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
                 SizedBox(height: 16.h),
                 _twoDropdownsRow(),
 
+                SizedBox(height: 16.h),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: MyText(
+                    'المدينة',
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                _roundedField(
+                  controller: _cityCtrl,
+                  hint: 'اكتب مدينتك (اختياري)',
+                  validator: (_) => null,
+                ),
+
+                SizedBox(height: 16.h),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: MyText(
+                    'الشركة',
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                _roundedField(
+                  controller: _companyCtrl,
+                  hint: 'اسم الشركة',
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'هذا الحقل مطلوب !'
+                      : null,
+                ),
+
                 SizedBox(height: 20.h),
                 Align(
                   alignment: Alignment.centerRight,
@@ -188,7 +229,7 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
                   ),
                 ),
                 SizedBox(height: 12.h),
-                if (_attachments.length < 2) _uploadRow(),
+                _uploadRow(),
 
                 SizedBox(height: 16.h),
                 SizedBox(height: 16.h),
@@ -238,6 +279,26 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
             });
           }),
         ),
+        SizedBox(width: 12.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              MyText(
+                'الجنس',
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+              SizedBox(height: 8.h),
+              _genderDropdownField((v) {
+                setState(() {
+                  _gender = (v ?? '').trim();
+                });
+              }),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -254,7 +315,12 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
       keyboardType: keyboardType,
       textAlign: TextAlign.center,
       validator: validator,
-      onChanged: onChanged,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      onChanged: (v) {
+        if (onChanged != null) onChanged(v);
+        // إعادة التحقق مباشرة لإخفاء رسالة الخطأ عند التصحيح
+        _formKey.currentState?.validate();
+      },
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(
@@ -297,6 +363,31 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
       );
       return;
     }
+    // تحقق إلزامي من صور الهوية
+    final String frontUrl = _idFrontCtrl.text.trim().isNotEmpty
+        ? _idFrontCtrl.text.trim()
+        : _idFrontUrl.trim();
+    final String backUrl = _idBackCtrl.text.trim().isNotEmpty
+        ? _idBackCtrl.text.trim()
+        : _idBackUrl.trim();
+    if (frontUrl.isEmpty) {
+      await showStatusDialog(
+        title: 'الوثائق ناقصة',
+        message: 'يرجى إرفاق صورة الوجه الأمامي للهوية',
+        color: const Color(0xFFFF3B30),
+        icon: Icons.error_outline,
+      );
+      return;
+    }
+    if (backUrl.isEmpty) {
+      await showStatusDialog(
+        title: 'الوثائق ناقصة',
+        message: 'يرجى إرفاق صورة الوجه الخلفي للهوية',
+        color: const Color(0xFFFF3B30),
+        icon: Icons.error_outline,
+      );
+      return;
+    }
     await LoadingDialog.show(message: 'جاري إنشاء حساب المندوب...');
     try {
       final deviceToken = await DeviceTokenService.getOrCreateToken();
@@ -305,13 +396,12 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
         phone: _phoneCtrl.text.trim(),
         password: _passwordCtrl.text.trim(),
         age: _age!,
+        gender: _gender,
+        city: _cityCtrl.text.trim(),
+        company: _companyCtrl.text.trim(),
         certificate: _certificateCtrl.text.trim(),
-        idFrontImage: (_idFrontCtrl.text.trim().isNotEmpty
-            ? _idFrontCtrl.text.trim()
-            : _idFrontUrl),
-        idBackImage: (_idBackCtrl.text.trim().isNotEmpty
-            ? _idBackCtrl.text.trim()
-            : _idBackUrl),
+        idFrontImage: frontUrl,
+        idBackImage: backUrl,
         deviceToken: deviceToken,
       );
       if (res['ok'] == true) {
@@ -361,10 +451,7 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
               _idBackUrl = url;
               _idBackCtrl.text = url;
             }
-            final uri = Uri.tryParse(url);
-            final fileName = (uri != null && uri.pathSegments.isNotEmpty)
-                ? uri.pathSegments.last
-                : 'image.jpg';
+            final fileName = _fileNameFromUrl(url);
             if (!_attachments.contains(fileName)) {
               _attachments.add(fileName);
             }
@@ -498,20 +585,60 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
     );
   }
 
-  Widget _uploadRow() {
-    return Row(
-      children: [
-        Expanded(child: _uploadTile('أرفق الوجه الخلفي للبطاقة')),
-        SizedBox(width: 12.w),
-        Expanded(child: _uploadTile('أرفق الوجه الأمامي للبطاقة')),
-      ],
+  Widget _genderDropdownField(ValueChanged<String?> onChanged) {
+    final List<String> genders = const ['ذكر', 'انثى'];
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 10.r,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: DropdownButtonFormField<String>(
+        value: _gender.isEmpty ? null : _gender,
+        items: [
+          const DropdownMenuItem(value: 'اختر', child: Text('اختر')),
+          ...genders.map((g) => DropdownMenuItem(value: g, child: Text(g))),
+        ],
+        onChanged: onChanged,
+        decoration: const InputDecoration(border: InputBorder.none),
+        icon: const Icon(Icons.keyboard_arrow_down_rounded),
+        style: TextStyle(
+          fontFamily: 'Expo Arabic',
+          fontSize: 16.sp,
+          color: AppColors.textPrimary,
+        ),
+      ),
     );
   }
 
-  Widget _uploadTile(String label) {
+  Widget _uploadRow() {
+    final List<Widget> tiles = [];
+    // اجعل زر الوجه الأمامي أولاً دائماً، ثم الخلفي
+    if (_idFrontUrl.isEmpty) {
+      tiles.add(
+        Expanded(child: _uploadTile('أرفق الوجه الأمامي للبطاقة', true)),
+      );
+    }
+    if (_idBackUrl.isEmpty) {
+      if (tiles.isNotEmpty) tiles.add(SizedBox(width: 12.w));
+      tiles.add(
+        Expanded(child: _uploadTile('أرفق الوجه الخلفي للبطاقة', false)),
+      );
+    }
+    if (tiles.isEmpty) return const SizedBox.shrink();
+    return Row(children: tiles);
+  }
+
+  Widget _uploadTile(String label, bool isFront) {
     return InkWell(
       onTap: () async {
-        final bool isFront = label.contains('الأمامي');
         await _pickAndUpload(isFront: isFront);
       },
       child: Container(
@@ -556,11 +683,14 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
         children: [
           InkWell(
             onTap: () => setState(() {
-              final removed = _attachments.removeAt(index);
-              final frontName = Uri.tryParse(_idFrontUrl)?.pathSegments.last;
-              final backName = Uri.tryParse(_idBackUrl)?.pathSegments.last;
-              if (removed == frontName) _idFrontUrl = '';
-              if (removed == backName) _idBackUrl = '';
+              final int idx = _attachments.indexOf(name);
+              if (idx >= 0 && idx < _attachments.length) {
+                final removed = _attachments.removeAt(idx);
+                final frontName = _fileNameFromUrl(_idFrontUrl);
+                final backName = _fileNameFromUrl(_idBackUrl);
+                if (removed == frontName) _idFrontUrl = '';
+                if (removed == backName) _idBackUrl = '';
+              }
             }),
             child: const Icon(Icons.close, color: Colors.redAccent),
           ),
@@ -577,5 +707,16 @@ class _DelegateRegisterPageState extends State<DelegateRegisterPage> {
         ],
       ),
     );
+  }
+
+  String _fileNameFromUrl(String url) {
+    if (url.trim().isEmpty) return '';
+    try {
+      final uri = Uri.parse(url);
+      final segs = uri.pathSegments;
+      return segs.isNotEmpty ? segs.last : '';
+    } catch (_) {
+      return '';
+    }
   }
 }

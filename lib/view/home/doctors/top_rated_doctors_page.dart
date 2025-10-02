@@ -116,6 +116,7 @@ class TopRatedDoctorsPage extends StatelessWidget {
         // الانتقال إلى صفحة تفاصيل الطبيب
         Get.to(
           () => DoctorProfilePage(
+            doctorId: 'unknown',
             doctorName: doctorNames[index],
             specialization: specialties[index],
           ),

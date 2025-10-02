@@ -4,14 +4,20 @@ import 'package:get/get.dart';
 import 'package:hagz/utils/app_colors.dart';
 import 'package:hagz/widget/my_text.dart';
 import '../../../controller/doctor_profile_controller.dart';
+import '../../../controller/session_controller.dart';
+import '../../../service_layer/services/opinion_service.dart';
+import '../../../widget/loading_dialog.dart';
+import '../../../widget/status_dialog.dart';
 import '../../appointments/patient_registration_page.dart';
 
 class DoctorProfilePage extends StatelessWidget {
+  final String doctorId;
   final String doctorName;
   final String specialization;
 
   const DoctorProfilePage({
     super.key,
+    required this.doctorId,
     required this.doctorName,
     required this.specialization,
   });
@@ -19,6 +25,8 @@ class DoctorProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(DoctorProfileController());
+    // Load opinions for this doctor
+    controller.loadOpinionsForTarget(doctorId);
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -218,10 +226,22 @@ class DoctorProfilePage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildSocialIconImage('assets/icons/home/instgram.png', const Color(0xFFE4405F)),
-          _buildSocialIconImage('assets/icons/home/phone.png', const Color(0xFFFF3040)),
-          _buildSocialIconImage('assets/icons/home/watsapp.png', const Color(0xFF25D366)),
-          _buildSocialIconImage('assets/icons/home/facebook.png', const Color(0xFF1877F2)),
+          _buildSocialIconImage(
+            'assets/icons/home/instgram.png',
+            const Color(0xFFE4405F),
+          ),
+          _buildSocialIconImage(
+            'assets/icons/home/phone.png',
+            const Color(0xFFFF3040),
+          ),
+          _buildSocialIconImage(
+            'assets/icons/home/watsapp.png',
+            const Color(0xFF25D366),
+          ),
+          _buildSocialIconImage(
+            'assets/icons/home/facebook.png',
+            const Color(0xFF1877F2),
+          ),
           _buildSocialIconImage('assets/icons/home/link.png', Colors.grey),
         ],
       ),
@@ -480,22 +500,240 @@ class DoctorProfilePage extends StatelessWidget {
   }
 
   Widget _buildReviewsContent(DoctorProfileController controller) {
-    return Obx(
-      () => Column(
-        children: controller.opinions
-            .map(
-              (opinion) => Container(
-                margin: EdgeInsets.only(bottom: 16.h),
-                child: _buildReviewItem(
-                  opinion['patientName'],
-                  opinion['date'],
-                  opinion['comment'],
-                  opinion['rating'].toDouble(),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Obx(
+          () => Column(
+            children: controller.opinions
+                .map(
+                  (opinion) => Container(
+                    margin: EdgeInsets.only(bottom: 16.h),
+                    child: _buildReviewItem(
+                      opinion['patientName'],
+                      opinion['date'],
+                      opinion['comment'],
+                      opinion['rating'].toDouble(),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ),
+        SizedBox(height: 12.h),
+        Align(
+          alignment: Alignment.centerRight,
+          child: _buildAddOpinionButton(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAddOpinionButton() {
+    return GestureDetector(
+      onTap: _showAddOpinionDialog,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          color: AppColors.primary,
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.add_comment, color: Colors.white, size: 20),
+            SizedBox(width: 8.w),
+            MyText(
+              'إضافة رأي',
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddOpinionDialog() {
+    final TextEditingController commentCtrl = TextEditingController();
+    Get.dialog(
+      Dialog(
+        insetPadding: EdgeInsets.symmetric(horizontal: 24.w),
+        backgroundColor: const Color(0xFFF4FEFF),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24.r),
+        ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16.w, 24.h, 16.w, 16.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Icon(
+                Icons.rate_review_rounded,
+                color: AppColors.primary,
+                size: 56,
+              ),
+              SizedBox(height: 10.h),
+              Text(
+                'إضافة رأي',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'Expo Arabic',
                 ),
               ),
-            )
-            .toList(),
+              SizedBox(height: 12.h),
+              Text(
+                'شارك تجربتك ليستفيد الآخرون.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Expo Arabic',
+                ),
+              ),
+              SizedBox(height: 16.h),
+              TextField(
+                controller: commentCtrl,
+                maxLines: 4,
+                textAlign: TextAlign.right,
+                decoration: InputDecoration(
+                  hintText: 'اكتب تعليقك هنا...',
+                  hintStyle: TextStyle(
+                    color: AppColors.textLight,
+                    fontSize: 14.sp,
+                    fontFamily: 'Expo Arabic',
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 12.h,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                    borderSide: BorderSide(
+                      color: AppColors.primary,
+                      width: 1.4,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 16.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Get.back(),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: AppColors.primary),
+                        foregroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                        ),
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                      ),
+                      child: Text(
+                        'إلغاء',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w800,
+                          fontFamily: 'Expo Arabic',
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        final text = commentCtrl.text.trim();
+                        if (text.isEmpty) return;
+                        await LoadingDialog.show(message: 'جاري الإرسال...');
+                        try {
+                          final session = Get.find<SessionController>();
+                          final String? userId = session.currentUser.value?.id;
+                          if (userId == null || userId.isEmpty) {
+                            LoadingDialog.hide();
+                            await showStatusDialog(
+                              title: 'غير مسجل',
+                              message: 'يرجى تسجيل الدخول أولاً',
+                              color: const Color(0xFFFF3B30),
+                              icon: Icons.error_outline,
+                            );
+                            return;
+                          }
+                          final service = OpinionService();
+                          final res = await service.addOpinion(
+                            userId: userId,
+                            targetId: doctorId,
+                            targetModel: 'User',
+                            comment: text,
+                          );
+                          LoadingDialog.hide();
+                          if (res['ok'] == true) {
+                            Get.back();
+                            await showStatusDialog(
+                              title: 'تم الإرسال',
+                              message: 'تم إضافة رأيك بنجاح',
+                              color: AppColors.primary,
+                              icon: Icons.check_circle_outline,
+                            );
+                          } else {
+                            await showStatusDialog(
+                              title: 'فشل الإرسال',
+                              message:
+                                  res['data']?['message']?.toString() ??
+                                  'تعذر إضافة الرأي',
+                              color: const Color(0xFFFF3B30),
+                              icon: Icons.error_outline,
+                            );
+                          }
+                        } catch (e) {
+                          LoadingDialog.hide();
+                          await showStatusDialog(
+                            title: 'خطأ',
+                            message: 'حدث خطأ غير متوقع: $e',
+                            color: const Color(0xFFFF3B30),
+                            icon: Icons.error_outline,
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                        ),
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'إرسال',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          fontFamily: 'Expo Arabic',
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
+      barrierDismissible: false,
     );
   }
 
@@ -740,10 +978,12 @@ class DoctorProfilePage extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 28.w),
       child: GestureDetector(
         onTap: () {
-          Get.to(() => PatientRegistrationPage(
-            doctorName: doctorName,
-            doctorSpecialty: specialization,
-          ));
+          Get.to(
+            () => PatientRegistrationPage(
+              doctorName: doctorName,
+              doctorSpecialty: specialization,
+            ),
+          );
         },
         child: Container(
           width: double.infinity,

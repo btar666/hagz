@@ -132,6 +132,7 @@ class SpecialtiesPage extends StatelessWidget {
       onTap: () {
         Get.to(
           () => DoctorProfilePage(
+            doctorId: 'unknown',
             doctorName: doctor.name,
             specialization: doctor.specialty,
           ),

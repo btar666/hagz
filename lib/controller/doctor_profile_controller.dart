@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '../service_layer/services/opinion_service.dart';
 
 class DoctorProfileController extends GetxController {
   // Observable variables for each section's expansion state
@@ -63,33 +64,9 @@ class DoctorProfileController extends GetxController {
     },
   ].obs;
 
-  // Sample opinions data (with publish state and avatar)
-  var opinions = <Map<String, dynamic>>[
-    {
-      'patientName': 'غونجا',
-      'rating': 5.0,
-      'comment': 'انها طبيبة محترفة و تتمتع بخبرة واسعة في مجالها.',
-      'date': null, // will be set in onInit to now-10m
-      'published': false,
-      'avatar': 'assets/icons/home/doctor.png',
-    },
-    {
-      'patientName': 'ريتشارد',
-      'rating': 4.5,
-      'comment': 'انها طبيبة محترفة و تتمتع بخبرة واسعة في مجالها.',
-      'date': null, // now - 26m
-      'published': false,
-      'avatar': 'assets/icons/home/doctor.png',
-    },
-    {
-      'patientName': 'سونوكو',
-      'rating': 4.8,
-      'comment': 'انها طبيبة محترفة و تتمتع بخبرة واسعة في مجالها.',
-      'date': null, // now - 10h
-      'published': true,
-      'avatar': 'assets/icons/home/doctor.png',
-    },
-  ].obs;
+  // Opinions from API
+  var opinions = <Map<String, dynamic>>[].obs;
+  final OpinionService _opinionService = OpinionService();
 
   // Sample treated cases
   var treatedCases = <Map<String, String>>[
@@ -115,15 +92,31 @@ class DoctorProfileController extends GetxController {
   var treatedCaseImages = <String>[].obs;
 
   // New: Managed cases list (each with name + one image) + form state
-  var managedCases = <Map<String, String>>[].obs; // { 'name': ..., 'image': path }
+  var managedCases =
+      <Map<String, String>>[].obs; // { 'name': ..., 'image': path }
   var newCaseName = ''.obs;
   var newCaseImage = ''.obs;
 
   // Appointments sequence (order queue)
   var sequenceAppointments = <Map<String, dynamic>>[
-    {'order': 1, 'patient': 'اسم المريض', 'time': '6:40 صباحاً', 'status': 'completed'},
-    {'order': 2, 'patient': 'اسم المريض', 'time': '6:40 صباحاً', 'status': 'pending'},
-    {'order': 4, 'patient': 'اسم المريض', 'time': '6:40 صباحاً', 'status': 'cancelled'},
+    {
+      'order': 1,
+      'patient': 'اسم المريض',
+      'time': '6:40 صباحاً',
+      'status': 'completed',
+    },
+    {
+      'order': 2,
+      'patient': 'اسم المريض',
+      'time': '6:40 صباحاً',
+      'status': 'pending',
+    },
+    {
+      'order': 4,
+      'patient': 'اسم المريض',
+      'time': '6:40 صباحاً',
+      'status': 'cancelled',
+    },
   ].obs;
 
   // Insurance companies
@@ -139,33 +132,32 @@ class DoctorProfileController extends GetxController {
     super.onInit();
     // Initialize any data loading here
     loadDoctorData();
-    // Seed relative dates for sample opinions
-    if (opinions.isNotEmpty) {
-      final now = DateTime.now();
-      // Safe updates with spread to trigger Rx refresh
-      if (opinions.length >= 1) {
-        opinions[0] = {
-          ...opinions[0],
-          'date': now.subtract(const Duration(minutes: 10)).toIso8601String(),
-        };
-      }
-      if (opinions.length >= 2) {
-        opinions[1] = {
-          ...opinions[1],
-          'date': now.subtract(const Duration(minutes: 26)).toIso8601String(),
-        };
-      }
-      if (opinions.length >= 3) {
-        opinions[2] = {
-          ...opinions[2],
-          'date': now.subtract(const Duration(hours: 10)).toIso8601String(),
-        };
-      }
-      opinions.refresh();
-    }
+    // opinions will be fetched by view when doctorId is known
 
     // Seed sample calendar statuses similar to design
     _seedCurrentMonthStatuses();
+  }
+
+  Future<void> loadOpinionsForTarget(String targetId) async {
+    try {
+      final res = await _opinionService.getOpinionsByTarget(targetId);
+      if (res['ok'] == true) {
+        final List<dynamic> data = (res['data']?['data'] as List? ?? []);
+        opinions.value = data.map((item) {
+          final Map<String, dynamic> m = item as Map<String, dynamic>;
+          final user = (m['user'] as Map<String, dynamic>?);
+          return {
+            'patientName': user?['name']?.toString() ?? 'مستخدم',
+            'rating': 5.0,
+            'comment': m['comment']?.toString() ?? '',
+            'date': m['createdAt']?.toString(),
+            'avatar': 'assets/icons/home/doctor.png',
+          };
+        }).toList();
+      }
+    } catch (_) {
+      // ignore network errors silently
+    }
   }
 
   void loadDoctorData() {
@@ -285,11 +277,16 @@ class DoctorProfileController extends GetxController {
     newCaseImage.value = path;
   }
 
-  bool get canAddCase => newCaseName.value.trim().isNotEmpty && newCaseImage.value.trim().isNotEmpty;
+  bool get canAddCase =>
+      newCaseName.value.trim().isNotEmpty &&
+      newCaseImage.value.trim().isNotEmpty;
 
   void addManagedCase() {
     if (canAddCase) {
-      managedCases.add({'name': newCaseName.value.trim(), 'image': newCaseImage.value});
+      managedCases.add({
+        'name': newCaseName.value.trim(),
+        'image': newCaseImage.value,
+      });
       newCaseName.value = '';
       newCaseImage.value = '';
     }
@@ -302,10 +299,7 @@ class DoctorProfileController extends GetxController {
   void updateManagedCaseNameAt(int index, String name) {
     if (index >= 0 && index < managedCases.length) {
       final current = managedCases[index];
-      managedCases[index] = {
-        ...current,
-        'name': name.trim(),
-      };
+      managedCases[index] = {...current, 'name': name.trim()};
       managedCases.refresh();
     }
   }
@@ -313,10 +307,7 @@ class DoctorProfileController extends GetxController {
   void updateManagedCaseImageAt(int index, String path) {
     if (index >= 0 && index < managedCases.length) {
       final current = managedCases[index];
-      managedCases[index] = {
-        ...current,
-        'image': path,
-      };
+      managedCases[index] = {...current, 'image': path};
       managedCases.refresh();
     }
   }
