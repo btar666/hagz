@@ -7,6 +7,8 @@ import '../../widget/my_text.dart';
 import '../../controller/session_controller.dart';
 import '../../model/user_model.dart';
 import '../../service_layer/services/user_service.dart';
+import '../../service_layer/services/cv_service.dart';
+import '../../service_layer/services/upload_service.dart';
 import '../../widget/loading_dialog.dart';
 import '../../widget/status_dialog.dart';
 
@@ -26,6 +28,13 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
 
   final SessionController _session = Get.find<SessionController>();
   final UserService _userService = UserService();
+  final CvService _cvService = CvService();
+  final UploadService _uploadService = UploadService();
+
+  // CV state
+  final TextEditingController _cvDescCtrl = TextEditingController(text: '');
+  final List<String> _cvCertificates = [];
+  String _cvId = '';
 
   final List<String> _cities = ['دهوك', 'أربيل', 'السليمانية', 'بغداد'];
   final List<String> _ages = [for (int i = 10; i <= 80; i++) i.toString()];
@@ -35,6 +44,7 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
     super.initState();
     _prefillFromSession();
     _fetchLatestUser();
+    _fetchCvIfAny();
   }
 
   void _prefillFromSession() {
@@ -78,6 +88,27 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
     } finally {
       LoadingDialog.hide();
     }
+  }
+
+  Future<void> _fetchCvIfAny() async {
+    try {
+      final String? uid = _session.currentUser.value?.id;
+      if (uid == null || uid.isEmpty) return;
+      final res = await _cvService.getUserCvByUserId(uid);
+      if (res['ok'] == true) {
+        final data = res['data'] as Map<String, dynamic>;
+        final Map<String, dynamic>? cv = data['data'] as Map<String, dynamic>?;
+        if (cv != null) {
+          _cvId = (cv['_id']?.toString() ?? '');
+          _cvDescCtrl.text = (cv['description']?.toString() ?? '');
+          final certs = (cv['certificates'] as List?)?.cast<dynamic>() ?? [];
+          _cvCertificates
+            ..clear()
+            ..addAll(certs.map((e) => e.toString()));
+          setState(() {});
+        }
+      }
+    } catch (_) {}
   }
 
   @override
@@ -162,6 +193,68 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
                   ),
                 ],
               ),
+
+              SizedBox(height: 28.h),
+
+              if ((_session.currentUser.value?.userType.trim() ?? '') ==
+                  'Doctor') ...[
+                // CV section (doctors only)
+                _label('السيرة الذاتية (CV)'),
+                SizedBox(height: 8.h),
+                _roundedMultilineField(
+                  controller: _cvDescCtrl,
+                  hint: 'اكتب السيرة الذاتية',
+                ),
+                SizedBox(height: 12.h),
+                _label('صور الشهادات'),
+                SizedBox(height: 8.h),
+                _certificatesStrip(),
+                SizedBox(height: 12.h),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _onSaveCv,
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF00A3A3)),
+                          foregroundColor: const Color(0xFF00A3A3),
+                          padding: EdgeInsets.symmetric(vertical: 14.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18.r),
+                          ),
+                        ),
+                        child: MyText(
+                          'حفظ السيرة',
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF00A3A3),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _onDeleteCv,
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFFF3B30)),
+                          foregroundColor: const Color(0xFFFF3B30),
+                          padding: EdgeInsets.symmetric(vertical: 14.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18.r),
+                          ),
+                        ),
+                        child: MyText(
+                          'حذف السيرة',
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFFFF3B30),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 28.h),
+              ],
 
               SizedBox(height: 28.h),
               Row(
@@ -256,6 +349,208 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
         style: TextStyle(fontSize: 16.sp),
       ),
     );
+  }
+
+  Widget _roundedMultilineField({
+    required TextEditingController controller,
+    required String hint,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        maxLines: 5,
+        textAlign: TextAlign.right,
+        decoration: InputDecoration(
+          hintText: hint,
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 20.w,
+            vertical: 16.h,
+          ),
+        ),
+        style: TextStyle(fontSize: 16.sp),
+      ),
+    );
+  }
+
+  Widget _certificatesStrip() {
+    return SizedBox(
+      height: 120.h,
+      child: Row(
+        children: [
+          // Add button
+          GestureDetector(
+            onTap: _pickAndUploadCertificate,
+            child: Container(
+              width: 120.w,
+              height: 120.h,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadow,
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.add_a_photo, color: AppColors.primary),
+            ),
+          ),
+          SizedBox(width: 12.w),
+          // Images list
+          Expanded(
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemBuilder: (_, i) {
+                final url = _cvCertificates[i];
+                return Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16.r),
+                      child: Image.network(
+                        url,
+                        width: 160.w,
+                        height: 120.h,
+                        fit: BoxFit.cover,
+                        errorBuilder: (c, e, s) => Container(
+                          width: 160.w,
+                          height: 120.h,
+                          color: Colors.grey[200],
+                          child: const Icon(
+                            Icons.broken_image,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 6,
+                      left: 6,
+                      child: GestureDetector(
+                        onTap: () =>
+                            setState(() => _cvCertificates.removeAt(i)),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.all(4),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+              separatorBuilder: (_, __) => SizedBox(width: 12.w),
+              itemCount: _cvCertificates.length,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickAndUploadCertificate() async {
+    // TODO: integrate image_picker similarly to delegate page, then call _uploadService.uploadImage(file)
+  }
+
+  Future<void> _onSaveCv() async {
+    await LoadingDialog.show(message: 'جاري حفظ السيرة...');
+    try {
+      final desc = _cvDescCtrl.text.trim();
+      Map<String, dynamic> res;
+      if (_cvId.isNotEmpty) {
+        res = await _cvService.updateCv(
+          cvId: _cvId,
+          description: desc,
+          certificates: _cvCertificates,
+        );
+      } else {
+        res = await _cvService.createCv(
+          description: desc,
+          certificates: _cvCertificates,
+        );
+        if (res['ok'] == true) {
+          try {
+            final created = res['data']?['data'] as Map<String, dynamic>?;
+            _cvId = created?['_id']?.toString() ?? '';
+          } catch (_) {}
+        }
+      }
+      if (res['ok'] == true) {
+        await showStatusDialog(
+          title: 'تم الحفظ',
+          message: 'تم حفظ السيرة الذاتية بنجاح',
+          color: AppColors.primary,
+          icon: Icons.check_circle_outline,
+        );
+      } else {
+        await showStatusDialog(
+          title: 'تعذر الحفظ',
+          message: res['data']?['message']?.toString() ?? 'فشل حفظ السيرة',
+          color: const Color(0xFFFF3B30),
+          icon: Icons.error_outline,
+        );
+      }
+    } finally {
+      LoadingDialog.hide();
+      setState(() {});
+    }
+  }
+
+  Future<void> _onDeleteCv() async {
+    if (_cvId.isEmpty) {
+      await showStatusDialog(
+        title: 'لا توجد سيرة',
+        message: 'لا توجد سيرة لحذفها',
+        color: const Color(0xFFFF3B30),
+        icon: Icons.error_outline,
+      );
+      return;
+    }
+    await LoadingDialog.show(message: 'جاري حذف السيرة...');
+    try {
+      final res = await _cvService.deleteCv(_cvId);
+      if (res['ok'] == true) {
+        _cvId = '';
+        _cvDescCtrl.text = '';
+        _cvCertificates.clear();
+        await showStatusDialog(
+          title: 'تم الحذف',
+          message: 'تم حذف السيرة الذاتية',
+          color: AppColors.primary,
+          icon: Icons.check_circle_outline,
+        );
+      } else {
+        await showStatusDialog(
+          title: 'تعذر الحذف',
+          message: res['data']?['message']?.toString() ?? 'فشل حذف السيرة',
+          color: const Color(0xFFFF3B30),
+          icon: Icons.error_outline,
+        );
+      }
+    } finally {
+      LoadingDialog.hide();
+      setState(() {});
+    }
   }
 
   Widget _genderButton(String label, int index) {

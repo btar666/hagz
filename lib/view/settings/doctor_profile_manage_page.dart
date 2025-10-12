@@ -5,9 +5,13 @@ import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 import '../../controller/doctor_profile_controller.dart';
+import '../../controller/session_controller.dart';
 import '../appointments/appointment_details_page.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import '../../service_layer/services/upload_service.dart';
+import '../../widget/loading_dialog.dart';
+import '../../widget/status_dialog.dart';
 
 class DoctorProfileManagePage extends StatelessWidget {
   DoctorProfileManagePage({super.key});
@@ -31,6 +35,8 @@ class DoctorProfileManagePage extends StatelessWidget {
     final DoctorProfileController controller = Get.put(
       DoctorProfileController(),
     );
+    // Prefill CV from server if exists
+    controller.fetchMyCvIfAny();
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
       body: SafeArea(
@@ -536,7 +542,10 @@ class DoctorProfileManagePage extends StatelessWidget {
                   AnimatedRotation(
                     turns: controller.isBioExpanded.value ? 0.5 : 0.0,
                     duration: const Duration(milliseconds: 200),
-                    child: const Icon(Icons.expand_more, color: AppColors.textSecondary),
+                    child: const Icon(
+                      Icons.expand_more,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -560,9 +569,17 @@ class DoctorProfileManagePage extends StatelessWidget {
   }
 
   Widget _bioEditContent(DoctorProfileController controller) {
-    final TextEditingController bioCtrl = TextEditingController(
-      text: controller.doctorBio.value,
-    );
+    // إنشاء controller مرة واحدة فقط
+    final TextEditingController bioCtrl = TextEditingController();
+
+    // تعيين النص الأولي فقط إذا كانت هناك سيرة ذاتية
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final String text = controller.cvDescription.value;
+      if (bioCtrl.text != text) {
+        bioCtrl.text = text;
+      }
+    });
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -573,15 +590,47 @@ class DoctorProfileManagePage extends StatelessWidget {
             border: Border.all(color: AppColors.divider),
           ),
           padding: EdgeInsets.all(12.w),
-          child: TextField(
+          child: TextFormField(
             controller: bioCtrl,
-            maxLines: 6,
             textAlign: TextAlign.right,
-            decoration: const InputDecoration.collapsed(
-              hintText: 'اكتب سيرتك الذاتية هنا...',
+            textDirection: TextDirection.rtl,
+            minLines: 5,
+            maxLines: 8,
+            style: const TextStyle(
+              fontFamily: 'Expo Arabic',
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
             ),
-            style: const TextStyle(fontFamily: 'Expo Arabic'),
-            onChanged: controller.updateBio,
+            decoration: InputDecoration(
+              hintText: 'اكتب سيرتك الذاتية هنا...',
+              hintStyle: TextStyle(
+                fontFamily: 'Expo Arabic',
+                color: AppColors.textLight,
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 12.w,
+                vertical: 12.h,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16.r),
+                borderSide: BorderSide(color: AppColors.divider),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16.r),
+                borderSide: const BorderSide(
+                  color: AppColors.primary,
+                  width: 1.5,
+                ),
+              ),
+            ),
+            onChanged: (v) {
+              controller.updateBio(v);
+              controller.cvDescription.value = v;
+            },
           ),
         ),
         SizedBox(height: 12.h),
@@ -593,12 +642,18 @@ class DoctorProfileManagePage extends StatelessWidget {
           textAlign: TextAlign.right,
         ),
         SizedBox(height: 8.h),
-        Obx(
-          () => Wrap(
+        Obx(() {
+          // استخدام قائمة موحدة للعرض
+          final List<String> displayImages =
+              controller.cvCertificates.isNotEmpty
+              ? controller.cvCertificates.toList()
+              : controller.certificateImages.toList();
+
+          return Wrap(
             spacing: 10.w,
             runSpacing: 10.h,
             children: [
-              for (int i = 0; i < controller.certificateImages.length; i++)
+              for (int i = 0; i < displayImages.length; i++)
                 Stack(
                   children: [
                     Container(
@@ -608,9 +663,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                         color: Colors.grey[200],
                         borderRadius: BorderRadius.circular(12.r),
                         image: DecorationImage(
-                          image: _imageProvider(
-                            controller.certificateImages[i],
-                          ),
+                          image: _imageProvider(displayImages[i]),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -619,7 +672,14 @@ class DoctorProfileManagePage extends StatelessWidget {
                       top: 6,
                       left: 6,
                       child: InkWell(
-                        onTap: () => controller.removeCertificateAt(i),
+                        onTap: () {
+                          // حذف من القائمة المناسبة
+                          if (controller.cvCertificates.isNotEmpty) {
+                            controller.cvCertificates.removeAt(i);
+                          } else {
+                            controller.removeCertificateAt(i);
+                          }
+                        },
                         child: Container(
                           decoration: const BoxDecoration(
                             color: Colors.white,
@@ -627,8 +687,8 @@ class DoctorProfileManagePage extends StatelessWidget {
                           ),
                           padding: const EdgeInsets.all(4),
                           child: const Icon(
-                            Icons.close,
-                            size: 16,
+                            Icons.delete_forever,
+                            size: 18,
                             color: Colors.redAccent,
                           ),
                         ),
@@ -638,64 +698,179 @@ class DoctorProfileManagePage extends StatelessWidget {
                 ),
               _addCertificateButton(controller),
             ],
-          ),
-        ),
+          );
+        }),
         SizedBox(height: 16.h),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () {
-                  controller.toggleBioExpansion();
-                },
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: AppColors.secondary),
-                  foregroundColor: AppColors.secondary,
-                  padding: EdgeInsets.symmetric(vertical: 16.h),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18.r),
+        Obx(() {
+          // يظهر زر الإضافة فقط إذا لم يكن هناك cvId (لم يتم الحفظ في API)
+          final bool isSavedInApi = controller.cvId.value.isNotEmpty;
+
+          return Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => controller.toggleBioExpansion(),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: AppColors.secondary),
+                    foregroundColor: AppColors.secondary,
+                    padding: EdgeInsets.symmetric(vertical: 16.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18.r),
+                    ),
+                  ),
+                  child: MyText(
+                    'إلغاء',
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.secondary,
                   ),
                 ),
-                child: MyText(
-                  'إلغاء',
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.secondary,
-                ),
               ),
-            ),
-            SizedBox(width: 16.w),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () {
-                  controller.updateBio(bioCtrl.text);
-                  controller.toggleBioExpansion();
-                  Get.snackbar(
-                    'تم الحفظ',
-                    'تم تحديث السيرة الذاتية',
-                    backgroundColor: AppColors.primary,
-                    colorText: Colors.white,
-                    duration: const Duration(seconds: 2),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.secondary,
-                  padding: EdgeInsets.symmetric(vertical: 16.h),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18.r),
+              SizedBox(width: 12.w),
+              // زر الإضافة: يظهر فقط إذا لم تكن السيرة محفوظة في API
+              if (!isSavedInApi)
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      // استخدام القائمة الصحيحة
+                      final certs = controller.cvCertificates.isNotEmpty
+                          ? controller.cvCertificates.toList()
+                          : controller.certificateImages.toList();
+                      final res = await controller.saveMyCv(
+                        description: controller.cvDescription.value,
+                        certificates: certs,
+                      );
+                      if (res['ok'] == true) {
+                        controller.updateBio(controller.cvDescription.value);
+                        Get.snackbar(
+                          'تمت الإضافة',
+                          'تم إضافة السيرة الذاتية بنجاح',
+                          backgroundColor: AppColors.primary,
+                          colorText: Colors.white,
+                          duration: const Duration(seconds: 2),
+                        );
+                      } else {
+                        Get.snackbar(
+                          'فشل الإضافة',
+                          (res['data']?['message']?.toString() ??
+                              'تعذر إضافة السيرة'),
+                          backgroundColor: const Color(0xFFFF3B30),
+                          colorText: Colors.white,
+                          duration: const Duration(seconds: 2),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      padding: EdgeInsets.symmetric(vertical: 16.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18.r),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: MyText(
+                      'إضافة',
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
                   ),
-                  elevation: 0,
                 ),
-                child: MyText(
-                  'حفظ',
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
+              // أزرار التعديل والحذف: تظهر فقط إذا كانت السيرة محفوظة في API
+              if (isSavedInApi) ...[
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      // استخدام القائمة الصحيحة (cvCertificates عند التعديل)
+                      final certs = controller.cvCertificates.isNotEmpty
+                          ? controller.cvCertificates.toList()
+                          : controller.certificateImages.toList();
+                      final res = await controller.saveMyCv(
+                        description: controller.cvDescription.value,
+                        certificates: certs,
+                      );
+                      if (res['ok'] == true) {
+                        controller.updateBio(controller.cvDescription.value);
+                        Get.snackbar(
+                          'تم الحفظ',
+                          'تم تعديل السيرة الذاتية',
+                          backgroundColor: AppColors.primary,
+                          colorText: Colors.white,
+                          duration: const Duration(seconds: 2),
+                        );
+                      } else {
+                        Get.snackbar(
+                          'فشل التعديل',
+                          (res['data']?['message']?.toString() ??
+                              'تعذر حفظ السيرة'),
+                          backgroundColor: const Color(0xFFFF3B30),
+                          colorText: Colors.white,
+                          duration: const Duration(seconds: 2),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.secondary,
+                      padding: EdgeInsets.symmetric(vertical: 16.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18.r),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: MyText(
+                      'تعديل',
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ],
-        ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      final res = await controller.deleteMyCv();
+                      if (res['ok'] == true) {
+                        controller.updateBio('');
+                        controller.certificateImages.clear();
+                        Get.snackbar(
+                          'تم الحذف',
+                          'تم حذف السيرة الذاتية',
+                          backgroundColor: AppColors.primary,
+                          colorText: Colors.white,
+                          duration: const Duration(seconds: 2),
+                        );
+                      } else {
+                        Get.snackbar(
+                          'فشل الحذف',
+                          (res['data']?['message']?.toString() ??
+                              'تعذر حذف السيرة'),
+                          backgroundColor: const Color(0xFFFF3B30),
+                          colorText: Colors.white,
+                          duration: const Duration(seconds: 2),
+                        );
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFFF3B30)),
+                      foregroundColor: const Color(0xFFFF3B30),
+                      padding: EdgeInsets.symmetric(vertical: 16.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18.r),
+                      ),
+                    ),
+                    child: MyText(
+                      'حذف',
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFFFF3B30),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          );
+        }),
       ],
     );
   }
@@ -708,8 +883,50 @@ class DoctorProfileManagePage extends StatelessWidget {
           source: ImageSource.gallery,
           imageQuality: 85,
         );
-        if (picked != null) {
-          controller.addCertificate(picked.path);
+        if (picked == null) return;
+        await LoadingDialog.show(message: 'جاري رفع الصورة...');
+        try {
+          final upload = UploadService();
+          final res = await upload.uploadImage(File(picked.path));
+          LoadingDialog.hide();
+          if (res['ok'] == true) {
+            final url = (res['data']?['data']?['url']?.toString() ?? '');
+            if (url.isNotEmpty) {
+              controller.addCertificate(url);
+              await showStatusDialog(
+                title: 'تم الرفع',
+                message: res['message']?.toString().isNotEmpty == true
+                    ? res['message'] as String
+                    : 'تم رفع الصورة بنجاح',
+                color: AppColors.primary,
+                icon: Icons.check_circle_outline,
+              );
+            } else {
+              await showStatusDialog(
+                title: 'فشل الرفع',
+                message: 'تعذر الحصول على الرابط من الخادم',
+                color: const Color(0xFFFF3B30),
+                icon: Icons.error_outline,
+              );
+            }
+          } else {
+            await showStatusDialog(
+              title: 'فشل الرفع',
+              message: (res['message']?.toString().isNotEmpty == true)
+                  ? res['message'] as String
+                  : 'يرجى المحاولة لاحقاً',
+              color: const Color(0xFFFF3B30),
+              icon: Icons.error_outline,
+            );
+          }
+        } catch (_) {
+          LoadingDialog.hide();
+          await showStatusDialog(
+            title: 'خطأ',
+            message: 'حدث خطأ أثناء رفع الصورة',
+            color: const Color(0xFFFF3B30),
+            icon: Icons.error_outline,
+          );
         }
       },
       child: Container(
@@ -761,7 +978,10 @@ class DoctorProfileManagePage extends StatelessWidget {
                   AnimatedRotation(
                     turns: controller.isAddressExpanded.value ? 0.5 : 0.0,
                     duration: const Duration(milliseconds: 200),
-                    child: const Icon(Icons.expand_more, color: AppColors.textSecondary),
+                    child: const Icon(
+                      Icons.expand_more,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -826,7 +1046,10 @@ class DoctorProfileManagePage extends StatelessWidget {
                   AnimatedRotation(
                     turns: controller.isOpinionsExpanded.value ? 0.5 : 0.0,
                     duration: const Duration(milliseconds: 200),
-                    child: const Icon(Icons.expand_more, color: AppColors.textSecondary),
+                    child: const Icon(
+                      Icons.expand_more,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -1158,11 +1381,18 @@ class DoctorProfileManagePage extends StatelessWidget {
       '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
 
   ImageProvider _imageProvider(String path) {
-    // If path points to a file on device, use FileImage; otherwise assume asset
-    if (path.startsWith('/') || path.contains('\\') || path.contains(':\\')) {
-      return FileImage(File(path));
+    final p = path.trim();
+    // Network URL
+    if (p.startsWith('http://') || p.startsWith('https://')) {
+      return NetworkImage(p);
     }
-    return AssetImage(path);
+    // Local file (Unix or Windows)
+    final isWindowsDrive = RegExp(r'^[A-Za-z]:\\').hasMatch(p);
+    if (p.startsWith('/') || p.contains('\\') || isWindowsDrive) {
+      return FileImage(File(p));
+    }
+    // Asset path
+    return AssetImage(p);
   }
 
   // Availability manage tile
@@ -1190,7 +1420,10 @@ class DoctorProfileManagePage extends StatelessWidget {
                   AnimatedRotation(
                     turns: controller.isAvailabilityExpanded.value ? 0.5 : 0.0,
                     duration: const Duration(milliseconds: 200),
-                    child: const Icon(Icons.expand_more, color: AppColors.textSecondary),
+                    child: const Icon(
+                      Icons.expand_more,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -1460,7 +1693,10 @@ class DoctorProfileManagePage extends StatelessWidget {
                   AnimatedRotation(
                     turns: controller.isSequenceExpanded.value ? 0.5 : 0.0,
                     duration: const Duration(milliseconds: 200),
-                    child: const Icon(Icons.expand_more, color: AppColors.textSecondary),
+                    child: const Icon(
+                      Icons.expand_more,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -1647,7 +1883,17 @@ class DoctorProfileManagePage extends StatelessWidget {
       () => Column(
         children: [
           InkWell(
-            onTap: controller.toggleCasesExpansion,
+            onTap: () async {
+              controller.toggleCasesExpansion();
+              // جلب الحالات عند فتح القسم
+              if (controller.isCasesExpanded.value) {
+                final session = Get.find<SessionController>();
+                final userId = session.currentUser.value?.id;
+                if (userId != null && userId.isNotEmpty) {
+                  await controller.loadDoctorCases(userId);
+                }
+              }
+            },
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
               child: Row(
@@ -1665,7 +1911,10 @@ class DoctorProfileManagePage extends StatelessWidget {
                   AnimatedRotation(
                     turns: controller.isCasesExpanded.value ? 0.5 : 0.0,
                     duration: const Duration(milliseconds: 200),
-                    child: const Icon(Icons.expand_more, color: AppColors.textSecondary),
+                    child: const Icon(
+                      Icons.expand_more,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -1689,11 +1938,17 @@ class DoctorProfileManagePage extends StatelessWidget {
   }
 
   Widget _casesEditContent(DoctorProfileController controller) {
+    // Controllers للنموذج
+    final titleCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final RxString visibility = 'public'.obs;
+    final RxList<String> caseImages = <String>[].obs;
+
     return Obx(
       () => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Form: Add new case (single image from gallery)
+          // Form: Add new case
           MyText(
             'إضافة حالة جديدة',
             fontSize: 18.sp,
@@ -1702,6 +1957,7 @@ class DoctorProfileManagePage extends StatelessWidget {
             textAlign: TextAlign.right,
           ),
           SizedBox(height: 8.h),
+          // Title
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -1710,10 +1966,11 @@ class DoctorProfileManagePage extends StatelessWidget {
             ),
             padding: EdgeInsets.symmetric(horizontal: 12.w),
             child: TextField(
+              controller: titleCtrl,
               textAlign: TextAlign.right,
               textDirection: TextDirection.rtl,
               decoration: const InputDecoration(
-                hintText: 'اكتب اسم الحالة',
+                hintText: 'عنوان الحالة',
                 border: InputBorder.none,
               ),
               style: TextStyle(
@@ -1721,58 +1978,210 @@ class DoctorProfileManagePage extends StatelessWidget {
                 fontWeight: FontWeight.w700,
                 fontSize: 16.sp,
               ),
-              onChanged: controller.updateNewCaseName,
             ),
           ),
           SizedBox(height: 8.h),
-          Row(
-            children: [
-              Container(
-                width: 64.w,
-                height: 64.w,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12.r),
-                  color: const Color(0xFFF2F4F5),
-                  image: controller.newCaseImage.value.isNotEmpty
-                      ? DecorationImage(
-                          image: _imageProvider(controller.newCaseImage.value),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
-                ),
-                child: controller.newCaseImage.value.isEmpty
-                    ? const Icon(Icons.image, color: AppColors.textSecondary)
-                    : null,
+          // Description
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(color: AppColors.divider),
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+            child: TextField(
+              controller: descCtrl,
+              textAlign: TextAlign.right,
+              textDirection: TextDirection.rtl,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'وصف الحالة',
+                border: InputBorder.none,
               ),
-              SizedBox(width: 10.w),
-              OutlinedButton(
-                onPressed: () async {
-                  final ImagePicker picker = ImagePicker();
-                  final XFile? picked = await picker.pickImage(
-                    source: ImageSource.gallery,
-                    imageQuality: 90,
-                  );
-                  if (picked != null) {
-                    controller.updateNewCaseImage(picked.path);
-                  }
-                },
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: AppColors.primary),
-                  foregroundColor: AppColors.primary,
+              style: TextStyle(
+                fontFamily: 'Expo Arabic',
+                fontWeight: FontWeight.w700,
+                fontSize: 16.sp,
+              ),
+            ),
+          ),
+          SizedBox(height: 8.h),
+          // Visibility toggle
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              MyText(
+                'عام',
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+              Obx(
+                () => Switch(
+                  value: visibility.value == 'public',
+                  onChanged: (val) {
+                    visibility.value = val ? 'public' : 'private';
+                  },
+                  activeColor: AppColors.primary,
                 ),
-                child: const Text('اختيار صورة من المعرض'),
+              ),
+              MyText(
+                'خاص',
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
               ),
             ],
+          ),
+          SizedBox(height: 8.h),
+          // Images section
+          Obx(
+            () => Wrap(
+              spacing: 10.w,
+              runSpacing: 10.h,
+              children: [
+                for (int i = 0; i < caseImages.length; i++)
+                  Stack(
+                    children: [
+                      Container(
+                        width: 100.w,
+                        height: 100.w,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12.r),
+                          color: Colors.grey[200],
+                          image: DecorationImage(
+                            image: _imageProvider(caseImages[i]),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: InkWell(
+                          onTap: () => caseImages.removeAt(i),
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            padding: const EdgeInsets.all(4),
+                            child: const Icon(
+                              Icons.close,
+                              size: 16,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                // Add image button
+                InkWell(
+                  onTap: () async {
+                    final ImagePicker picker = ImagePicker();
+                    final XFile? picked = await picker.pickImage(
+                      source: ImageSource.gallery,
+                      imageQuality: 85,
+                    );
+                    if (picked == null) return;
+                    await LoadingDialog.show(message: 'جاري رفع الصورة...');
+                    try {
+                      final upload = UploadService();
+                      final res = await upload.uploadImage(File(picked.path));
+                      LoadingDialog.hide();
+                      if (res['ok'] == true) {
+                        final url =
+                            (res['data']?['data']?['url']?.toString() ?? '');
+                        if (url.isNotEmpty) {
+                          caseImages.add(url);
+                        }
+                      }
+                    } catch (_) {
+                      LoadingDialog.hide();
+                    }
+                  },
+                  child: Container(
+                    width: 100.w,
+                    height: 100.w,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.add, color: AppColors.primary),
+                        MyText(
+                          'إضافة صورة',
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           SizedBox(height: 10.h),
           Align(
             alignment: Alignment.centerLeft,
             child: ElevatedButton.icon(
-              onPressed:
-                  controller.canAddCase ? controller.addManagedCase : null,
+              onPressed: () async {
+                if (titleCtrl.text.trim().isEmpty ||
+                    descCtrl.text.trim().isEmpty) {
+                  await showStatusDialog(
+                    title: 'خطأ',
+                    message: 'يرجى ملء جميع الحقول',
+                    color: const Color(0xFFFF3B30),
+                    icon: Icons.error_outline,
+                  );
+                  return;
+                }
+                await LoadingDialog.show(message: 'جاري إضافة الحالة...');
+                try {
+                  final res = await controller.createNewCase(
+                    title: titleCtrl.text.trim(),
+                    description: descCtrl.text.trim(),
+                    visibility: visibility.value,
+                    images: caseImages.toList(),
+                  );
+                  LoadingDialog.hide();
+                  if (res['ok'] == true) {
+                    titleCtrl.clear();
+                    descCtrl.clear();
+                    caseImages.clear();
+                    visibility.value = 'public';
+                    await showStatusDialog(
+                      title: 'تمت الإضافة',
+                      message: 'تم إضافة الحالة بنجاح',
+                      color: AppColors.primary,
+                      icon: Icons.check_circle_outline,
+                    );
+                  } else {
+                    await showStatusDialog(
+                      title: 'فشل الإضافة',
+                      message:
+                          (res['data']?['message']?.toString() ??
+                          'تعذر إضافة الحالة'),
+                      color: const Color(0xFFFF3B30),
+                      icon: Icons.error_outline,
+                    );
+                  }
+                } catch (_) {
+                  LoadingDialog.hide();
+                  await showStatusDialog(
+                    title: 'خطأ',
+                    message: 'حدث خطأ أثناء إضافة الحالة',
+                    color: const Color(0xFFFF3B30),
+                    icon: Icons.error_outline,
+                  );
+                }
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                disabledBackgroundColor: AppColors.divider,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18.r),
                 ),
@@ -1798,7 +2207,9 @@ class DoctorProfileManagePage extends StatelessWidget {
             textAlign: TextAlign.right,
           ),
           SizedBox(height: 8.h),
-          if (controller.managedCases.isEmpty)
+          if (controller.isLoadingCases.value)
+            const Center(child: CircularProgressIndicator())
+          else if (controller.apiCases.isEmpty)
             MyText(
               'لا توجد حالات بعد',
               fontSize: 16.sp,
@@ -1806,263 +2217,131 @@ class DoctorProfileManagePage extends StatelessWidget {
               color: AppColors.textSecondary,
               textAlign: TextAlign.right,
             )
-          else ...controller.managedCases.asMap().entries.map(
-                (e) => Card(
-                  margin: EdgeInsets.only(bottom: 8.h),
-                  child: ListTile(
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                    leading: Container(
-                      width: 48.w,
-                      height: 48.w,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(8.r),
-                        image: (e.value['image'] ?? '').isNotEmpty
-                            ? DecorationImage(
-                                image: _imageProvider(e.value['image']!),
-                                fit: BoxFit.cover,
-                              )
-                            : null,
-                      ),
-                      child: (e.value['image'] ?? '').isEmpty
-                          ? const Icon(Icons.image,
-                              color: AppColors.textSecondary, size: 20)
+          else
+            ...controller.apiCases.map((caseData) {
+              final images = (caseData['images'] as List<dynamic>?) ?? [];
+              final firstImage = images.isNotEmpty
+                  ? images.first.toString()
+                  : '';
+
+              return Card(
+                margin: EdgeInsets.only(bottom: 8.h),
+                child: ListTile(
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 8.h,
+                  ),
+                  leading: Container(
+                    width: 48.w,
+                    height: 48.w,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(8.r),
+                      image: firstImage.isNotEmpty
+                          ? DecorationImage(
+                              image: _imageProvider(firstImage),
+                              fit: BoxFit.cover,
+                            )
                           : null,
                     ),
-                    title: MyText(
-                      e.value['name'] ?? '',
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                      textAlign: TextAlign.right,
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          tooltip: 'تعديل',
-                          icon: const Icon(Icons.edit, color: AppColors.primary),
-                          onPressed: () async {
-                            final ctx = Get.context;
-                            if (ctx == null) return;
-                            final nameController = TextEditingController(
-                              text: e.value['name'] ?? '',
-                            );
-                            String imagePath = e.value['image'] ?? '';
-                            await showModalBottomSheet(
-                              context: ctx,
-                              isScrollControlled: true,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(20.r),
-                                  topRight: Radius.circular(20.r),
-                                ),
+                    child: firstImage.isEmpty
+                        ? const Icon(
+                            Icons.image,
+                            color: AppColors.textSecondary,
+                            size: 20,
+                          )
+                        : null,
+                  ),
+                  title: MyText(
+                    caseData['title']?.toString() ?? '',
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                    textAlign: TextAlign.right,
+                  ),
+                  subtitle: MyText(
+                    caseData['description']?.toString() ?? '',
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                    textAlign: TextAlign.right,
+                    maxLines: 2,
+                  ),
+                  trailing: IconButton(
+                    tooltip: 'حذف',
+                    icon: const Icon(Icons.delete, color: Color(0xFFFF3B30)),
+                    onPressed: () async {
+                      final caseId = caseData['_id']?.toString() ?? '';
+                      if (caseId.isEmpty) return;
+
+                      final confirmed = await Get.dialog<bool>(
+                        AlertDialog(
+                          title: const Text(
+                            'تأكيد الحذف',
+                            textAlign: TextAlign.right,
+                          ),
+                          content: const Text(
+                            'هل أنت متأكد من حذف هذه الحالة؟',
+                            textAlign: TextAlign.right,
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Get.back(result: false),
+                              child: const Text('إلغاء'),
+                            ),
+                            TextButton(
+                              onPressed: () => Get.back(result: true),
+                              style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xFFFF3B30),
                               ),
-                              builder: (context) {
-                                return StatefulBuilder(
-                                  builder: (context, setModalState) {
-                                    return SingleChildScrollView(
-                                      child: Padding(
-                                        padding: EdgeInsets.fromLTRB(
-                                          16.w,
-                                          16.h,
-                                          16.w,
-                                          16.h +
-                                              MediaQuery.of(context)
-                                                  .viewInsets
-                                                  .bottom,
-                                        ),
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.stretch,
-                                          children: [
-                                            MyText(
-                                              'تعديل الحالة',
-                                              fontSize: 18.sp,
-                                              fontWeight: FontWeight.w800,
-                                              color: AppColors.textPrimary,
-                                              textAlign: TextAlign.right,
-                                            ),
-                                            SizedBox(height: 12.h),
-                                            Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius:
-                                                    BorderRadius.circular(16.r),
-                                                border: Border.all(
-                                                    color: AppColors.divider),
-                                              ),
-                                              padding: EdgeInsets.symmetric(
-                                                  horizontal: 12.w),
-                                              child: TextField(
-                                                controller: nameController,
-                                                textAlign: TextAlign.right,
-                                                textDirection: TextDirection.rtl,
-                                                decoration: const InputDecoration(
-                                                  hintText: 'اسم الحالة',
-                                                  border: InputBorder.none,
-                                                ),
-                                                style: TextStyle(
-                                                  fontFamily: 'Expo Arabic',
-                                                  fontWeight: FontWeight.w700,
-                                                  fontSize: 16.sp,
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(height: 12.h),
-                                            Row(
-                                              children: [
-                                                Container(
-                                                  width: 64.w,
-                                                  height: 64.w,
-                                                  decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            12.r),
-                                                    color:
-                                                        const Color(0xFFF2F4F5),
-                                                    image: imagePath.isNotEmpty
-                                                        ? DecorationImage(
-                                                            image: _imageProvider(
-                                                                imagePath),
-                                                            fit: BoxFit.cover,
-                                                          )
-                                                        : null,
-                                                  ),
-                                                  child: imagePath.isEmpty
-                                                      ? const Icon(Icons.image,
-                                                          color: AppColors
-                                                              .textSecondary)
-                                                      : null,
-                                                ),
-                                                SizedBox(width: 10.w),
-                                                OutlinedButton(
-                                                  onPressed: () async {
-                                                    final ImagePicker picker =
-                                                        ImagePicker();
-                                                    final XFile? picked =
-                                                        await picker.pickImage(
-                                                      source:
-                                                          ImageSource.gallery,
-                                                      imageQuality: 90,
-                                                    );
-                                                    if (picked != null) {
-                                                      setModalState(() {
-                                                        imagePath = picked.path;
-                                                      });
-                                                    }
-                                                  },
-                                                  style: OutlinedButton.styleFrom(
-                                                    side: BorderSide(
-                                                        color: AppColors
-                                                            .primary),
-                                                    foregroundColor:
-                                                        AppColors.primary,
-                                                  ),
-                                                  child: const Text(
-                                                      'اختيار صورة من المعرض'),
-                                                ),
-                                              ],
-                                            ),
-                                            SizedBox(height: 16.h),
-                                            Row(
-                                              children: [
-                                                Expanded(
-                                                  child: OutlinedButton(
-                                                    onPressed: () =>
-                                                        Navigator.of(context)
-                                                            .pop(),
-                                                    style: OutlinedButton
-                                                        .styleFrom(
-                                                      side: BorderSide(
-                                                          color: AppColors
-                                                              .secondary),
-                                                      foregroundColor:
-                                                          AppColors.secondary,
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                              vertical: 14.h),
-                                                    ),
-                                                    child: MyText(
-                                                      'إلغاء',
-                                                      fontSize: 16.sp,
-                                                      fontWeight:
-                                                          FontWeight.w800,
-                                                      color:
-                                                          AppColors.secondary,
-                                                    ),
-                                                  ),
-                                                ),
-                                                SizedBox(width: 12.w),
-                                                Expanded(
-                                                  child: ElevatedButton(
-                                                    onPressed: () {
-                                                      controller
-                                                          .updateManagedCaseNameAt(
-                                                        e.key,
-                                                        nameController.text,
-                                                      );
-                                                      controller
-                                                          .updateManagedCaseImageAt(
-                                                        e.key,
-                                                        imagePath,
-                                                      );
-                                                      Navigator.of(context)
-                                                          .pop();
-                                                    },
-                                                    style: ElevatedButton
-                                                        .styleFrom(
-                                                      backgroundColor:
-                                                          AppColors.secondary,
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                              vertical: 14.h),
-                                                      shape:
-                                                          RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(
-                                                                    18.r),
-                                                      ),
-                                                      elevation: 0,
-                                                    ),
-                                                    child: MyText(
-                                                      'حفظ',
-                                                      fontSize: 16.sp,
-                                                      fontWeight:
-                                                          FontWeight.w900,
-                                                      color: Colors.white,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                            );
-                          },
+                              child: const Text('حذف'),
+                            ),
+                          ],
                         ),
-                        IconButton(
-                          tooltip: 'حذف',
-                          icon: const Icon(Icons.delete, color: Color(0xFFFF3B30)),
-                          onPressed: () => controller.removeManagedCaseAt(e.key),
-                        ),
-                      ],
-                    ),
+                      );
+
+                      if (confirmed != true) return;
+
+                      await LoadingDialog.show(message: 'جاري الحذف...');
+                      try {
+                        final res = await controller.deleteCase(caseId);
+                        LoadingDialog.hide();
+                        if (res['ok'] == true) {
+                          await showStatusDialog(
+                            title: 'تم الحذف',
+                            message: 'تم حذف الحالة بنجاح',
+                            color: AppColors.primary,
+                            icon: Icons.check_circle_outline,
+                          );
+                        } else {
+                          await showStatusDialog(
+                            title: 'فشل الحذف',
+                            message:
+                                (res['data']?['message']?.toString() ??
+                                'تعذر حذف الحالة'),
+                            color: const Color(0xFFFF3B30),
+                            icon: Icons.error_outline,
+                          );
+                        }
+                      } catch (_) {
+                        LoadingDialog.hide();
+                        await showStatusDialog(
+                          title: 'خطأ',
+                          message: 'حدث خطأ أثناء حذف الحالة',
+                          color: const Color(0xFFFF3B30),
+                          icon: Icons.error_outline,
+                        );
+                      }
+                    },
                   ),
                 ),
-              ),
+              );
+            }),
         ],
       ),
     );
   }
+
   Widget _sectionTile(String title) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
@@ -2086,5 +2365,4 @@ class DoctorProfileManagePage extends StatelessWidget {
       ),
     );
   }
-
 }

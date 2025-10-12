@@ -1,5 +1,8 @@
 import 'package:get/get.dart';
 import '../service_layer/services/opinion_service.dart';
+import '../service_layer/services/cv_service.dart';
+import '../service_layer/services/case_service.dart';
+import 'session_controller.dart';
 
 class DoctorProfileController extends GetxController {
   // Observable variables for each section's expansion state
@@ -67,6 +70,19 @@ class DoctorProfileController extends GetxController {
   // Opinions from API
   var opinions = <Map<String, dynamic>>[].obs;
   final OpinionService _opinionService = OpinionService();
+  final CvService _cvService = CvService();
+  final CaseService _caseService = CaseService();
+  final SessionController _session = Get.find<SessionController>();
+
+  // CV state
+  var cvId = ''.obs;
+  var cvDescription = ''.obs;
+  var cvCertificates = <String>[].obs;
+  var isLoadingCv = false.obs;
+
+  // Cases state from API
+  var apiCases = <Map<String, dynamic>>[].obs;
+  var isLoadingCases = false.obs;
 
   // Sample treated cases
   var treatedCases = <Map<String, String>>[
@@ -165,6 +181,107 @@ class DoctorProfileController extends GetxController {
     // For now using sample data
   }
 
+  Future<void> fetchMyCvIfAny() async {
+    final String? uid = _session.currentUser.value?.id;
+    if (uid == null || uid.isEmpty) return;
+    isLoadingCv.value = true;
+    try {
+      final res = await _cvService.getUserCvByUserId(uid);
+      if (res['ok'] == true) {
+        final data = res['data'] as Map<String, dynamic>;
+        final Map<String, dynamic>? cvData =
+            data['data'] as Map<String, dynamic>?;
+        if (cvData != null) {
+          cvId.value = (cvData['_id']?.toString() ?? '');
+          cvDescription.value = (cvData['description']?.toString() ?? '');
+          final certs =
+              (cvData['certificates'] as List?)?.cast<dynamic>() ?? [];
+          cvCertificates.value = certs.map((e) => e.toString()).toList();
+          // reflect into existing UI state
+          doctorBio.value = cvDescription.value.isNotEmpty
+              ? cvDescription.value
+              : doctorBio.value;
+          certificateImages.value = List<String>.from(cvCertificates);
+        }
+      }
+    } catch (_) {
+    } finally {
+      isLoadingCv.value = false;
+    }
+  }
+
+  Future<void> loadCvForUserId(String userId) async {
+    if (userId.isEmpty) return;
+    isLoadingCv.value = true;
+    try {
+      final res = await _cvService.getUserCvByUserId(userId);
+      if (res['ok'] == true) {
+        final data = res['data'] as Map<String, dynamic>;
+        final Map<String, dynamic>? cvData =
+            data['data'] as Map<String, dynamic>?;
+        if (cvData != null) {
+          cvDescription.value = (cvData['description']?.toString() ?? '');
+          final certs =
+              (cvData['certificates'] as List?)?.cast<dynamic>() ?? [];
+          cvCertificates.value = certs.map((e) => e.toString()).toList();
+        }
+      }
+    } catch (_) {
+    } finally {
+      isLoadingCv.value = false;
+    }
+  }
+
+  Future<Map<String, dynamic>> saveMyCv({
+    required String description,
+    required List<String> certificates,
+  }) async {
+    final bool hasExisting = cvId.value.isNotEmpty;
+    if (hasExisting) {
+      final res = await _cvService.updateCv(
+        cvId: cvId.value,
+        description: description,
+        certificates: certificates,
+      );
+      if (res['ok'] == true) {
+        cvDescription.value = description;
+        cvCertificates.value = certificates;
+      }
+      return res;
+    } else {
+      final res = await _cvService.createCv(
+        description: description,
+        certificates: certificates,
+      );
+      if (res['ok'] == true) {
+        try {
+          final created = (res['data']?['data']) as Map<String, dynamic>?;
+          if (created != null) {
+            cvId.value = created['_id']?.toString() ?? '';
+          }
+        } catch (_) {}
+        cvDescription.value = description;
+        cvCertificates.value = certificates;
+      }
+      return res;
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteMyCv() async {
+    if (cvId.value.isEmpty)
+      return {
+        'ok': false,
+        'data': {'message': 'لا توجد سيرة لحذفها'},
+      };
+    final res = await _cvService.deleteCv(cvId.value);
+    if (res['ok'] == true) {
+      cvId.value = '';
+      cvDescription.value = '';
+      cvCertificates.clear();
+    }
+    return res;
+  }
+
   // Mutations used by manage page
   void toggleEditingSocial() {
     isEditingSocial.toggle();
@@ -175,7 +292,12 @@ class DoctorProfileController extends GetxController {
   }
 
   void addCertificate(String path) {
-    certificateImages.add(path);
+    // إضافة إلى القائمتين
+    if (cvCertificates.isNotEmpty || cvId.value.isNotEmpty) {
+      cvCertificates.add(path);
+    } else {
+      certificateImages.add(path);
+    }
   }
 
   void removeCertificateAt(int index) {
@@ -328,5 +450,67 @@ class DoctorProfileController extends GetxController {
     if (index >= 0 && index < opinions.length) {
       opinions.removeAt(index);
     }
+  }
+
+  // ==================== Cases Management ====================
+
+  /// جلب حالات الطبيب من API
+  Future<void> loadDoctorCases(String doctorId) async {
+    if (isLoadingCases.value) return;
+    isLoadingCases.value = true;
+    try {
+      final res = await _caseService.getDoctorCases(doctorId);
+      if (res['ok'] == true) {
+        final List<dynamic> data = (res['data']?['data'] as List? ?? []);
+        apiCases.value = data.map((item) {
+          final Map<String, dynamic> m = item as Map<String, dynamic>;
+          return {
+            '_id': m['_id']?.toString() ?? '',
+            'title': m['title']?.toString() ?? '',
+            'description': m['description']?.toString() ?? '',
+            'visibility': m['visibility']?.toString() ?? 'public',
+            'images': (m['images'] as List?)?.cast<String>() ?? <String>[],
+            'createdAt': m['createdAt']?.toString() ?? '',
+          };
+        }).toList();
+      }
+    } catch (_) {
+      // ignore network errors
+    } finally {
+      isLoadingCases.value = false;
+    }
+  }
+
+  /// إنشاء حالة جديدة
+  Future<Map<String, dynamic>> createNewCase({
+    required String title,
+    required String description,
+    required String visibility,
+    required List<String> images,
+  }) async {
+    final res = await _caseService.createCase(
+      title: title,
+      description: description,
+      visibility: visibility,
+      images: images,
+    );
+    if (res['ok'] == true) {
+      // إعادة تحميل الحالات
+      final String? userId = _session.currentUser.value?.id;
+      if (userId != null && userId.isNotEmpty) {
+        await loadDoctorCases(userId);
+      }
+    }
+    return res;
+  }
+
+  /// حذف حالة
+  Future<Map<String, dynamic>> deleteCase(String caseId) async {
+    final res = await _caseService.deleteCase(caseId);
+    if (res['ok'] == true) {
+      // إزالة الحالة من القائمة المحلية
+      apiCases.removeWhere((c) => c['_id'] == caseId);
+    }
+    return res;
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -25,8 +26,9 @@ class DoctorProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(DoctorProfileController());
-    // Load opinions for this doctor
+    // Load opinions and read-only CV for this doctor
     controller.loadOpinionsForTarget(doctorId);
+    controller.loadCvForUserId(doctorId);
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -430,7 +432,9 @@ class DoctorProfilePage extends StatelessWidget {
       children: [
         Obx(
           () => MyText(
-            controller.doctorBio.value,
+            controller.cvDescription.value.isNotEmpty
+                ? controller.cvDescription.value
+                : controller.doctorBio.value,
             fontSize: 14.sp,
             color: AppColors.textSecondary,
             height: 1.5,
@@ -446,17 +450,63 @@ class DoctorProfilePage extends StatelessWidget {
           textAlign: TextAlign.right,
         ),
         SizedBox(height: 8.h),
-        Container(
-          height: 150.h,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          child: const Center(
-            child: Icon(Icons.image, size: 40, color: Colors.grey),
-          ),
-        ),
+        Obx(() {
+          final images = controller.cvCertificates.isNotEmpty
+              ? controller.cvCertificates
+              : <String>[]; // لا نعرض عينات ثابتة
+          if (images.isEmpty) {
+            return Container(
+              height: 150.h,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: const Center(
+                child: Icon(Icons.image, size: 40, color: Colors.grey),
+              ),
+            );
+          }
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: SizedBox(
+              height: 120.h,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: images.length > 2
+                    ? const BouncingScrollPhysics()
+                    : const NeverScrollableScrollPhysics(),
+                itemBuilder: (_, i) {
+                  final url = images[i];
+                  return GestureDetector(
+                    onTap: () => _openImage(url),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12.r),
+                      child: Image.network(
+                        url,
+                        height: 120.h,
+                        width: 160.w,
+                        fit: BoxFit.cover,
+                        errorBuilder: (c, e, s) => Container(
+                          height: 120.h,
+                          width: 160.w,
+                          color: Colors.grey[200],
+                          child: const Icon(
+                            Icons.broken_image,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                separatorBuilder: (_, __) => SizedBox(width: 10.w),
+                itemCount: images.length,
+              ),
+            ),
+          );
+        }),
+        // Read-only in doctor details page (no actions)
       ],
     );
   }
@@ -807,73 +857,142 @@ class DoctorProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildCaseImagesContent(DoctorProfileController controller) {
-    return Obx(
-      () => Column(
-        children: controller.treatedCases
-            .map(
-              (case_) => Container(
-                margin: EdgeInsets.only(bottom: 16.h),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 5,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      height: 150.h,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(12.r),
-                        ),
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.medical_services,
-                          size: 40,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(16.w),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          MyText(
-                            case_['title']!,
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                            textAlign: TextAlign.right,
-                          ),
-                          SizedBox(height: 8.h),
-                          MyText(
-                            case_['description']!,
-                            fontSize: 14.sp,
-                            color: AppColors.textSecondary,
-                            textAlign: TextAlign.right,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+  void _openImage(String url) {
+    showDialog(
+      context: Get.context!,
+      builder: (_) {
+        return Dialog(
+          backgroundColor: Colors.black,
+          insetPadding: EdgeInsets.all(0),
+          child: GestureDetector(
+            onTap: () => Get.back(),
+            child: InteractiveViewer(
+              child: Center(
+                child: Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                  errorBuilder: (c, e, s) => const Icon(
+                    Icons.broken_image,
+                    color: Colors.white70,
+                    size: 48,
+                  ),
                 ),
               ),
-            )
-            .toList(),
-      ),
+            ),
+          ),
+        );
+      },
     );
+  }
+
+  Widget _buildCaseImagesContent(DoctorProfileController controller) {
+    // جلب الحالات عند عرض هذا القسم
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!controller.isLoadingCases.value && controller.apiCases.isEmpty) {
+        controller.loadDoctorCases(doctorId);
+      }
+    });
+
+    return Obx(() {
+      if (controller.isLoadingCases.value) {
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.all(32.0),
+            child: CircularProgressIndicator(),
+          ),
+        );
+      }
+
+      if (controller.apiCases.isEmpty) {
+        return Center(
+          child: Padding(
+            padding: EdgeInsets.all(32.w),
+            child: MyText(
+              'لا توجد حالات بعد',
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        );
+      }
+
+      return Column(
+        children: controller.apiCases.map((caseData) {
+          final images = (caseData['images'] as List<dynamic>?) ?? [];
+          final firstImage = images.isNotEmpty ? images.first.toString() : '';
+
+          return Container(
+            margin: EdgeInsets.only(bottom: 16.h),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12.r),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 5,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Image or placeholder
+                Container(
+                  height: 150.h,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(12.r),
+                    ),
+                    image: firstImage.isNotEmpty
+                        ? DecorationImage(
+                            image: _imageProvider(firstImage),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  child: firstImage.isEmpty
+                      ? const Center(
+                          child: Icon(
+                            Icons.medical_services,
+                            size: 40,
+                            color: Colors.grey,
+                          ),
+                        )
+                      : null,
+                ),
+                // Title and description
+                Padding(
+                  padding: EdgeInsets.all(16.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      MyText(
+                        caseData['title']?.toString() ?? '',
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                        textAlign: TextAlign.right,
+                      ),
+                      SizedBox(height: 8.h),
+                      MyText(
+                        caseData['description']?.toString() ?? '',
+                        fontSize: 14.sp,
+                        color: AppColors.textSecondary,
+                        textAlign: TextAlign.right,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      );
+    });
   }
 
   Widget _buildInsuranceContent(DoctorProfileController controller) {
@@ -1009,5 +1128,16 @@ class DoctorProfilePage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  ImageProvider _imageProvider(String path) {
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return NetworkImage(path);
+    } else if (path.startsWith('/') ||
+        path.contains('\\') ||
+        path.contains(':\\')) {
+      return FileImage(File(path));
+    }
+    return AssetImage(path);
   }
 }

@@ -58,6 +58,17 @@ class ApiRequest {
     return _decode(res);
   }
 
+  Future<Map<String, dynamic>> delete(
+    String url, {
+    Map<String, String>? headers,
+  }) async {
+    final res = await http.delete(
+      Uri.parse(url),
+      headers: _headers(extra: headers),
+    );
+    return _decode(res);
+  }
+
   Map<String, dynamic> _decode(http.Response res) {
     final decoded = _safeDecode(res.bodyBytes);
     return {

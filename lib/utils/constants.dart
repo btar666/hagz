@@ -11,4 +11,10 @@ class ApiConstants {
   static const String uploads = '$baseUrl/api/uploads/';
   static const String sliders = '$baseUrl/api/sliders/';
   static const String opinions = '$baseUrl/api/opinions/';
+  // CV
+  static const String userCv = '$baseUrl/api/users/cv';
+  static const String cv = '$baseUrl/api/cv';
+  // Cases
+  static const String doctorCases = '$baseUrl/api/cases/doctors';
+  static const String cases = '$baseUrl/api/cases/cases';
 }
