@@ -5,6 +5,8 @@ import '../../utils/app_colors.dart';
 // import '../auth/login_page.dart';
 import '../../controller/session_controller.dart';
 import 'doctor_profile_manage_page.dart';
+import 'working_hours_page.dart';
+import 'holidays_page.dart';
 import 'secretary_accounts_page.dart';
 import '../appointments/past_appointments_page.dart';
 import 'user_profile_edit_page.dart';
@@ -47,6 +49,24 @@ class SettingsPage extends StatelessWidget {
                 color: AppColors.secondary,
                 onTap: () {
                   Get.to(() => DoctorProfileManagePage());
+                },
+              ),
+              SizedBox(height: 16.h),
+              _buildSettingsItem(
+                icon: Icons.access_time,
+                title: 'إدارة أوقات العمل',
+                color: AppColors.secondary,
+                onTap: () {
+                  Get.to(() => WorkingHoursPage());
+                },
+              ),
+              SizedBox(height: 16.h),
+              _buildSettingsItem(
+                icon: Icons.beach_access,
+                title: 'إدارة العطل',
+                color: AppColors.secondary,
+                onTap: () {
+                  Get.to(() => HolidaysPage());
                 },
               ),
               SizedBox(height: 16.h),

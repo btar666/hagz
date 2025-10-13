@@ -17,4 +17,12 @@ class ApiConstants {
   // Cases
   static const String doctorCases = '$baseUrl/api/cases/doctors';
   static const String cases = '$baseUrl/api/cases/cases';
+  // Working Hours
+  static const String workingHours = '$baseUrl/api/working-hours';
+  static const String doctorsWorkingHours = '$baseUrl/api/doctors';
+  // Holidays
+  static const String holidays = '$baseUrl/api/holidays';
+  // Appointments
+  static const String appointments = '$baseUrl/api/appointments';
+  static const String patients = '$baseUrl/api/patients';
 }

@@ -45,6 +45,7 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => const PatientRegistrationPage(
+                            doctorId: 'doctor_id_placeholder',
                             doctorName: 'اسم الطبيب',
                             doctorSpecialty: 'التخصص',
                           ),

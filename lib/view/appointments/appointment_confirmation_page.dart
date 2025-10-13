@@ -2,8 +2,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import '../../utils/app_colors.dart';
+import '../../controller/appointments_controller.dart';
 import '../../widget/my_text.dart';
+import '../../widget/loading_dialog.dart';
+import '../../widget/status_dialog.dart';
 import 'appointment_success_page.dart';
 
 class CircularProgressPainter extends CustomPainter {
@@ -69,6 +71,7 @@ class CircularProgressPainter extends CustomPainter {
 }
 
 class AppointmentConfirmationPage extends StatelessWidget {
+  final String doctorId;
   final String doctorName;
   final String doctorSpecialty;
   final String patientName;
@@ -80,6 +83,7 @@ class AppointmentConfirmationPage extends StatelessWidget {
 
   const AppointmentConfirmationPage({
     Key? key,
+    required this.doctorId,
     required this.doctorName,
     required this.doctorSpecialty,
     required this.patientName,
@@ -92,44 +96,43 @@ class AppointmentConfirmationPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF4FEFF),
-        body: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              _buildProgressIndicator(),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 30.w),
-                    child: Column(
-                      children: [
-                        SizedBox(height: 40.h),
-                        _buildDoctorInfo(),
-                        SizedBox(height: 30.h),
-                        _buildQueueNumber(),
-                        SizedBox(height: 20.h),
-                        _buildWishMessage(),
-                        SizedBox(height: 30.h),
-                        _buildBaleyCab(),
-                        SizedBox(height: 40.h),
-                      ],
-                    ),
+    final AppointmentsController controller = Get.put(AppointmentsController());
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4FEFF),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(context),
+            _buildProgressIndicator(),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 30.w),
+                  child: Column(
+                    children: [
+                      SizedBox(height: 40.h),
+                      _buildDoctorInfo(),
+                      SizedBox(height: 30.h),
+                      _buildQueueNumber(),
+                      SizedBox(height: 20.h),
+                      _buildWishMessage(),
+                      SizedBox(height: 30.h),
+                      _buildBaleyCab(),
+                      SizedBox(height: 40.h),
+                    ],
                   ),
                 ),
               ),
-              _buildBottomButtons(),
-            ],
-          ),
+            ),
+            _buildBottomButtons(context, controller),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
       child: Row(
@@ -446,7 +449,10 @@ class AppointmentConfirmationPage extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomButtons() {
+  Widget _buildBottomButtons(
+    BuildContext context,
+    AppointmentsController controller,
+  ) {
     return Container(
       padding: EdgeInsets.all(30.w),
       child: Row(
@@ -472,25 +478,71 @@ class AppointmentConfirmationPage extends StatelessWidget {
           SizedBox(width: 15.w),
           Expanded(
             flex: 2,
-            child: ElevatedButton(
-              onPressed: () {
-                Get.to(() => const AppointmentSuccessPage());
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7FC8D6),
-                padding: EdgeInsets.symmetric(vertical: 18.h),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28.r),
+            child: Obx(() {
+              final isLoading = controller.isLoading.value;
+              return ElevatedButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        // عرض dialog التحميل
+                        LoadingDialog.show(message: 'جاري حجز الموعد...');
+
+                        // تحويل التاريخ من yyyy/MM/dd إلى yyyy-MM-dd
+                        final dateForApi = appointmentDate.replaceAll('/', '-');
+
+                        // إرسال الحجز للـ API
+                        final result = await controller.bookAppointment(
+                          doctorId: doctorId,
+                          appointmentDate: dateForApi,
+                          appointmentTime: appointmentTime,
+                          patientNotes: 'حجز من التطبيق',
+                          amount: 15000, // يمكن تمريره كمعامل لاحقاً
+                        );
+
+                        // إخفاء dialog التحميل
+                        LoadingDialog.hide();
+
+                        if (result['ok'] == true) {
+                          // نجح الحجز
+                          Get.off(() => const AppointmentSuccessPage());
+                        } else {
+                          // فشل الحجز
+                          showStatusDialog(
+                            title: 'فشل الحجز',
+                            message:
+                                result['data']?['message'] ??
+                                'حدث خطأ أثناء الحجز',
+                            icon: Icons.error_outline,
+                            color: Colors.red,
+                          );
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF7FC8D6),
+                  disabledBackgroundColor: Colors.grey[300],
+                  padding: EdgeInsets.symmetric(vertical: 18.h),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28.r),
+                  ),
+                  elevation: 0,
                 ),
-                elevation: 0,
-              ),
-              child: MyText(
-                'تأكيد و دفع كلفة الحجز',
-                fontSize: 20.sp,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
-            ),
+                child: isLoading
+                    ? SizedBox(
+                        height: 20.h,
+                        width: 20.w,
+                        child: const CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : MyText(
+                        'تأكيد و دفع كلفة الحجز',
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+              );
+            }),
           ),
         ],
       ),

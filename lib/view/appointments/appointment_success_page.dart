@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 
 class AppointmentSuccessPage extends StatelessWidget {
@@ -9,33 +8,30 @@ class AppointmentSuccessPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF4FEFF),
-        body: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 30.w),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildSuccessIcon(),
-                      SizedBox(height: 40.h),
-                      _buildSuccessMessage(),
-                      SizedBox(height: 20.h),
-                      _buildSubMessage(),
-                      SizedBox(height: 60.h),
-                    ],
-                  ),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4FEFF),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 30.w),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildSuccessIcon(),
+                    SizedBox(height: 40.h),
+                    _buildSuccessMessage(),
+                    SizedBox(height: 20.h),
+                    _buildSubMessage(),
+                    SizedBox(height: 60.h),
+                  ],
                 ),
               ),
-              _buildHomeButton(),
-            ],
-          ),
+            ),
+            _buildHomeButton(),
+          ],
         ),
       ),
     );
@@ -47,7 +43,10 @@ class AppointmentSuccessPage extends StatelessWidget {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Get.back(),
+            onTap: () {
+              // العودة للصفحة الرئيسية
+              Get.until((route) => route.isFirst);
+            },
             child: Icon(Icons.close, size: 24.r, color: Colors.black54),
           ),
           const Spacer(),
@@ -122,10 +121,8 @@ class AppointmentSuccessPage extends StatelessWidget {
         width: double.infinity,
         child: ElevatedButton(
           onPressed: () {
-            // Navigate to home page and clear all previous routes
-            Get.offAllNamed('/home'); // Assuming you have named routes
-            // Or if you don't have named routes:
-            // Get.until((route) => route.isFirst);
+            // العودة للصفحة الرئيسية وحذف جميع الصفحات السابقة
+            Get.until((route) => route.isFirst);
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF7FC8D6),

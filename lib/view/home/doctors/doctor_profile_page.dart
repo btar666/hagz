@@ -1099,6 +1099,7 @@ class DoctorProfilePage extends StatelessWidget {
         onTap: () {
           Get.to(
             () => PatientRegistrationPage(
+              doctorId: doctorId,
               doctorName: doctorName,
               doctorSpecialty: specialization,
             ),

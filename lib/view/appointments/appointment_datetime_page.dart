@@ -2,11 +2,13 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import '../../utils/app_colors.dart';
+import 'package:intl/intl.dart';
+import '../../controller/appointments_controller.dart';
 import '../../widget/my_text.dart';
 import 'appointment_confirmation_page.dart';
 
 class AppointmentDateTimePage extends StatefulWidget {
+  final String doctorId;
   final String doctorName;
   final String doctorSpecialty;
   final String patientName;
@@ -16,6 +18,7 @@ class AppointmentDateTimePage extends StatefulWidget {
 
   const AppointmentDateTimePage({
     Key? key,
+    required this.doctorId,
     required this.doctorName,
     required this.doctorSpecialty,
     required this.patientName,
@@ -92,10 +95,12 @@ class CircularProgressPainter extends CustomPainter {
 }
 
 class _AppointmentDateTimePageState extends State<AppointmentDateTimePage> {
+  final AppointmentsController _appointmentsController = Get.put(
+    AppointmentsController(),
+  );
+
   DateTime selectedDate = DateTime.now();
-  String selectedTime = '6:00 ص';
-  int selectedMonth = 8;
-  int selectedYear = 2025;
+  String? selectedTime;
 
   final List<String> weekDays = [
     'أحد',
@@ -106,6 +111,7 @@ class _AppointmentDateTimePageState extends State<AppointmentDateTimePage> {
     'جمعة',
     'سبت',
   ];
+
   final List<String> months = [
     'يناير',
     'فبراير',
@@ -121,68 +127,67 @@ class _AppointmentDateTimePageState extends State<AppointmentDateTimePage> {
     'ديسمبر',
   ];
 
-  final List<Map<String, dynamic>> timeSlots = [
-    {'time': '6:00 ص', 'available': true, 'selected': true},
-    {'time': '7:00 ص', 'available': true, 'selected': false},
-    {'time': '6:30 ص', 'available': true, 'selected': false},
-    {'time': '8:00 ص', 'available': true, 'selected': false},
-    {'time': '8:30 ص', 'available': true, 'selected': false},
-    {'time': '7:30 ص', 'available': false, 'selected': false},
-    {'time': '9:30 ص', 'available': true, 'selected': false},
-    {'time': '9:00 ص', 'available': true, 'selected': false},
-    {'time': '10:00 ص', 'available': false, 'selected': false},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadAvailableSlots();
+  }
+
+  Future<void> _loadAvailableSlots() async {
+    final dateStr = DateFormat('yyyy-MM-dd').format(selectedDate);
+    await _appointmentsController.getAvailableSlots(
+      doctorId: widget.doctorId,
+      date: dateStr,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF4FEFF),
-        body: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              _buildProgressIndicator(),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 30.w),
-                    child: Column(
-                      children: [
-                        SizedBox(height: 40.h),
-                        Container(
-                          padding: EdgeInsets.all(24.w),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(28.r),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x267FC8D6),
-                                blurRadius: 35,
-                                offset: Offset(0, 20),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              _buildDateSelector(),
-                              SizedBox(height: 30.h),
-                              _buildTimeSelector(),
-                            ],
-                          ),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4FEFF),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            _buildProgressIndicator(),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 30.w),
+                  child: Column(
+                    children: [
+                      SizedBox(height: 40.h),
+                      Container(
+                        padding: EdgeInsets.all(24.w),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(28.r),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x267FC8D6),
+                              blurRadius: 35,
+                              offset: Offset(0, 20),
+                            ),
+                          ],
                         ),
-                        SizedBox(height: 30.h),
-                        _buildEarlyArrivalNote(),
-                        SizedBox(height: 40.h),
-                      ],
-                    ),
+                        child: Column(
+                          children: [
+                            _buildDateSelector(),
+                            SizedBox(height: 30.h),
+                            _buildTimeSelector(),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 30.h),
+                      _buildEarlyArrivalNote(),
+                      SizedBox(height: 40.h),
+                    ],
                   ),
                 ),
               ),
-              _buildBottomButtons(),
-            ],
-          ),
+            ),
+            _buildBottomButtons(),
+          ],
         ),
       ),
     );
@@ -311,6 +316,10 @@ class _AppointmentDateTimePageState extends State<AppointmentDateTimePage> {
   }
 
   Widget _buildDateSelector() {
+    // حساب أيام الأسبوع الحالي
+    final now = selectedDate;
+    final weekStart = now.subtract(Duration(days: now.weekday % 7));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -319,53 +328,48 @@ class _AppointmentDateTimePageState extends State<AppointmentDateTimePage> {
           children: [
             MyText(
               'اختر تاريخ الموعد',
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w600,
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w700,
               color: Colors.black87,
               textAlign: TextAlign.right,
             ),
-
             Row(
               children: [
                 GestureDetector(
                   onTap: () {
                     setState(() {
-                      if (selectedMonth < 12) {
-                        selectedMonth++;
-                      } else {
-                        selectedMonth = 1;
-                        selectedYear++;
-                      }
+                      selectedDate = selectedDate.subtract(
+                        const Duration(days: 7),
+                      );
+                      selectedTime = null;
                     });
+                    _loadAvailableSlots();
                   },
                   child: Icon(
-                    Icons.arrow_back_ios,
-                    size: 16.r,
+                    Icons.chevron_right,
+                    size: 24.r,
                     color: Colors.black54,
                   ),
                 ),
-                SizedBox(width: 9.w),
+                SizedBox(width: 8.w),
                 MyText(
-                  '$selectedYear , ${months[selectedMonth - 1]}',
-                  fontSize: 16.sp.sp,
+                  '${selectedDate.year} , ${selectedDate.month}',
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
                 ),
-                SizedBox(width: 9.w),
+                SizedBox(width: 8.w),
                 GestureDetector(
                   onTap: () {
                     setState(() {
-                      if (selectedMonth > 1) {
-                        selectedMonth--;
-                      } else {
-                        selectedMonth = 12;
-                        selectedYear--;
-                      }
+                      selectedDate = selectedDate.add(const Duration(days: 7));
+                      selectedTime = null;
                     });
+                    _loadAvailableSlots();
                   },
                   child: Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16.r,
+                    Icons.chevron_left,
+                    size: 24.r,
                     color: Colors.black54,
                   ),
                 ),
@@ -374,52 +378,77 @@ class _AppointmentDateTimePageState extends State<AppointmentDateTimePage> {
           ],
         ),
         SizedBox(height: 20.h),
+        // التقويم الأفقي
         Container(
-          padding: EdgeInsets.all(20.w),
+          padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 12.w),
           decoration: BoxDecoration(
-            color: const Color(0xFFF1F8F7),
-            borderRadius: BorderRadius.circular(24.r),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20.r),
             border: Border.all(color: const Color(0xFFE6F2F1), width: 1),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(7, (index) {
-              bool isSelected = index == 4; // Thursday is selected
-              return Flexible(
-                child: Column(
-                  children: [
-                    MyText(
-                      weekDays[index],
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black87,
+              final day = weekStart.add(Duration(days: index));
+              final isSelected =
+                  day.day == selectedDate.day &&
+                  day.month == selectedDate.month &&
+                  day.year == selectedDate.year;
+              final isPast = day.isBefore(
+                DateTime.now().subtract(const Duration(days: 1)),
+              );
+
+              return Expanded(
+                child: GestureDetector(
+                  onTap: isPast
+                      ? null
+                      : () {
+                          setState(() {
+                            selectedDate = day;
+                            selectedTime = null;
+                          });
+                          _loadAvailableSlots();
+                        },
+                  child: Container(
+                    margin: EdgeInsets.symmetric(horizontal: 2.w),
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? const Color(0xFF7FC8D6)
+                          : isPast
+                          ? Colors.grey[100]
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12.r),
+                      border: isSelected
+                          ? Border.all(color: const Color(0xFF7FC8D6), width: 2)
+                          : null,
                     ),
-                    SizedBox(height: 6.h),
-                    Container(
-                      width: 32.w,
-                      height: 32.w,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? const Color(0xFF7FC8D6)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(8.r),
-                        border: isSelected
-                            ? Border.all(
-                                color: const Color(0xFF7FC8D6),
-                                width: 2,
-                              )
-                            : null,
-                      ),
-                      child: Center(
-                        child: MyText(
-                          '25',
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w600,
-                          color: isSelected ? Colors.white : Colors.black87,
+                    child: Column(
+                      children: [
+                        MyText(
+                          weekDays[day.weekday % 7],
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w500,
+                          color: isSelected
+                              ? Colors.white
+                              : isPast
+                              ? Colors.grey[400]
+                              : Colors.black87,
                         ),
-                      ),
+                        SizedBox(height: 6.h),
+                        MyText(
+                          '${day.day}',
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w700,
+                          color: isSelected
+                              ? Colors.white
+                              : isPast
+                              ? Colors.grey[400]
+                              : Colors.black87,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               );
             }),
@@ -430,79 +459,105 @@ class _AppointmentDateTimePageState extends State<AppointmentDateTimePage> {
   }
 
   Widget _buildTimeSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        MyText(
-          'اختر وقت الموعد',
-          fontSize: 16.sp,
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
-          textAlign: TextAlign.right,
-        ),
-        SizedBox(height: 20.h),
-        Container(
-          padding: EdgeInsets.all(20.w),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF1F8F7),
-            borderRadius: BorderRadius.circular(24.r),
-            border: Border.all(color: const Color(0xFFE6F2F1), width: 1),
+    return Obx(() {
+      final isLoading = _appointmentsController.isLoadingSlots.value;
+      final slots = _appointmentsController.availableSlots;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          MyText(
+            'اختر وقت الموعد',
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w700,
+            color: Colors.black87,
+            textAlign: TextAlign.right,
           ),
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 12.w,
-              mainAxisSpacing: 12.h,
-              childAspectRatio: 2.2,
-            ),
-            itemCount: timeSlots.length,
-            itemBuilder: (context, index) {
-              final slot = timeSlots[index];
-              return GestureDetector(
-                onTap: () {
-                  if (slot['available']) {
-                    setState(() {
-                      for (var s in timeSlots) {
-                        s['selected'] = false;
-                      }
-                      slot['selected'] = true;
-                      selectedTime = slot['time'];
-                    });
-                  }
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: slot['selected']
-                        ? const Color(0xFF7FC8D6)
-                        : slot['available']
-                        ? Colors.grey[50]
-                        : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(20.r),
-                    border: slot['selected']
-                        ? Border.all(color: const Color(0xFF7FC8D6), width: 2)
-                        : Border.all(color: Colors.grey[300]!, width: 1),
-                  ),
-                  child: Center(
-                    child: MyText(
-                      slot['time'],
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w500,
-                      color: slot['selected']
-                          ? Colors.white
-                          : slot['available']
-                          ? Colors.black87
-                          : Colors.grey[400],
+          SizedBox(height: 20.h),
+          isLoading
+              ? Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40.h),
+                    child: const CircularProgressIndicator(
+                      color: Color(0xFF7FC8D6),
                     ),
                   ),
+                )
+              : slots.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40.h),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.event_busy,
+                          size: 48.r,
+                          color: Colors.grey[400],
+                        ),
+                        SizedBox(height: 16.h),
+                        MyText(
+                          'لا توجد أوقات متاحة في هذا التاريخ',
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey[600],
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    // حساب عرض كل عنصر: (العرض الكلي - المسافات) / 3
+                    final totalSpacing = 12.w * 2; // مسافتان بين 3 عناصر
+                    final itemWidth = (constraints.maxWidth - totalSpacing) / 3;
+
+                    return Wrap(
+                      spacing: 12.w,
+                      runSpacing: 12.h,
+                      alignment: WrapAlignment.end,
+                      children: slots.map((slot) {
+                        final isSelected = selectedTime == slot;
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedTime = slot;
+                            });
+                          },
+                          child: Container(
+                            width: itemWidth,
+                            padding: EdgeInsets.symmetric(vertical: 14.h),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFF7FC8D6)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(16.r),
+                              border: Border.all(
+                                color: isSelected
+                                    ? const Color(0xFF7FC8D6)
+                                    : Colors.grey[300]!,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Center(
+                              child: MyText(
+                                '$slot ص',
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.black87,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 
   Widget _buildEarlyArrivalNote() {
@@ -568,22 +623,29 @@ class _AppointmentDateTimePageState extends State<AppointmentDateTimePage> {
           Expanded(
             flex: 2,
             child: ElevatedButton(
-              onPressed: () {
-                Get.to(
-                  () => AppointmentConfirmationPage(
-                    doctorName: widget.doctorName,
-                    doctorSpecialty: widget.doctorSpecialty,
-                    patientName: widget.patientName,
-                    patientAge: widget.patientAge,
-                    patientGender: widget.patientGender,
-                    patientPhone: widget.patientPhone,
-                    appointmentDate: '2 / 10 / 2025',
-                    appointmentTime: selectedTime,
-                  ),
-                );
-              },
+              onPressed: selectedTime == null
+                  ? null
+                  : () {
+                      final formattedDate = DateFormat(
+                        'yyyy/MM/dd',
+                      ).format(selectedDate);
+                      Get.to(
+                        () => AppointmentConfirmationPage(
+                          doctorId: widget.doctorId,
+                          doctorName: widget.doctorName,
+                          doctorSpecialty: widget.doctorSpecialty,
+                          patientName: widget.patientName,
+                          patientAge: widget.patientAge,
+                          patientGender: widget.patientGender,
+                          patientPhone: widget.patientPhone,
+                          appointmentDate: formattedDate,
+                          appointmentTime: selectedTime!,
+                        ),
+                      );
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF7FC8D6),
+                disabledBackgroundColor: Colors.grey[300],
                 padding: EdgeInsets.symmetric(vertical: 18.h),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(28.r),

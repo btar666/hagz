@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import '../../utils/app_colors.dart';
-import '../settings/doctor_profile_manage_page.dart';
 import '../../controller/past_appointments_controller.dart';
 import '../appointments/appointment_details_page.dart';
 
@@ -36,8 +35,7 @@ class PastAppointmentsPage extends StatelessWidget {
     }
   }
 
-  String _formatDate(DateTime dt) =>
-      '${dt.year}/${dt.month}/${dt.day}';
+  String _formatDate(DateTime dt) => '${dt.year}/${dt.month}/${dt.day}';
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +60,10 @@ class PastAppointmentsPage extends StatelessWidget {
                       ),
                       child: IconButton(
                         onPressed: () => Get.back(),
-                        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                     Expanded(
@@ -112,8 +113,45 @@ class PastAppointmentsPage extends StatelessWidget {
               ),
               SizedBox(height: 12.h),
               Expanded(
-                child: Obx(
-                  () => ListView.separated(
+                child: Obx(() {
+                  if (controller.isLoading.value) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
+                    );
+                  }
+
+                  if (controller.filtered.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.event_busy,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          SizedBox(height: 16.h),
+                          Text(
+                            'لا توجد مواعيد',
+                            style: TextStyle(
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          SizedBox(height: 8.h),
+                          TextButton(
+                            onPressed: controller.loadAppointments,
+                            child: const Text('تحديث'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
                     padding: EdgeInsets.only(top: 4.h, bottom: 8.h),
                     itemCount: controller.filtered.length,
                     separatorBuilder: (_, __) => Padding(
@@ -148,14 +186,20 @@ class PastAppointmentsPage extends StatelessWidget {
                           );
                         },
                         child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16.w,
+                            vertical: 14.h,
+                          ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               // top line: doctor name on right, arrow on left
                               Row(
                                 children: [
-                                  const Icon(Icons.chevron_left, color: AppColors.textSecondary),
+                                  const Icon(
+                                    Icons.chevron_left,
+                                    color: AppColors.textSecondary,
+                                  ),
                                   Expanded(
                                     child: Align(
                                       alignment: Alignment.centerRight,
@@ -212,8 +256,8 @@ class PastAppointmentsPage extends StatelessWidget {
                         ),
                       );
                     },
-                  ),
-                ),
+                  );
+                }),
               ),
             ],
           ),
@@ -223,9 +267,11 @@ class PastAppointmentsPage extends StatelessWidget {
   }
 
   Widget _dot() => Container(
-        width: 8,
-        height: 8,
-        decoration: const BoxDecoration(color: Color(0xFFFFC107), shape: BoxShape.circle),
-      );
+    width: 8,
+    height: 8,
+    decoration: const BoxDecoration(
+      color: Color(0xFFFFC107),
+      shape: BoxShape.circle,
+    ),
+  );
 }
-

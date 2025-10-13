@@ -36,10 +36,7 @@ Future<void> showActionConfirmDialog({
               ),
             ),
             SizedBox(height: 8.h),
-            RichText(
-              textAlign: TextAlign.center,
-              text: message,
-            ),
+            RichText(textAlign: TextAlign.center, text: message),
             SizedBox(height: 16.h),
             Row(
               children: [
@@ -118,21 +115,136 @@ InlineSpan _baseMessage({required String prefix, required String underlined}) {
   );
 }
 
-Future<void> showDeleteAccountConfirmDialog(BuildContext context, {VoidCallback? onConfirm}) async {
+Future<void> showDeleteAccountConfirmDialog(
+  BuildContext context, {
+  VoidCallback? onConfirm,
+}) async {
   return showActionConfirmDialog(
     title: 'حذف حسابك',
-    message: _baseMessage(prefix: 'هل أنت متأكد ؟ ', underlined: 'ستفقد كافة بياناتك'),
+    message: _baseMessage(
+      prefix: 'هل أنت متأكد ؟ ',
+      underlined: 'ستفقد كافة بياناتك',
+    ),
     primaryColor: const Color(0xFFFF3B30),
     onConfirm: onConfirm,
   );
 }
 
-Future<void> showLogoutConfirmDialog(BuildContext context, {VoidCallback? onConfirm}) async {
+Future<void> showLogoutConfirmDialog(
+  BuildContext context, {
+  VoidCallback? onConfirm,
+}) async {
   return showActionConfirmDialog(
     title: 'تسجيل الخروج',
-    message: _baseMessage(prefix: 'هل أنت متأكد ؟ ', underlined: 'لن تفقد بياناتك'),
+    message: _baseMessage(
+      prefix: 'هل أنت متأكد ؟ ',
+      underlined: 'لن تفقد بياناتك',
+    ),
     primaryColor: const Color(0xFFFFC107),
     onConfirm: onConfirm,
   );
 }
 
+Future<bool> showDeleteCaseConfirmDialog(BuildContext context) async {
+  final result = await Get.dialog<bool>(
+    Dialog(
+      insetPadding: EdgeInsets.symmetric(horizontal: 24.w),
+      backgroundColor: const Color(0xFFF4FEFF),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(16.w, 24.h, 16.w, 16.h),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: const Color(0xFFFF3B30),
+              size: 72,
+            ),
+            SizedBox(height: 12.h),
+            Text(
+              'حذف الحالة',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: const Color(0xFFFF3B30),
+                fontSize: 22.sp,
+                fontWeight: FontWeight.w900,
+                fontFamily: 'Expo Arabic',
+              ),
+            ),
+            SizedBox(height: 8.h),
+            RichText(
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'Expo Arabic',
+                ),
+                children: const [
+                  TextSpan(text: 'هل أنت متأكد ؟ '),
+                  TextSpan(
+                    text: 'سيتم حذف الحالة نهائياً',
+                    style: TextStyle(decoration: TextDecoration.underline),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16.h),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Get.back(result: false),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFFF3B30)),
+                      foregroundColor: const Color(0xFFFF3B30),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                    ),
+                    child: Text(
+                      'إلغاء',
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFFFF3B30),
+                        fontFamily: 'Expo Arabic',
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Get.back(result: true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF3B30),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'حذف',
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        fontFamily: 'Expo Arabic',
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+  return result ?? false;
+}

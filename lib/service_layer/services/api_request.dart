@@ -15,7 +15,7 @@ class ApiRequest {
     };
     final String? token = _session.token.value;
     if (token != null && token.isNotEmpty) {
-      base['Authorization'] = 'Bearer $token';
+      base['Authorization'] = 'Bearer $token'; // إرسال الـ token مع Bearer
     }
     if (extra != null) base.addAll(extra);
     return base;
@@ -62,10 +62,11 @@ class ApiRequest {
     String url, {
     Map<String, String>? headers,
   }) async {
-    final res = await http.delete(
-      Uri.parse(url),
-      headers: _headers(extra: headers),
-    );
+    final finalHeaders = _headers(extra: headers);
+    print('🔐 DELETE HEADERS: $finalHeaders');
+    final res = await http.delete(Uri.parse(url), headers: finalHeaders);
+    print('📥 DELETE STATUS CODE: ${res.statusCode}');
+    print('📥 DELETE BODY: ${res.body}');
     return _decode(res);
   }
 

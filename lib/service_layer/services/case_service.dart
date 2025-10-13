@@ -17,13 +17,21 @@ class CaseService {
       'visibility': visibility,
       'images': images,
     };
-    return await _api.post(ApiConstants.doctorCases, body);
+    final url = '${ApiConstants.doctorCases}/cases';
+    print('➕ CREATE CASE URL: $url');
+    print('➕ CREATE CASE BODY: $body');
+    final result = await _api.post(url, body);
+    print('➕ CREATE CASE RESPONSE: $result');
+    return result;
   }
 
   /// جلب حالات طبيب معين
   Future<Map<String, dynamic>> getDoctorCases(String doctorId) async {
     final url = '${ApiConstants.doctorCases}/$doctorId/cases';
-    return await _api.get(url);
+    print('📋 GET DOCTOR CASES URL: $url');
+    final result = await _api.get(url);
+    print('📋 GET DOCTOR CASES RESPONSE: $result');
+    return result;
   }
 
   /// جلب حالة محددة
@@ -35,6 +43,9 @@ class CaseService {
   /// حذف حالة
   Future<Map<String, dynamic>> deleteCase(String caseId) async {
     final url = '${ApiConstants.cases}/$caseId';
-    return await _api.delete(url);
+    print('🗑️ DELETE CASE URL: $url');
+    final result = await _api.delete(url);
+    print('🗑️ DELETE CASE RESPONSE: $result');
+    return result;
   }
 }

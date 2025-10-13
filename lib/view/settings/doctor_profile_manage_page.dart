@@ -12,6 +12,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../service_layer/services/upload_service.dart';
 import '../../widget/loading_dialog.dart';
 import '../../widget/status_dialog.dart';
+import '../../widget/confirm_dialogs.dart';
 
 class DoctorProfileManagePage extends StatelessWidget {
   DoctorProfileManagePage({super.key});
@@ -2007,33 +2008,96 @@ class DoctorProfileManagePage extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
           // Visibility toggle
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              MyText(
-                'عام',
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-              Obx(
-                () => Switch(
-                  value: visibility.value == 'public',
-                  onChanged: (val) {
-                    visibility.value = val ? 'public' : 'private';
-                  },
-                  activeColor: AppColors.primary,
+          Obx(
+            () => Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => visibility.value = 'public',
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      decoration: BoxDecoration(
+                        color: visibility.value == 'public'
+                            ? AppColors.primary
+                            : Colors.grey[200],
+                        borderRadius: BorderRadius.circular(16.r),
+                        border: Border.all(
+                          color: visibility.value == 'public'
+                              ? AppColors.primary
+                              : Colors.grey[300]!,
+                          width: 2,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.public,
+                            color: visibility.value == 'public'
+                                ? Colors.white
+                                : Colors.grey[600],
+                            size: 20.sp,
+                          ),
+                          SizedBox(width: 8.w),
+                          MyText(
+                            'عام',
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w800,
+                            color: visibility.value == 'public'
+                                ? Colors.white
+                                : Colors.grey[600]!,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              MyText(
-                'خاص',
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ],
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => visibility.value = 'private',
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      decoration: BoxDecoration(
+                        color: visibility.value == 'private'
+                            ? AppColors.primary
+                            : Colors.grey[200],
+                        borderRadius: BorderRadius.circular(16.r),
+                        border: Border.all(
+                          color: visibility.value == 'private'
+                              ? AppColors.primary
+                              : Colors.grey[300]!,
+                          width: 2,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.lock,
+                            color: visibility.value == 'private'
+                                ? Colors.white
+                                : Colors.grey[600],
+                            size: 20.sp,
+                          ),
+                          SizedBox(width: 8.w),
+                          MyText(
+                            'خاص',
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w800,
+                            color: visibility.value == 'private'
+                                ? Colors.white
+                                : Colors.grey[600]!,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          SizedBox(height: 8.h),
+          SizedBox(height: 16.h),
           // Images section
           Obx(
             () => Wrap(
@@ -2274,33 +2338,10 @@ class DoctorProfileManagePage extends StatelessWidget {
                       final caseId = caseData['_id']?.toString() ?? '';
                       if (caseId.isEmpty) return;
 
-                      final confirmed = await Get.dialog<bool>(
-                        AlertDialog(
-                          title: const Text(
-                            'تأكيد الحذف',
-                            textAlign: TextAlign.right,
-                          ),
-                          content: const Text(
-                            'هل أنت متأكد من حذف هذه الحالة؟',
-                            textAlign: TextAlign.right,
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Get.back(result: false),
-                              child: const Text('إلغاء'),
-                            ),
-                            TextButton(
-                              onPressed: () => Get.back(result: true),
-                              style: TextButton.styleFrom(
-                                foregroundColor: const Color(0xFFFF3B30),
-                              ),
-                              child: const Text('حذف'),
-                            ),
-                          ],
-                        ),
+                      final confirmed = await showDeleteCaseConfirmDialog(
+                        Get.context!,
                       );
-
-                      if (confirmed != true) return;
+                      if (!confirmed) return;
 
                       await LoadingDialog.show(message: 'جاري الحذف...');
                       try {
@@ -2314,11 +2355,23 @@ class DoctorProfileManagePage extends StatelessWidget {
                             icon: Icons.check_circle_outline,
                           );
                         } else {
+                          // التعامل مع رسائل الخطأ المختلفة
+                          String errorMessage =
+                              res['data']?['message']?.toString() ??
+                              'تعذر حذف الحالة';
+
+                          // تحديد العنوان بناءً على نوع الخطأ
+                          String errorTitle = 'فشل الحذف';
+                          if (errorMessage.contains('غير مصرح') ||
+                              errorMessage.contains('not authorized') ||
+                              errorMessage.contains('Unauthorized')) {
+                            errorTitle = 'غير مصرح لك';
+                            errorMessage = 'ليس لديك صلاحية حذف هذه الحالة';
+                          }
+
                           await showStatusDialog(
-                            title: 'فشل الحذف',
-                            message:
-                                (res['data']?['message']?.toString() ??
-                                'تعذر حذف الحالة'),
+                            title: errorTitle,
+                            message: errorMessage,
                             color: const Color(0xFFFF3B30),
                             icon: Icons.error_outline,
                           );

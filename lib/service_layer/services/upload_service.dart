@@ -45,7 +45,8 @@ class UploadService {
       final SessionController session = Get.find<SessionController>();
       final token = session.token.value;
       if (token != null && token.isNotEmpty) {
-        request.headers['Authorization'] = 'Bearer $token';
+        request.headers['Authorization'] =
+            'Bearer $token'; // إرسال الـ token مع Bearer
       }
     } catch (_) {}
 

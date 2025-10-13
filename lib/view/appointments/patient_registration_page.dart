@@ -2,16 +2,17 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 import 'appointment_datetime_page.dart';
 
 class PatientRegistrationPage extends StatefulWidget {
+  final String doctorId;
   final String doctorName;
   final String doctorSpecialty;
 
   const PatientRegistrationPage({
     Key? key,
+    required this.doctorId,
     required this.doctorName,
     required this.doctorSpecialty,
   }) : super(key: key);
@@ -91,9 +92,9 @@ class CircularProgressPainter extends CustomPainter {
 
 class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _ageController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   String _selectedGender = 'أنثى';
+  int? _selectedAge;
 
   @override
   Widget build(BuildContext context) {
@@ -340,34 +341,46 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
             borderRadius: BorderRadius.circular(24.r),
             border: Border.all(color: const Color(0xFFE6F2F1), width: 1),
           ),
-          child: TextField(
-            controller: _ageController,
-            textAlign: TextAlign.right,
-            textDirection: TextDirection.rtl,
-            keyboardType: TextInputType.number,
-            style: TextStyle(fontSize: 16.sp, color: Colors.black87),
+          child: DropdownButtonFormField<int>(
+            value: _selectedAge,
             decoration: InputDecoration(
               hintText: 'اختر عمر المريض',
               hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16.sp),
-              hintTextDirection: TextDirection.rtl,
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(
                 horizontal: 24.w,
                 vertical: 18.h,
               ),
-              suffixIcon: Padding(
-                padding: EdgeInsets.only(left: 12.w, right: 8.w),
-                child: Icon(
-                  Icons.keyboard_arrow_down,
-                  color: Colors.grey[500],
-                  size: 22.r,
-                ),
-              ),
-              suffixIconConstraints: BoxConstraints(
-                minWidth: 32.w,
-                minHeight: 32.h,
+            ),
+            icon: Padding(
+              padding: EdgeInsets.only(left: 12.w),
+              child: Icon(
+                Icons.keyboard_arrow_down,
+                color: Colors.grey[500],
+                size: 22.r,
               ),
             ),
+            style: TextStyle(fontSize: 16.sp, color: Colors.black87),
+            isExpanded: true,
+            alignment: Alignment.centerRight,
+            items: List.generate(
+              100,
+              (index) => DropdownMenuItem<int>(
+                value: index + 1,
+                alignment: Alignment.centerRight,
+                child: MyText(
+                  '${index + 1} سنة',
+                  fontSize: 16.sp,
+                  color: Colors.black87,
+                  textAlign: TextAlign.right,
+                ),
+              ),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _selectedAge = value;
+              });
+            },
           ),
         ),
       ],
@@ -534,10 +547,11 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
           onPressed: () {
             Get.to(
               () => AppointmentDateTimePage(
+                doctorId: widget.doctorId,
                 doctorName: widget.doctorName,
                 doctorSpecialty: widget.doctorSpecialty,
                 patientName: _nameController.text,
-                patientAge: _ageController.text,
+                patientAge: _selectedAge?.toString() ?? '',
                 patientGender: _selectedGender,
                 patientPhone: _phoneController.text,
               ),
@@ -565,7 +579,6 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
   @override
   void dispose() {
     _nameController.dispose();
-    _ageController.dispose();
     _phoneController.dispose();
     super.dispose();
   }

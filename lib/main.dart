@@ -47,7 +47,7 @@ class MedicalApp extends StatelessWidget {
               elevation: 0,
               systemOverlayStyle: SystemUiOverlayStyle.dark,
             ),
-            fontFamily: 'Arial', // You can add Arabic fonts later
+            fontFamily: 'Expo Arabic',
           ),
           home: _resolveStartPage(),
           locale: const Locale('ar'),
