@@ -545,15 +545,29 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
         width: double.infinity,
         child: ElevatedButton(
           onPressed: () {
+            // فحص صحة البيانات
+            if (_nameController.text.trim().isEmpty) {
+              Get.snackbar('خطأ', 'يرجى إدخال اسم المريض');
+              return;
+            }
+            if (_selectedAge == null) {
+              Get.snackbar('خطأ', 'يرجى إختيار العمر');
+              return;
+            }
+            if (_phoneController.text.trim().isEmpty) {
+              Get.snackbar('خطأ', 'يرجى إدخال رقم الهاتف');
+              return;
+            }
+
             Get.to(
               () => AppointmentDateTimePage(
                 doctorId: widget.doctorId,
                 doctorName: widget.doctorName,
                 doctorSpecialty: widget.doctorSpecialty,
-                patientName: _nameController.text,
-                patientAge: _selectedAge?.toString() ?? '',
+                patientName: _nameController.text.trim(),
+                patientAge: _selectedAge!,
                 patientGender: _selectedGender,
-                patientPhone: _phoneController.text,
+                patientPhone: _phoneController.text.trim(),
               ),
             );
           },

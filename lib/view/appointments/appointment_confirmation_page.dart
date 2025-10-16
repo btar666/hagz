@@ -75,7 +75,7 @@ class AppointmentConfirmationPage extends StatelessWidget {
   final String doctorName;
   final String doctorSpecialty;
   final String patientName;
-  final String patientAge;
+  final int patientAge;
   final String patientGender;
   final String patientPhone;
   final String appointmentDate;
@@ -490,9 +490,12 @@ class AppointmentConfirmationPage extends StatelessWidget {
                         // تحويل التاريخ من yyyy/MM/dd إلى yyyy-MM-dd
                         final dateForApi = appointmentDate.replaceAll('/', '-');
 
-                        // إرسال الحجز للـ API
+                        // إرسال الحجز للـ API مع المعلومات المطلوبة
                         final result = await controller.bookAppointment(
                           doctorId: doctorId,
+                          patientName: patientName,
+                          patientAge: patientAge,
+                          patientPhone: patientPhone,
                           appointmentDate: dateForApi,
                           appointmentTime: appointmentTime,
                           patientNotes: 'حجز من التطبيق',

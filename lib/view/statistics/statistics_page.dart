@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:get/get.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
+import '../../controller/session_controller.dart';
+import '../appointments/missed_appointments_page.dart';
 
 class StatisticsPage extends StatelessWidget {
   const StatisticsPage({super.key});
@@ -24,6 +27,23 @@ class StatisticsPage extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              final sessionController = Get.find<SessionController>();
+              final userId = sessionController.currentUser.value?.id ?? '';
+              if (userId.isNotEmpty) {
+                Get.to(() => MissedAppointmentsPage(doctorId: userId));
+              }
+            },
+            icon: Icon(
+              Icons.event_busy,
+              color: AppColors.error,
+              size: 24.r,
+            ),
+            tooltip: 'المواعيد المفقودة',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.w),

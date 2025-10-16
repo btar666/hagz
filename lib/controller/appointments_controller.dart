@@ -51,9 +51,12 @@ class AppointmentsController extends GetxController {
     }
   }
 
-  /// حجز موعد جديد
+  /// حجز موعد جديد - مع المعلومات الإضافية
   Future<Map<String, dynamic>> bookAppointment({
     required String doctorId,
+    required String patientName,
+    required int patientAge,
+    required String patientPhone,
     required String appointmentDate,
     required String appointmentTime,
     String? patientNotes,
@@ -67,6 +70,9 @@ class AppointmentsController extends GetxController {
     final res = await _service.createAppointment(
       doctorId: doctorId,
       patientId: userId,
+      patientName: patientName,
+      patientAge: patientAge,
+      patientPhone: patientPhone,
       appointmentDate: appointmentDate,
       appointmentTime: appointmentTime,
       patientNotes: patientNotes,
@@ -289,5 +295,46 @@ class AppointmentsController extends GetxController {
     }
 
     return res;
+  }
+
+  // قائمة المواعيد المفقودة
+  RxList<Map<String, dynamic>> missedAppointments =
+      <Map<String, dynamic>>[].obs;
+
+  /// جلب المواعيد المفقودة للطبيب
+  Future<void> loadMissedAppointments({
+    required String doctorId,
+    required String startDate,
+    required String endDate,
+  }) async {
+    try {
+      final res = await _service.getDoctorMissedAppointments(
+        doctorId: doctorId,
+        startDate: startDate,
+        endDate: endDate,
+      );
+      if (res['ok'] == true) {
+        final data = res['data']?['data'];
+        if (data != null && data is List) {
+          missedAppointments.value = data.map((item) {
+            return {
+              '_id': item['_id']?.toString() ?? '',
+              'doctor': item['doctor'],
+              'patient': item['patient'],
+              'patientName': item['patientName']?.toString() ?? '',
+              'patientPhone': item['patientPhone']?.toString() ?? '',
+              'appointmentDate': item['appointmentDate']?.toString() ?? '',
+              'appointmentTime': item['appointmentTime']?.toString() ?? '',
+              'status': item['status']?.toString() ?? '',
+              'patientNotes': item['patientNotes']?.toString(),
+              'amount': item['amount'],
+              'createdAt': item['createdAt']?.toString() ?? '',
+            };
+          }).toList();
+        }
+      }
+    } catch (e) {
+      print('Error loading missed appointments: $e');
+    }
   }
 }

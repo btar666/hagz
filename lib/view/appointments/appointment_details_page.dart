@@ -14,7 +14,6 @@ class AppointmentDetailsPage extends StatelessWidget {
     // Extract details with safe defaults
     final String patient = (details['patient'] ?? 'اسم المريض') as String;
     final int? age = details['age'] as int?;
-    final String gender = (details['gender'] ?? 'غير محدد') as String;
     final String phone = (details['phone'] ?? '0770 000 0000') as String;
     final String date = (details['date'] ?? _formatDate(DateTime.now())) as String;
     final String time = (details['time'] ?? '6:00 صباحاً') as String;
@@ -31,6 +30,7 @@ class AppointmentDetailsPage extends StatelessWidget {
           child: SingleChildScrollView(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Row(
                   children: [
@@ -69,8 +69,6 @@ class AppointmentDetailsPage extends StatelessWidget {
                       _twoCols('اسم المريض', patient),
                       SizedBox(height: 8.h),
                       _twoCols('العمر', age?.toString() ?? '-'),
-                      SizedBox(height: 8.h),
-                      _twoCols('الجنس', gender),
                       SizedBox(height: 8.h),
                       _twoCols('رقم الهاتف', phone, underlineValue: true),
                       SizedBox(height: 12.h),
@@ -158,7 +156,7 @@ class AppointmentDetailsPage extends StatelessWidget {
               fontFamily: 'Expo Arabic',
               fontSize: 20.sp,
             ),
-            textAlign: TextAlign.left,
+            textAlign: TextAlign.right,
           ),
         ),
       ],

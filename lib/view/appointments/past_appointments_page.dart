@@ -30,6 +30,8 @@ class PastAppointmentsPage extends StatelessWidget {
         return 'قيد الانتظار';
       case 'cancelled':
         return 'ملغي';
+      case 'confirmed':
+        return 'مؤكد';
       default:
         return s;
     }
@@ -40,6 +42,7 @@ class PastAppointmentsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(PastAppointmentsController());
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -100,7 +103,7 @@ class PastAppointmentsPage extends StatelessWidget {
                           onChanged: controller.updateQuery,
                           textAlign: TextAlign.center,
                           decoration: const InputDecoration(
-                            hintText: 'ابحث عن طبيب ..',
+                            hintText: 'ابحث عن مريض ..',
                             border: InputBorder.none,
                           ),
                           style: const TextStyle(fontFamily: 'Expo Arabic'),
@@ -111,6 +114,64 @@ class PastAppointmentsPage extends StatelessWidget {
                   ),
                 ),
               ),
+              // Doctor date range filter
+              Obx(() {
+                if (!Get.find<PastAppointmentsController>().isDoctor) {
+                  return const SizedBox.shrink();
+                }
+                final c = Get.find<PastAppointmentsController>();
+                final String start = c.startDate.value != null
+                    ? _formatDate(c.startDate.value!)
+                    : '—';
+                final String end = c.endDate.value != null
+                    ? _formatDate(c.endDate.value!)
+                    : '—';
+                return Padding(
+                  padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 0),
+                  child: Container(
+                    padding: EdgeInsets.all(12.w),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16.r),
+                      border: Border.all(color: AppColors.divider),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.calendar_today, color: AppColors.primary, size: 18.r),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: Text(
+                            'الفترة: $start - $end',
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            final picked = await showDateRangePicker(
+                              context: context,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                              initialDateRange: c.startDate.value != null && c.endDate.value != null
+                                  ? DateTimeRange(start: c.startDate.value!, end: c.endDate.value!)
+                                  : null,
+                              locale: const Locale('ar'),
+                            );
+                            if (picked != null) {
+                              c.setDateRange(picked.start, picked.end);
+                            }
+                          },
+                          child: const Text('تحديد الفترة'),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
               SizedBox(height: 12.h),
               Expanded(
                 child: Obx(() {
@@ -160,30 +221,30 @@ class PastAppointmentsPage extends StatelessWidget {
                     ),
                     itemBuilder: (_, i) {
                       final item = controller.filtered[i];
-                      final String doctor = item['doctor'] as String;
-                      final int order = item['order'] as int;
+                      final String title = item['title'] as String;
                       final DateTime date = item['date'] as DateTime;
                       final String status = item['status'] as String;
+                      final String time = item['time'] as String;
                       return InkWell(
                         onTap: () {
                           final sColor = statusColor(status);
                           final sText = statusLabel(status);
-                          Get.to(
-                            () => AppointmentDetailsPage(
-                              details: {
-                                'patient': doctor,
-                                'order': order,
-                                'time': '—',
-                                'statusText': sText,
-                                'statusColor': sColor,
-                                'age': 30,
-                                'gender': 'ذكر',
-                                'phone': '0770 000 0000',
-                                'date': _formatDate(date),
-                                'price': '10,000 د.ع',
-                              },
-                            ),
-                          );
+                          final String price = '${item['amount'] ?? 0} د.ع';
+
+                          // بناء تفاصيل الصفحة - عرض معلومات المريض دائماً
+                          final details = <String, dynamic>{
+                            'patient': item['patientName'] ?? title,
+                            'order': item['appointmentSequence'],
+                            'time': time.isEmpty ? '—' : time,
+                            'statusText': sText,
+                            'statusColor': sColor,
+                            'age': item['patientAge'],
+                            'phone': item['patientPhone'] ?? '—',
+                            'date': _formatDate(date),
+                            'price': price,
+                          };
+
+                          Get.to(() => AppointmentDetailsPage(details: details));
                         },
                         child: Padding(
                           padding: EdgeInsets.symmetric(
@@ -193,7 +254,7 @@ class PastAppointmentsPage extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              // top line: doctor name on right, arrow on left
+                              // top line RTL: title on right, arrow on left
                               Row(
                                 children: [
                                   const Icon(
@@ -204,19 +265,20 @@ class PastAppointmentsPage extends StatelessWidget {
                                     child: Align(
                                       alignment: Alignment.centerRight,
                                       child: Text(
-                                        doctor,
+                                        title,
                                         style: TextStyle(
                                           color: AppColors.textPrimary,
                                           fontSize: 18.sp,
                                           fontWeight: FontWeight.w800,
                                         ),
+                                        textAlign: TextAlign.right,
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
                               SizedBox(height: 8.h),
-                              // second line: status • date • sequence
+                              // second line RTL: status • date • (sequence) • time
                               Wrap(
                                 alignment: WrapAlignment.end,
                                 crossAxisAlignment: WrapCrossAlignment.center,
@@ -240,9 +302,20 @@ class PastAppointmentsPage extends StatelessWidget {
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),
+                                  if (item['appointmentSequence'] != null) ...[
+                                    _dot(),
+                                    Text(
+                                      'التسلسل : ${item['appointmentSequence']}',
+                                      style: TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontSize: 18.sp,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
                                   _dot(),
                                   Text(
-                                    'التسلسل : $order',
+                                    time.isEmpty ? '—' : time,
                                     style: TextStyle(
                                       color: AppColors.textPrimary,
                                       fontSize: 18.sp,
@@ -251,6 +324,31 @@ class PastAppointmentsPage extends StatelessWidget {
                                   ),
                                 ],
                               ),
+
+                              // actions row (doctor): change status
+                              Obx(() {
+                                final c = Get.find<PastAppointmentsController>();
+                                if (!c.isDoctor) return const SizedBox.shrink();
+                                return Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: TextButton.icon(
+                                    onPressed: () => _showChangeStatusSheet(
+                                      context,
+                                      onPick: (status) async {
+                                        final ok = await c.changeStatus(
+                                          item['_id'] as String,
+                                          status,
+                                        );
+                                        if (!ok) {
+                                          Get.snackbar('فشل', 'تعذر تغيير الحالة');
+                                        }
+                                      },
+                                    ),
+                                    icon: const Icon(Icons.sync_alt, size: 18, color: AppColors.primary),
+                                    label: const Text('تغيير الحالة'),
+                                  ),
+                                );
+                              }),
                             ],
                           ),
                         ),
@@ -273,5 +371,51 @@ class PastAppointmentsPage extends StatelessWidget {
       color: Color(0xFFFFC107),
       shape: BoxShape.circle,
     ),
+  );
+}
+
+void _showChangeStatusSheet(BuildContext context, {required void Function(String) onPick}) {
+  showModalBottomSheet(
+    context: context,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (_) {
+      return Directionality(
+        textDirection: TextDirection.rtl,
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.verified, color: AppColors.primary),
+                title: const Text('تعيين كمؤكد'),
+                onTap: () {
+                  Navigator.pop(context);
+                  onPick('confirmed');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.check_circle, color: Color(0xFF2ECC71)),
+                title: const Text('تعيين كمكتمل'),
+                onTap: () {
+                  Navigator.pop(context);
+                  onPick('completed');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.cancel, color: Color(0xFFFF3B30)),
+                title: const Text('تعيين كملغي'),
+                onTap: () {
+                  Navigator.pop(context);
+                  onPick('cancelled');
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      );
+    },
   );
 }

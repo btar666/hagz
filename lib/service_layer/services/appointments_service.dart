@@ -17,10 +17,13 @@ class AppointmentsService {
     return result;
   }
 
-  /// حجز موعد جديد
+  /// حجز موعد جديد - مع المعلومات الإضافية المطلوبة
   Future<Map<String, dynamic>> createAppointment({
     required String doctorId,
     required String patientId,
+    required String patientName,
+    required int patientAge,
+    required String patientPhone,
     required String appointmentDate,
     required String appointmentTime,
     String? patientNotes,
@@ -29,6 +32,9 @@ class AppointmentsService {
     final body = {
       'doctor': doctorId,
       'patient': patientId,
+      'patientName': patientName,
+      'patientAge': patientAge,
+      'patientPhone': patientPhone,
       'appointmentDate': appointmentDate,
       'appointmentTime': appointmentTime,
       if (patientNotes != null && patientNotes.isNotEmpty)
@@ -94,10 +100,12 @@ class AppointmentsService {
     if (page != null) queryParams.add('page=$page');
     if (limit != null) queryParams.add('limit=$limit');
     if (status != null && status.isNotEmpty) queryParams.add('status=$status');
-    if (startDate != null && startDate.isNotEmpty)
+    if (startDate != null && startDate.isNotEmpty) {
       queryParams.add('startDate=$startDate');
-    if (endDate != null && endDate.isNotEmpty)
+    }
+    if (endDate != null && endDate.isNotEmpty) {
       queryParams.add('endDate=$endDate');
+    }
 
     if (queryParams.isNotEmpty) {
       url += '?${queryParams.join('&')}';
@@ -189,10 +197,12 @@ class AppointmentsService {
     var url = '${ApiConstants.doctorsWorkingHours}/$doctorId/appointment-stats';
 
     final queryParams = <String>[];
-    if (startDate != null && startDate.isNotEmpty)
+    if (startDate != null && startDate.isNotEmpty) {
       queryParams.add('startDate=$startDate');
-    if (endDate != null && endDate.isNotEmpty)
+    }
+    if (endDate != null && endDate.isNotEmpty) {
       queryParams.add('endDate=$endDate');
+    }
 
     if (queryParams.isNotEmpty) {
       url += '?${queryParams.join('&')}';

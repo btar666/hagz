@@ -12,7 +12,7 @@ class AppointmentDateTimePage extends StatefulWidget {
   final String doctorName;
   final String doctorSpecialty;
   final String patientName;
-  final String patientAge;
+  final int patientAge;
   final String patientGender;
   final String patientPhone;
 
