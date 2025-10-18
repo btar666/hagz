@@ -793,6 +793,19 @@ class DoctorProfilePage extends StatelessWidget {
     String review,
     double rating,
   ) {
+    // عرض التاريخ فقط بدون الوقت
+    String dateOnly = time;
+    try {
+      final dt = DateTime.tryParse(time);
+      if (dt != null) {
+        dateOnly = '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
+      } else if (time.contains('T')) {
+        dateOnly = time.split('T').first;
+      }
+    } catch (_) {
+      if (time.contains('T')) dateOnly = time.split('T').first;
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -800,7 +813,7 @@ class DoctorProfilePage extends StatelessWidget {
           radius: 20.r,
           backgroundColor: AppColors.primaryLight,
           child: MyText(
-            name[0],
+            name.isNotEmpty ? name[0] : '-',
             fontSize: 16.sp,
             fontWeight: FontWeight.w600,
             color: AppColors.primary,
@@ -811,6 +824,7 @@ class DoctorProfilePage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // الاسم + (منذ ..) بين قوسين بجانبه
               Row(
                 children: [
                   MyText(
@@ -819,30 +833,18 @@ class DoctorProfilePage extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
                   ),
-                  const Spacer(),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.star, color: Colors.amber, size: 14.r),
-                      SizedBox(width: 4.w),
-                      MyText(
-                        rating.toString(),
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w400,
-                        color: AppColors.textSecondary,
-                      ),
-                    ],
+                  SizedBox(width: 8.w),
+                  MyText(
+                    '( ${_relativeFrom(time)} )',
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textSecondary,
                   ),
                 ],
               ),
-              SizedBox(height: 2.h),
-              MyText(
-                time,
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w400,
-                color: AppColors.textSecondary,
-              ),
+              SizedBox(height: 6.h),
               SizedBox(height: 8.h),
+              // التعليق
               MyText(
                 review,
                 fontSize: 13.sp,
@@ -995,6 +997,21 @@ class DoctorProfilePage extends StatelessWidget {
     });
   }
 
+  String _relativeFrom(String iso) {
+    try {
+      final dt = DateTime.tryParse(iso);
+      if (dt == null) return iso.contains('T') ? iso.split('T').first : iso;
+      final diff = DateTime.now().difference(dt);
+      if (diff.inMinutes < 1) return 'الآن';
+      if (diff.inMinutes < 60) return 'منذ ${diff.inMinutes} دقيقة';
+      if (diff.inHours < 24) return 'منذ ${diff.inHours} ساعات';
+      if (diff.inDays < 7) return 'منذ ${diff.inDays} أيام';
+      return '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return iso.contains('T') ? iso.split('T').first : iso;
+    }
+  }
+
   Widget _buildInsuranceContent(DoctorProfileController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1133,6 +1150,10 @@ class DoctorProfilePage extends StatelessWidget {
 
   ImageProvider _imageProvider(String path) {
     if (path.startsWith('http://') || path.startsWith('https://')) {
+      final host = Uri.tryParse(path)?.host.toLowerCase() ?? '';
+      if (host.contains('scontent') || host.contains('fbcdn') || host.contains('facebook.com')) {
+        return const AssetImage('assets/icons/home/doctor.png');
+      }
       return NetworkImage(path);
     } else if (path.startsWith('/') ||
         path.contains('\\') ||

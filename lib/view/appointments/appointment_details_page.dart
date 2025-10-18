@@ -4,23 +4,68 @@ import 'package:get/get.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
+import '../../controller/past_appointments_controller.dart';
+import '../../controller/session_controller.dart';
 
-class AppointmentDetailsPage extends StatelessWidget {
+class AppointmentDetailsPage extends StatefulWidget {
   final Map<String, dynamic> details;
   const AppointmentDetailsPage({super.key, required this.details});
 
   @override
+  State<AppointmentDetailsPage> createState() => _AppointmentDetailsPageState();
+}
+
+class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
+  late String _statusText;
+  late Color _statusColor;
+
+  Color statusColor(String s) {
+    switch (s) {
+      case 'مكتمل':
+        return const Color(0xFF2ECC71);
+      case 'قيد الانتظار':
+        return const Color(0xFFFFA000);
+      case 'ملغي':
+        return const Color(0xFFFF3B30);
+      case 'مؤكد':
+        return const Color(0xFF18A2AE);
+      default:
+        return AppColors.textSecondary;
+    }
+  }
+
+  String labelFromCode(String code) {
+    // Since we now pass Arabic status directly, just return it
+    return code;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _statusText = (widget.details['statusText'] ?? 'قيد الانتظار') as String;
+    _statusColor = (widget.details['statusColor'] as Color?) ?? statusColor(_statusText);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Extract details with safe defaults
-    final String patient = (details['patient'] ?? 'اسم المريض') as String;
-    final int? age = details['age'] as int?;
-    final String phone = (details['phone'] ?? '0770 000 0000') as String;
-    final String date = (details['date'] ?? _formatDate(DateTime.now())) as String;
-    final String time = (details['time'] ?? '6:00 صباحاً') as String;
-    final String price = (details['price'] ?? '10,000 د.ع') as String;
-    final String status = (details['statusText'] ?? 'تم الدفع') as String;
-    final Color statusColor = (details['statusColor'] as Color?) ?? const Color(0xFF2ECC71);
-    final int? order = details['order'] as int?;
+    final String patient = (widget.details['patient'] ?? 'اسم المريض') as String;
+    final int? age = widget.details['age'] as int?;
+    final String phone = (widget.details['phone'] ?? '0770 000 0000') as String;
+    final String date = (widget.details['date'] ?? _formatDate(DateTime.now())) as String;
+    final String time = (widget.details['time'] ?? '6:00 صباحاً') as String;
+    final String price = (widget.details['price'] ?? '10,000 د.ع') as String;
+    final int? order = widget.details['order'] as int?;
+    final String appointmentId = (widget.details['appointmentId'] ?? '') as String;
+    
+    print('📋 APPOINTMENT DETAILS: appointmentId=$appointmentId');
+    print('📋 WIDGET DETAILS: ${widget.details}');
+
+    final role = Get.find<SessionController>().role.value;
+    final bool canChange = role == 'doctor' || role == 'secretary';
+    print('📋 USER ROLE: $role, canChange: $canChange');
+    final pastCtrl = Get.isRegistered<PastAppointmentsController>()
+        ? Get.find<PastAppointmentsController>()
+        : Get.put(PastAppointmentsController());
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -82,8 +127,8 @@ class AppointmentDetailsPage extends StatelessWidget {
                       SizedBox(height: 8.h),
                       _twoCols(
                         'الحالة',
-                        status,
-                        valueColor: statusColor,
+                        _statusText,
+                        valueColor: _statusColor,
                         isBold: true,
                       ),
                     ],
@@ -112,11 +157,103 @@ class AppointmentDetailsPage extends StatelessWidget {
                     ],
                   ),
                 ),
+
+                // Change status button at bottom (doctor/secretary only)
+                if (canChange && appointmentId.isNotEmpty) ...[
+                  SizedBox(height: 20.h),
+                  Container(
+                    width: double.infinity,
+                    height: 56.h,
+                    padding: EdgeInsets.symmetric(horizontal: 20.w),
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showChangeStatusSheet(context, onPick: (code) async {
+                        print('🔴 BUTTON CLICKED: Trying to change status to $code for appointmentId: $appointmentId');
+                        if (appointmentId.isEmpty) {
+                          Get.snackbar('فشل', 'معرّف الموعد غير موجود');
+                          return;
+                        }
+                        final ok = await pastCtrl.changeStatus(appointmentId, code);
+                        print('🔴 CHANGE STATUS RESULT: $ok');
+                        if (ok) {
+                          final newLabel = labelFromCode(code);
+                          setState(() {
+                            _statusText = newLabel;
+                            _statusColor = statusColor(newLabel);
+                          });
+                          Get.snackbar('تم', 'تم تحديث حالة الموعد إلى $newLabel');
+                        } else {
+                          Get.snackbar('فشل', 'تعذر تغيير الحالة - تحقق من الاتصال');
+                        }
+                      }),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                        ),
+                        elevation: 4,
+                      ),
+                      icon: const Icon(Icons.sync_alt, size: 20),
+                      label: MyText(
+                        'تغيير حالة الموعد',
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  void _showChangeStatusSheet(BuildContext context, {required void Function(String) onPick}) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.verified, color: AppColors.primary),
+                  title: const Text('تعيين كمؤكد'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    onPick('مؤكد'); // Arabic confirmed
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.check_circle, color: Color(0xFF2ECC71)),
+                  title: const Text('تعيين كمكتمل'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    onPick('مكتمل'); // Arabic completed
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.cancel, color: Color(0xFFFF3B30)),
+                  title: const Text('تعيين كملغي'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    onPick('ملغي'); // Arabic cancelled
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

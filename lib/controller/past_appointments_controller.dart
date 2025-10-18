@@ -17,6 +17,10 @@ class PastAppointmentsController extends GetxController {
   final Rxn<DateTime> endDate = Rxn<DateTime>();
 
   bool get isDoctor => _session.role.value == 'doctor';
+  bool get canManageAppointments {
+    final role = _session.role.value;
+    return role == 'doctor' || role == 'secretary';
+  }
 
   @override
   void onInit() {
@@ -159,7 +163,8 @@ class PastAppointmentsController extends GetxController {
 
   void updateQuery(String v) => query.value = v;
 
-  /// تغيير حالة الموعد (للطبيب)
+  /// تغيير حالة الموعد (للطبيب/السكرتير)
+  /// newStatus يمكن أن يكون: 'مؤكد' | 'مكتمل' | 'ملغي'
   Future<bool> changeStatus(
     String appointmentId,
     String newStatus, {
@@ -167,24 +172,84 @@ class PastAppointmentsController extends GetxController {
     String? cancelledBy,
     String? cancellationReason,
   }) async {
+    print('🔄 CHANGING STATUS: $appointmentId -> $newStatus');
     try {
-      final res = await _service.updateAppointmentStatus(
-        appointmentId: appointmentId,
-        status: newStatus,
-        notes: notes,
-        cancelledBy: cancelledBy,
-        cancellationReason: cancellationReason,
-      );
-      if (res['ok'] == true) {
-        final idx = appointments.indexWhere((a) => a['_id'] == appointmentId);
-        if (idx != -1) {
-          appointments[idx]['status'] = newStatus;
-          appointments.refresh();
+      Map<String, dynamic> res;
+      // حدد الطرف الملغي إن لزم
+      final role = _session.role.value;
+      final who = cancelledBy ?? (role == 'doctor' ? 'doctor' : role == 'secretary' ? 'secretary' : 'patient');
+
+      if (newStatus == 'مؤكد') {
+        // استخدم endpoint التأكيد
+        res = await _service.confirmAppointment(
+          appointmentId: appointmentId,
+          notes: notes,
+        );
+        // حدث الحالة محلياً إلى 'confirmed'
+        if (res['ok'] == true) {
+          final idx = appointments.indexWhere((a) => a['_id'] == appointmentId);
+          if (idx != -1) {
+            appointments[idx]['status'] = 'confirmed';
+            appointments.refresh();
+          }
+          print('🔄 STATUS CHANGE SUCCESS (confirm)');
+          return true;
         }
-        return true;
+      } else if (newStatus == 'مكتمل') {
+        // استخدم endpoint الاكمال
+        res = await _service.completeAppointment(
+          appointmentId: appointmentId,
+          notes: notes,
+        );
+        if (res['ok'] == true) {
+          final idx = appointments.indexWhere((a) => a['_id'] == appointmentId);
+          if (idx != -1) {
+            appointments[idx]['status'] = 'completed';
+            appointments.refresh();
+          }
+          print('🔄 STATUS CHANGE SUCCESS (complete)');
+          return true;
+        }
+      } else if (newStatus == 'ملغي') {
+        // استخدم endpoint الإلغاء
+        res = await _service.cancelAppointment(
+          appointmentId: appointmentId,
+          cancelledBy: who,
+          cancellationReason: cancellationReason,
+        );
+        if (res['ok'] == true) {
+          final idx = appointments.indexWhere((a) => a['_id'] == appointmentId);
+          if (idx != -1) {
+            appointments[idx]['status'] = 'cancelled';
+            appointments.refresh();
+          }
+          print('🔄 STATUS CHANGE SUCCESS (cancel)');
+          return true;
+        }
+      } else {
+        // احتياطي: استدعاء API العام إذا تم تمرير قيمة مختلفة
+        res = await _service.updateAppointmentStatus(
+          appointmentId: appointmentId,
+          status: newStatus,
+          notes: notes,
+          cancelledBy: who,
+          cancellationReason: cancellationReason,
+        );
+        if (res['ok'] == true) {
+          final idx = appointments.indexWhere((a) => a['_id'] == appointmentId);
+          if (idx != -1) {
+            appointments[idx]['status'] = newStatus;
+            appointments.refresh();
+          }
+          print('🔄 STATUS CHANGE SUCCESS (generic)');
+          return true;
+        }
       }
+
+      print('🔄 STATUS CHANGE FAILED: API returned ok=false');
+      print('🔄 Response: ${res}');
     } catch (e) {
-      print('Error changing status: $e');
+      print('🔄 STATUS CHANGE ERROR: $e');
     }
     return false;
   }

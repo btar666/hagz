@@ -162,17 +162,49 @@ class DoctorProfileController extends GetxController {
         opinions.value = data.map((item) {
           final Map<String, dynamic> m = item as Map<String, dynamic>;
           final user = (m['user'] as Map<String, dynamic>?);
+          final statusRaw = (m['stuats'] ?? m['status'] ?? '').toString().toLowerCase();
+          final bool published = statusRaw == 'puplish' || statusRaw == 'publish' || statusRaw == 'published' || (m['published'] == true);
+          // endpoint target/ يعيد المنشور فقط، لكن نبقي الحماية الاحتياطية
+          if (!published) return null;
           return {
+            '_id': m['_id']?.toString() ?? '',
             'patientName': user?['name']?.toString() ?? 'مستخدم',
             'rating': 5.0,
             'comment': m['comment']?.toString() ?? '',
             'date': m['createdAt']?.toString(),
             'avatar': 'assets/icons/home/doctor.png',
+            'published': published,
+          };
+        }).whereType<Map<String, dynamic>>().toList();
+      }
+    } catch (_) {
+      // ignore network errors silently
+    }
+  }
+
+  /// آراء الطبيب (كلها منشور/مخفي) - تتطلب توكن الطبيب
+  Future<void> loadMyOpinions() async {
+    try {
+      final res = await _opinionService.getDoctorOpinions();
+      if (res['ok'] == true) {
+        final List<dynamic> data = (res['data']?['data'] as List? ?? []);
+        opinions.value = data.map((item) {
+          final Map<String, dynamic> m = item as Map<String, dynamic>;
+          final user = (m['user'] as Map<String, dynamic>?);
+          final statusRaw = (m['stuats'] ?? m['status'] ?? '').toString().toLowerCase();
+          final bool published = statusRaw == 'puplish' || statusRaw == 'publish' || statusRaw == 'published' || (m['published'] == true);
+          return {
+            '_id': m['_id']?.toString() ?? '',
+            'patientName': user?['name']?.toString() ?? 'مستخدم',
+            'comment': m['comment']?.toString() ?? '',
+            'date': m['createdAt']?.toString(),
+            'avatar': 'assets/icons/home/doctor.png',
+            'published': published,
           };
         }).toList();
       }
     } catch (_) {
-      // ignore network errors silently
+      // ignore
     }
   }
 
@@ -435,19 +467,29 @@ class DoctorProfileController extends GetxController {
   }
 
   // Opinions mutations
-  void toggleOpinionPublished(int index) {
-    if (index >= 0 && index < opinions.length) {
-      final current = opinions[index];
+  Future<void> toggleOpinionPublished(int index) async {
+    if (index < 0 || index >= opinions.length) return;
+    final current = opinions[index];
+    final String id = (current['_id'] ?? '') as String;
+    if (id.isEmpty) return;
+    final bool isPublished = (current['published'] as bool? ?? false);
+    final String apiStatus = isPublished ? 'hidden' : 'puplish';
+    final res = await _opinionService.patchOpinionStatus(id: id, status: apiStatus);
+    if (res['ok'] == true) {
       opinions[index] = {
         ...current,
-        'published': !(current['published'] as bool? ?? false),
+        'published': !isPublished,
       };
       opinions.refresh();
     }
   }
 
-  void removeOpinionAt(int index) {
-    if (index >= 0 && index < opinions.length) {
+  Future<void> removeOpinionAt(int index) async {
+    if (index < 0 || index >= opinions.length) return;
+    final String id = (opinions[index]['_id'] ?? '') as String;
+    if (id.isEmpty) return;
+    final res = await _opinionService.deleteOpinion(id);
+    if (res['ok'] == true) {
       opinions.removeAt(index);
     }
   }

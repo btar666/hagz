@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'controller/main_controller.dart';
 import 'bindings/home_binding.dart';
 import 'utils/app_colors.dart';
@@ -52,6 +53,15 @@ class MedicalApp extends StatelessWidget {
           home: _resolveStartPage(),
           locale: const Locale('ar'),
           fallbackLocale: const Locale('ar'),
+          supportedLocales: const [
+            Locale('ar'),
+            Locale('en'),
+          ],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
           onInit: () {
             // Initialize controllers
             Get.put(MainController());

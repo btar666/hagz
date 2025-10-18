@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
 import '../../controller/past_appointments_controller.dart';
 import '../appointments/appointment_details_page.dart';
+import '../../controller/session_controller.dart';
 
 class PastAppointmentsPage extends StatelessWidget {
   const PastAppointmentsPage({super.key});
@@ -114,9 +115,11 @@ class PastAppointmentsPage extends StatelessWidget {
                   ),
                 ),
               ),
-              // Doctor date range filter
+              // Doctor/Secretary date range filter
               Obx(() {
-                if (!Get.find<PastAppointmentsController>().isDoctor) {
+                final role = Get.find<SessionController>().role.value;
+                final showFilter = role == 'doctor' || role == 'secretary';
+                if (!showFilter) {
                   return const SizedBox.shrink();
                 }
                 final c = Get.find<PastAppointmentsController>();
@@ -150,22 +153,10 @@ class PastAppointmentsPage extends StatelessWidget {
                             ),
                           ),
                         ),
-                        TextButton(
-                          onPressed: () async {
-                            final picked = await showDateRangePicker(
-                              context: context,
-                              firstDate: DateTime(2020),
-                              lastDate: DateTime.now().add(const Duration(days: 365)),
-                              initialDateRange: c.startDate.value != null && c.endDate.value != null
-                                  ? DateTimeRange(start: c.startDate.value!, end: c.endDate.value!)
-                                  : null,
-                              locale: const Locale('ar'),
-                            );
-                            if (picked != null) {
-                              c.setDateRange(picked.start, picked.end);
-                            }
-                          },
-                          child: const Text('تحديد الفترة'),
+                        TextButton.icon(
+                          onPressed: () => _showDateRangeFilterSheet(context),
+                          icon: const Icon(Icons.tune, color: AppColors.primary, size: 18),
+                          label: const Text('تحديد الفترة'),
                         ),
                       ],
                     ),
@@ -242,6 +233,7 @@ class PastAppointmentsPage extends StatelessWidget {
                             'phone': item['patientPhone'] ?? '—',
                             'date': _formatDate(date),
                             'price': price,
+                            'appointmentId': item['_id'],
                           };
 
                           Get.to(() => AppointmentDetailsPage(details: details));
@@ -324,31 +316,6 @@ class PastAppointmentsPage extends StatelessWidget {
                                   ),
                                 ],
                               ),
-
-                              // actions row (doctor): change status
-                              Obx(() {
-                                final c = Get.find<PastAppointmentsController>();
-                                if (!c.isDoctor) return const SizedBox.shrink();
-                                return Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: TextButton.icon(
-                                    onPressed: () => _showChangeStatusSheet(
-                                      context,
-                                      onPick: (status) async {
-                                        final ok = await c.changeStatus(
-                                          item['_id'] as String,
-                                          status,
-                                        );
-                                        if (!ok) {
-                                          Get.snackbar('فشل', 'تعذر تغيير الحالة');
-                                        }
-                                      },
-                                    ),
-                                    icon: const Icon(Icons.sync_alt, size: 18, color: AppColors.primary),
-                                    label: const Text('تغيير الحالة'),
-                                  ),
-                                );
-                              }),
                             ],
                           ),
                         ),
@@ -414,6 +381,223 @@ void _showChangeStatusSheet(BuildContext context, {required void Function(String
               const SizedBox(height: 8),
             ],
           ),
+        ),
+      );
+    },
+  );
+}
+
+void _showDateRangeFilterSheet(BuildContext context) {
+  final c = Get.find<PastAppointmentsController>();
+  DateTime tempStart = c.startDate.value ?? DateTime.now().subtract(const Duration(days: 30));
+  DateTime tempEnd = c.endDate.value ?? DateTime.now();
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (_) {
+      return Directionality(
+        textDirection: TextDirection.rtl,
+        child: StatefulBuilder(
+          builder: (context, setModalState) {
+            Widget _chip(String label, VoidCallback onTap) {
+              return GestureDetector(
+                onTap: onTap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.25)),
+                  ),
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontFamily: 'Expo Arabic',
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            Future<void> pickStart() async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: tempStart,
+                firstDate: DateTime(2020),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
+                locale: const Locale('ar'),
+              );
+              if (picked != null) {
+                setModalState(() {
+                  tempStart = picked;
+                  if (tempEnd.isBefore(tempStart)) tempEnd = tempStart;
+                });
+              }
+            }
+
+            Future<void> pickEnd() async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: tempEnd,
+                firstDate: DateTime(2020),
+                lastDate: DateTime.now().add(const Duration(days: 365)),
+                locale: const Locale('ar'),
+              );
+              if (picked != null) {
+                setModalState(() {
+                  tempEnd = picked;
+                  if (tempStart.isAfter(tempEnd)) tempStart = tempEnd;
+                });
+              }
+            }
+
+            void applyQuickRange(String key) {
+              final now = DateTime.now();
+              switch (key) {
+                case 'today':
+                  tempStart = DateTime(now.year, now.month, now.day);
+                  tempEnd = DateTime(now.year, now.month, now.day);
+                  break;
+                case 'last7':
+                  tempEnd = DateTime(now.year, now.month, now.day);
+                  tempStart = tempEnd.subtract(const Duration(days: 6));
+                  break;
+                case 'thisMonth':
+                  tempStart = DateTime(now.year, now.month, 1);
+                  tempEnd = now;
+                  break;
+                case 'lastMonth':
+                  final firstThisMonth = DateTime(now.year, now.month, 1);
+                  final lastMonthEnd = firstThisMonth.subtract(const Duration(days: 1));
+                  tempStart = DateTime(lastMonthEnd.year, lastMonthEnd.month, 1);
+                  tempEnd = DateTime(lastMonthEnd.year, lastMonthEnd.month, lastMonthEnd.day);
+                  break;
+                case 'last30':
+                  tempEnd = DateTime(now.year, now.month, now.day);
+                  tempStart = tempEnd.subtract(const Duration(days: 29));
+                  break;
+              }
+              setModalState(() {});
+            }
+
+            String fmt(DateTime d) => '${d.year}/${d.month}/${d.day}';
+
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 12,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.date_range, color: AppColors.primary),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'تحديد الفترة',
+                          style: TextStyle(
+                            fontFamily: 'Expo Arabic',
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _chip('اليوم', () => applyQuickRange('today')),
+                        _chip('آخر 7 أيام', () => applyQuickRange('last7')),
+                        _chip('هذا الشهر', () => applyQuickRange('thisMonth')),
+                        _chip('الشهر الماضي', () => applyQuickRange('lastMonth')),
+                        _chip('آخر 30 يوم', () => applyQuickRange('last30')),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.divider),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.login, color: AppColors.textSecondary),
+                              const SizedBox(width: 8),
+                              const Text('بداية الفترة', style: TextStyle(fontFamily: 'Expo Arabic', fontWeight: FontWeight.w700)),
+                              const Spacer(),
+                              TextButton(
+                                onPressed: pickStart,
+                                child: Text(fmt(tempStart)),
+                              ),
+                            ],
+                          ),
+                          const Divider(),
+                          Row(
+                            children: [
+                              const Icon(Icons.logout, color: AppColors.textSecondary),
+                              const SizedBox(width: 8),
+                              const Text('نهاية الفترة', style: TextStyle(fontFamily: 'Expo Arabic', fontWeight: FontWeight.w700)),
+                              const Spacer(),
+                              TextButton(
+                                onPressed: pickEnd,
+                                child: Text(fmt(tempEnd)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        OutlinedButton(
+                          onPressed: () {
+                            c.setDateRange(null, null);
+                            Navigator.pop(context);
+                          },
+                          child: const Text('مسح'),
+                        ),
+                        const Spacer(),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: () {
+                            c.setDateRange(tempStart, tempEnd);
+                            Navigator.pop(context);
+                          },
+                          child: const Text('تطبيق'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       );
     },

@@ -58,6 +58,19 @@ class ApiRequest {
     return _decode(res);
   }
 
+  Future<Map<String, dynamic>> patch(
+    String url,
+    Map<String, dynamic> body, {
+    Map<String, String>? headers,
+  }) async {
+    final res = await http.patch(
+      Uri.parse(url),
+      headers: _headers(extra: headers),
+      body: jsonEncode(body),
+    );
+    return _decode(res);
+  }
+
   Future<Map<String, dynamic>> delete(
     String url, {
     Map<String, String>? headers,

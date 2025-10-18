@@ -1012,7 +1012,12 @@ class DoctorProfileManagePage extends StatelessWidget {
       () => Column(
         children: [
           InkWell(
-            onTap: controller.toggleOpinionsExpansion,
+            onTap: () async {
+              controller.toggleOpinionsExpansion();
+              if (controller.isOpinionsExpanded.value) {
+                await controller.loadMyOpinions();
+              }
+            },
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
               child: Row(
@@ -1243,7 +1248,20 @@ class DoctorProfileManagePage extends StatelessWidget {
     final String comment = (item['comment'] ?? '') as String;
     final String? dateStr = item['date'] as String?;
     final bool published = (item['published'] as bool? ?? false);
-    final String timeAgo = _formatRelative(dateStr);
+    // عرض التاريخ فقط بدون الوقت
+    String dateOnly = '';
+    try {
+      if (dateStr != null && dateStr.isNotEmpty) {
+        final dt = DateTime.parse(dateStr);
+        dateOnly = _formatDate(dt);
+      }
+    } catch (_) {
+      if ((dateStr ?? '').contains('T')) {
+        dateOnly = (dateStr ?? '').split('T').first;
+      } else {
+        dateOnly = dateStr ?? '';
+      }
+    }
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 16.h),
@@ -1270,8 +1288,8 @@ class DoctorProfileManagePage extends StatelessWidget {
                           color: AppColors.textPrimary,
                         ),
                         MyText(
-                          '( $timeAgo )',
-                          fontSize: 16.sp,
+                          '( ${_formatRelative(dateStr)} )',
+                          fontSize: 14.sp,
                           fontWeight: FontWeight.w700,
                           color: AppColors.textSecondary,
                         ),
@@ -1385,6 +1403,11 @@ class DoctorProfileManagePage extends StatelessWidget {
     final p = path.trim();
     // Network URL
     if (p.startsWith('http://') || p.startsWith('https://')) {
+      final host = Uri.tryParse(p)?.host.toLowerCase() ?? '';
+      // Avoid providers that often block hotlinking (403), show local placeholder instead
+      if (host.contains('scontent') || host.contains('fbcdn') || host.contains('facebook.com')) {
+        return const AssetImage('assets/icons/home/doctor.png');
+      }
       return NetworkImage(p);
     }
     // Local file (Unix or Windows)
