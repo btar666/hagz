@@ -62,8 +62,12 @@ class ChatsPage extends StatelessWidget {
           final item = chats[i];
           return InkWell(
             borderRadius: BorderRadius.circular(16.r),
-            onTap: () =>
-                Get.to(() => ChatDetailsPage(title: item['name'] as String)),
+            onTap: () => Get.to(
+              () => ChatDetailsPage(title: item['name'] as String),
+              binding: BindingsBuilder(() {
+                // ChatDetailsPage لا يحتاج binding خاص
+              }),
+            ),
             child: Container(
               padding: EdgeInsets.symmetric(vertical: 14.h),
               child: Row(

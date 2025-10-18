@@ -48,7 +48,12 @@ class SettingsPage extends StatelessWidget {
                 title: 'إدارة حسابك الشخصي',
                 color: AppColors.secondary,
                 onTap: () {
-                  Get.to(() => DoctorProfileManagePage());
+                  Get.to(
+                    () => DoctorProfileManagePage(),
+                    binding: BindingsBuilder(() {
+                      // يمكن إضافة controller هنا إذا لزم الأمر
+                    }),
+                  );
                 },
               ),
               SizedBox(height: 16.h),
@@ -57,7 +62,12 @@ class SettingsPage extends StatelessWidget {
                 title: 'إدارة أوقات العمل',
                 color: AppColors.secondary,
                 onTap: () {
-                  Get.to(() => WorkingHoursPage());
+                  Get.to(
+                    () => WorkingHoursPage(),
+                    binding: BindingsBuilder(() {
+                      // يمكن إضافة WorkingHoursController هنا إذا لزم الأمر
+                    }),
+                  );
                 },
               ),
               SizedBox(height: 16.h),
@@ -66,7 +76,12 @@ class SettingsPage extends StatelessWidget {
                 title: 'إدارة العطل',
                 color: AppColors.secondary,
                 onTap: () {
-                  Get.to(() => HolidaysPage());
+                  Get.to(
+                    () => HolidaysPage(),
+                    binding: BindingsBuilder(() {
+                      // يمكن إضافة HolidaysController هنا إذا لزم الأمر
+                    }),
+                  );
                 },
               ),
               SizedBox(height: 16.h),
@@ -75,7 +90,12 @@ class SettingsPage extends StatelessWidget {
                 title: 'إدارة حسابات السكرتارية',
                 color: AppColors.secondary,
                 onTap: () {
-                  Get.to(() => const SecretaryAccountsPage());
+                  Get.to(
+                    () => const SecretaryAccountsPage(),
+                    binding: BindingsBuilder(() {
+                      // يمكن إضافة SecretaryAccountsController هنا إذا لزم الأمر
+                    }),
+                  );
                 },
               ),
               SizedBox(height: 16.h),
@@ -84,7 +104,12 @@ class SettingsPage extends StatelessWidget {
                 title: 'المواعيد السابقة',
                 color: AppColors.secondary,
                 onTap: () {
-                  Get.to(() => const PastAppointmentsPage());
+                  Get.to(
+                    () => const PastAppointmentsPage(),
+                    binding: BindingsBuilder(() {
+                      // يمكن إضافة PastAppointmentsController هنا إذا لزم الأمر
+                    }),
+                  );
                 },
               ),
               SizedBox(height: 16.h),
@@ -96,7 +121,12 @@ class SettingsPage extends StatelessWidget {
                 title: 'تعديل ملفك الشخصي',
                 color: AppColors.secondary,
                 onTap: () {
-                  Get.to(() => const UserProfileEditPage());
+                  Get.to(
+                    () => const UserProfileEditPage(),
+                    binding: BindingsBuilder(() {
+                      // يمكن إضافة UserProfileEditController هنا إذا لزم الأمر
+                    }),
+                  );
                 },
               ),
               SizedBox(height: 16.h),
@@ -117,7 +147,12 @@ class SettingsPage extends StatelessWidget {
                 title: 'المواعيد السابقة',
                 color: AppColors.secondary,
                 onTap: () {
-                  Get.to(() => const PastAppointmentsPage());
+                  Get.to(
+                    () => const PastAppointmentsPage(),
+                    binding: BindingsBuilder(() {
+                      // يمكن إضافة PastAppointmentsController هنا إذا لزم الأمر
+                    }),
+                  );
                 },
               ),
               SizedBox(height: 16.h),

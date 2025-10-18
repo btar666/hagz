@@ -8,6 +8,8 @@ import 'register_page.dart';
 import '../../controller/session_controller.dart';
 import '../../controller/auth_controller.dart';
 import '../delegate/delegate_terms_page.dart';
+import '../../bindings/delegate_terms_binding.dart';
+import '../../bindings/register_binding.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -192,9 +194,15 @@ class _LoginPageState extends State<LoginPage> {
                     final SessionController session =
                         Get.find<SessionController>();
                     if (session.role.value == 'delegate') {
-                      Get.to(() => const DelegateTermsPage());
+                      Get.to(
+                        () => const DelegateTermsPage(),
+                        binding: DelegateTermsBinding(),
+                      );
                     } else {
-                      Get.to(() => const RegisterPage());
+                      Get.to(
+                        () => const RegisterPage(),
+                        binding: RegisterBinding(),
+                      );
                     }
                   },
                   child: RichText(

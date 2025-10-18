@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 import '../home/doctors/doctor_profile_page.dart';
+import '../../bindings/doctor_profile_binding.dart';
 
 class SpecialtiesPage extends StatelessWidget {
   const SpecialtiesPage({Key? key}) : super(key: key);
@@ -136,6 +137,7 @@ class SpecialtiesPage extends StatelessWidget {
             doctorName: doctor.name,
             specialization: doctor.specialty,
           ),
+          binding: DoctorProfileBinding(),
         );
       },
       child: Container(

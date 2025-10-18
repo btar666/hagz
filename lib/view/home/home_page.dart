@@ -19,6 +19,9 @@ import '../../widget/doctors_filter_dialog.dart';
 import '../chat/chats_page.dart';
 import 'doctors/top_rated_doctors_page.dart';
 import 'doctors/doctor_profile_page.dart';
+import '../../bindings/chats_binding.dart';
+import '../../bindings/doctor_profile_binding.dart';
+import '../../bindings/complex_details_binding.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -54,7 +57,10 @@ class HomePage extends StatelessWidget {
                   children: [
                     // Chat icon
                     GestureDetector(
-                      onTap: () => Get.to(() => const ChatsPage()),
+                      onTap: () => Get.to(
+                        () => const ChatsPage(),
+                        binding: ChatsBinding(),
+                      ),
                       child: Container(
                         width: 48.w,
                         height: 48.w,
@@ -324,6 +330,7 @@ class HomePage extends StatelessWidget {
             doctorName: name,
             specialization: specialization.isEmpty ? '—' : specialization,
           ),
+          binding: DoctorProfileBinding(),
         );
       },
       child: Container(
@@ -505,6 +512,7 @@ class HomePage extends StatelessWidget {
             complexLocation:
                 _complexLocations[index % _complexLocations.length],
           ),
+          binding: ComplexDetailsBinding(),
         );
       },
       child: Container(
@@ -727,7 +735,12 @@ class HomePage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           GestureDetector(
-            onTap: () => Get.to(() => const TopRatedDoctorsPage()),
+            onTap: () => Get.to(
+              () => const TopRatedDoctorsPage(),
+              binding: BindingsBuilder(() {
+                // TopRatedDoctorsPage لا يحتاج controller خاص
+              }),
+            ),
             child: Container(
               padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 4.w),
               decoration: BoxDecoration(
@@ -835,6 +848,7 @@ Widget _buildTopRatedDoctorCardFromItem(Map<String, dynamic> item) {
           doctorName: name,
           specialization: specialty,
         ),
+        binding: DoctorProfileBinding(),
       );
     },
     child: Container(

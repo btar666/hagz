@@ -279,7 +279,12 @@ class _RegisterPageState extends State<RegisterPage> {
                 SizedBox(height: 20.h),
                 Center(
                   child: GestureDetector(
-                    onTap: () => Get.to(() => const LoginPage()),
+                    onTap: () => Get.to(
+                      () => const LoginPage(),
+                      binding: BindingsBuilder(() {
+                        // LoginPage لا يحتاج binding خاص
+                      }),
+                    ),
                     child: RichText(
                       text: TextSpan(
                         style: TextStyle(

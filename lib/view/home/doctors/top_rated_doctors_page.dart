@@ -6,6 +6,7 @@ import '../../../widget/my_text.dart';
 import '../../../widget/specialty_text.dart';
 import '../../../widget/doctors_filter_dialog.dart';
 import 'doctor_profile_page.dart';
+import '../../../bindings/doctor_profile_binding.dart';
 
 import '../../../service_layer/services/ratings_service.dart';
 
@@ -131,6 +132,7 @@ class _TopRatedDoctorsPageState extends State<TopRatedDoctorsPage> {
             doctorName: item['name'] ?? 'طبيب',
             specialization: item['specialty'] ?? '',
           ),
+          binding: DoctorProfileBinding(),
         );
       },
       child: Container(

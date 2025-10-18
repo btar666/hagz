@@ -34,7 +34,12 @@ class _UserTypeSelectionPageState extends State<UserTypeSelectionPage> {
         session.setRole('delegate');
         break;
     }
-    Get.to(() => const LoginPage());
+    Get.to(
+      () => const LoginPage(),
+      binding: BindingsBuilder(() {
+        // LoginPage لا يحتاج binding خاص
+      }),
+    );
   }
 
   @override
