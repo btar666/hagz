@@ -25,4 +25,8 @@ class ApiConstants {
   // Appointments
   static const String appointments = '$baseUrl/api/appointments';
   static const String patients = '$baseUrl/api/patients';
+  // Doctor Pricing
+  static const String doctorPricing = '$baseUrl/api/doctor-pricing';
+  // Ratings
+  static const String ratings = '$baseUrl/api/ratings';
 }

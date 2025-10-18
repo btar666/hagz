@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:hagz/view/home/hospital/hospital_details_page.dart';
 import 'package:hagz/view/home/complex/complex_details_page.dart';
 import '../../controller/main_controller.dart';
@@ -27,141 +28,149 @@ class HomePage extends StatelessWidget {
     final MainController controller = Get.find<MainController>();
     final HomeController home = Get.find<HomeController>();
 
+    // تأكد من تحديث البيانات عند العودة
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureDataRefresh(home);
+    });
+
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
-      body: Column(
-        children: [
-          // Top section with header and search
-          SafeArea(
-            child: Padding(
-              padding: EdgeInsets.all(16.w),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Chat icon
-                  GestureDetector(
-                    onTap: () => Get.to(() => const ChatsPage()),
-                    child: Container(
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () async {
+          await home.fetchDoctors(reset: true);
+          final hospitals = Get.find<HospitalsController>();
+          await hospitals.fetchHospitals();
+          await home.fetchTopRatedDoctors();
+        },
+        child: Column(
+          children: [
+            // Top section with header and search
+            SafeArea(
+              child: Padding(
+                padding: EdgeInsets.all(16.w),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Chat icon
+                    GestureDetector(
+                      onTap: () => Get.to(() => const ChatsPage()),
+                      child: Container(
+                        width: 48.w,
+                        height: 48.w,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(20.r),
+                        ),
+                        child: Center(
+                          child: Image.asset(
+                            'assets/icons/home/Message Icon.png',
+                            width: 24,
+                            height: 24,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.chat_bubble_outline,
+                                color: Colors.white,
+                                size: 22,
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 16.w),
+
+                    // Search bar (expanded to take remaining space)
+                    Expanded(
+                      child: SearchWidget(
+                        hint: 'ابحث عن طبيب أو مستشفى...',
+                        readOnly: true,
+                        onTap: () => Get.to(
+                          () => const SearchPage(),
+                          binding: SearchBinding(),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 16.w),
+
+                    // Profile avatar
+                    Container(
                       width: 48.w,
                       height: 48.w,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(20.r),
+                        shape: BoxShape.circle,
                       ),
-                      child: Center(
-                        child: Image.asset(
-                          'assets/icons/home/Message Icon.png',
-                          width: 24,
-                          height: 24,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.chat_bubble_outline,
-                              color: Colors.white,
-                              size: 22,
-                            );
-                          },
+                      child: const Icon(
+                        Icons.person,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Rest of the content (scrollable)
+            Expanded(
+              child: Column(
+                children: [
+                  // Scrollable content
+                  Expanded(
+                    child: SingleChildScrollView(
+                      controller: home.scrollController,
+                      child: Padding(
+                        padding: EdgeInsets.all(16.w),
+                        child: Column(
+                          children: [
+                            // Banner carousel section
+                            const BannerCarousel(),
+                            SizedBox(height: 20.h),
+
+                            // Top rated doctors section - يظهر فقط في تبويب الأطباء
+                            Obx(() {
+                              if (controller.homeTabIndex.value == 0) {
+                                return Column(
+                                  children: [
+                                    _buildTopRatedDoctorsSection(home),
+                                    SizedBox(height: 20.h),
+                                  ],
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            }),
+
+                            // Tab buttons (الكل)
+                            _buildTabHeader(),
+                            SizedBox(height: 20.h),
+
+                            // Content tabs (scrolls with whole page)
+                            Obx(() {
+                              final i = controller.homeTabIndex.value;
+                              if (i == 0) return _buildDoctorsTab(home);
+                              if (i == 1) return _buildHospitalsTab();
+                              return _buildMedicalCentersTab();
+                            }),
+                            SizedBox(
+                              height: 20.h,
+                            ), // Space before fixed bottom tabs
+                          ],
                         ),
                       ),
                     ),
                   ),
-                  SizedBox(width: 16.w),
-
-                  // Search bar (expanded to take remaining space)
-                  Expanded(
-                    child: SearchWidget(
-                      hint: 'ابحث عن طبيب أو مستشفى...',
-                      readOnly: true,
-                      onTap: () => Get.to(
-                        () => const SearchPage(),
-                        binding: SearchBinding(),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 16.w),
-
-                  // Profile avatar
+                  // Fixed bottom tab selector
                   Container(
-                    width: 48.w,
-                    height: 48.w,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.person,
-                      color: Colors.white,
-                      size: 28,
-                    ),
+                    padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 20.h),
+                    child: _buildBottomTabs(controller),
                   ),
                 ],
               ),
             ),
-          ),
-
-          // Rest of the content (scrollable)
-          Expanded(
-            child: Column(
-              children: [
-                // Scrollable content
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.w),
-                      child: Column(
-                        children: [
-                          // Banner carousel section
-                          const BannerCarousel(),
-                          SizedBox(height: 20.h),
-
-                          // Top rated doctors section - يظهر فقط في تبويب الأطباء
-                          Obx(() {
-                            if (controller.homeTabIndex.value == 0) {
-                              return Column(
-                                children: [
-                                  _buildTopRatedDoctorsSection(),
-                                  SizedBox(height: 20.h),
-                                ],
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          }),
-
-                          // Tab buttons (الكل)
-                          _buildTabHeader(),
-                          SizedBox(height: 20.h),
-
-                          // Content tabs
-                          SizedBox(
-                            height: 400.h,
-                            child: Obx(
-                              () => IndexedStack(
-                                index: controller.homeTabIndex.value,
-                                children: [
-                                  _buildDoctorsTab(home),
-                                  _buildHospitalsTab(),
-                                  _buildMedicalCentersTab(),
-                                ],
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            height: 20.h,
-                          ), // Space before fixed bottom tabs
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                // Fixed bottom tab selector
-                Container(
-                  padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 20.h),
-                  child: _buildBottomTabs(controller),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -191,55 +200,105 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildDoctorsTab(HomeController home) {
-    if (home.isLoadingDoctors.value) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
+    return Obx(() {
+      final items = home.doctors;
+      final isLoading = home.isLoadingDoctors.value;
+      
+      // Show skeleton when loading or no data
+      if (isLoading || items.isEmpty) {
+        return Skeletonizer(
+          enabled: true,
+          child: GridView.builder(
+            padding: EdgeInsets.zero,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12.w,
+              mainAxisSpacing: 12.h,
+              childAspectRatio: 178 / 247,
+            ),
+            itemCount: 6, // Show 6 skeleton cards
+            itemBuilder: (context, index) {
+              return _buildDoctorSkeletonCard();
+            },
+          ),
+        );
+      }
+      
+      // Show actual data
+      return GridView.builder(
+        padding: EdgeInsets.zero,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12.w,
+          mainAxisSpacing: 12.h,
+          childAspectRatio: 178 / 247,
+        ),
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          final doctor = items[index];
+          return _buildDoctorCardFromData(doctor);
+        },
       );
-    }
-    final items = home.doctors;
-    return GridView.builder(
-      padding: EdgeInsets.zero,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12.w,
-        mainAxisSpacing: 12.h,
-        childAspectRatio: 178 / 247,
-      ),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final doctor = items[index];
-        return _buildDoctorCardFromData(doctor);
-      },
-    );
+    });
   }
 
   Widget _buildHospitalsTab() {
     final HospitalsController hospitals = Get.find<HospitalsController>();
-    if (hospitals.isLoading.value) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
+    return Obx(() {
+      final items = hospitals.hospitals;
+      final isLoading = hospitals.isLoading.value;
+      
+      // Show skeleton when loading or no data
+      if (isLoading || items.isEmpty) {
+        return Skeletonizer(
+          enabled: true,
+          child: GridView.builder(
+            padding: EdgeInsets.zero,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12.w,
+              mainAxisSpacing: 12.h,
+              childAspectRatio: 178 / 209,
+            ),
+            itemCount: 6, // Show 6 skeleton cards
+            itemBuilder: (context, index) {
+              return _buildHospitalSkeletonCard();
+            },
+          ),
+        );
+      }
+      
+      // Show actual data
+      return GridView.builder(
+        padding: EdgeInsets.zero,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12.w,
+          mainAxisSpacing: 12.h,
+          childAspectRatio: 178 / 209,
+        ),
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          return _buildHospitalCardFromData(items[index]);
+        },
       );
-    }
-    final items = hospitals.hospitals;
-    return GridView.builder(
-      padding: EdgeInsets.zero,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12.w,
-        mainAxisSpacing: 12.h,
-        childAspectRatio: 178 / 209,
-      ),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        return _buildHospitalCardFromData(items[index]);
-      },
-    );
+    });
   }
 
   Widget _buildMedicalCentersTab() {
     // عرض المجمعات بقائمة منفصلة لكن بنفس تصميم المستشفيات وبنفس شبكة العرض
     return GridView.builder(
       padding: EdgeInsets.zero,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: 12.w,
@@ -518,210 +577,385 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildTopRatedDoctorsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        GestureDetector(
-          onTap: () => Get.to(() => const TopRatedDoctorsPage()),
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 4.w),
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(8.r)),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: MyText(
-                    'الأطباء الأعلى تقييماً',
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                    textAlign: TextAlign.start,
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  color: AppColors.textSecondary,
-                  size: 16.sp,
-                ),
-              ],
-            ),
+  
+  // Skeleton card for regular doctors grid
+  Widget _buildDoctorSkeletonCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-        ),
-        SizedBox(height: 16.h),
-        SizedBox(
-          height: 197.h, // ارتفاع محدد للكاردات العلوية
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 0),
-            physics: const BouncingScrollPhysics(),
-            itemCount: 8, // زيادة عدد الأطباء لضمان السكرول
-            separatorBuilder: (context, index) =>
-                SizedBox(width: 12.w), // مسافة موحدة بين جميع الكاردات
-            itemBuilder: (context, index) {
-              return SizedBox(
-                width: 137.w, // عرض محدد للكاردات العلوية
-                height: 197.h, // ارتفاع محدد
-                child: _buildTopRatedDoctorCard(index),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTopRatedDoctorCard(int index) {
-    final List<String> doctorNames = [
-      'د. آرين',
-      'د. صوفيا',
-      'د. سونجوز',
-      'د. مالوون',
-      'د. أحمد',
-      'د. فاطمة',
-      'د. خالد',
-      'د. مريم',
-    ];
-
-    final List<String> specialties = [
-      'جراحة القلب',
-      'طب العيون',
-      'جراحة القلب',
-      'جراحة العيون',
-      'طب الأسنان',
-      'طب الأطفال',
-      'جراحة العظام',
-      'طب الجلدية',
-    ];
-
-    return GestureDetector(
-      onTap: () {
-        // الانتقال إلى صفحة تفاصيل الطبيب
-        Get.to(
-          () => DoctorProfilePage(
-            doctorId: 'unknown',
-            doctorName: doctorNames[index],
-            specialization: specialties[index],
-          ),
-        );
-      },
-      child: Container(
-        width: double.infinity, // يملأ عرض الـ SizedBox المحدد
-        height: double.infinity, // يملأ ارتفاع الـ SizedBox المحدد
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.shadow,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(height: 5.h),
-            // Doctor image with rounded rectangle - مثل الكاردات السفلية
-            Center(
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(height: 8.h),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8.w),
+            child: AspectRatio(
+              aspectRatio: 1.0,
               child: Container(
-                width: 126.w, // عرض محدد للصورة
-                height: 135.h, // ارتفاع محدد للصورة
                 decoration: BoxDecoration(
                   color: AppColors.primaryLight,
                   borderRadius: BorderRadius.circular(16.r),
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16.r),
-                  child: Image.asset(
-                    'assets/icons/home/doctor.png',
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: double.infinity,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryLight,
-                          borderRadius: BorderRadius.circular(16.r),
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.person,
-                            color: AppColors.primary,
-                            size: 40,
-                          ),
-                        ),
+              ),
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Container(
+            height: 20.h,
+            width: 100.w,
+            color: Colors.white,
+          ),
+          SizedBox(height: 6.h),
+          Container(
+            height: 16.h,
+            width: 80.w,
+            color: Colors.white,
+          ),
+          const Spacer(),
+        ],
+      ),
+    );
+  }
+  
+  // Skeleton card for top-rated doctors
+  Widget _buildTopRatedDoctorSkeletonCard() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(height: 5.h),
+          Center(
+            child: Container(
+              width: 126.w,
+              height: 135.h,
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Container(
+            height: 18.h,
+            width: 80.w,
+            color: Colors.white,
+          ),
+          SizedBox(height: 6.h),
+          Container(
+            height: 14.h,
+            width: 90.w,
+            color: Colors.white,
+          ),
+          const Spacer(),
+        ],
+      ),
+    );
+  }
+  
+  // Skeleton card for hospitals
+  Widget _buildHospitalSkeletonCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(height: 8.h),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 9.w),
+            child: Container(
+              width: 155.w,
+              height: 140.h,
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Container(
+            height: 20.h,
+            width: 120.w,
+            color: Colors.white,
+          ),
+          SizedBox(height: 8.h),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopRatedDoctorsSection(HomeController home) {
+    return Obx(() {
+      final items = home.topRatedDoctors;
+      final isLoading = home.isLoadingTopRated.value;
+      
+      // إخفاء القسم تماماً إذا لم يكن هناك تحميل ولا بيانات
+      if (!isLoading && items.isEmpty) return const SizedBox.shrink();
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: () => Get.to(() => const TopRatedDoctorsPage()),
+            child: Container(
+              padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 4.w),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: MyText(
+                      'الأطباء الأعلى تقييماً',
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                      textAlign: TextAlign.start,
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    color: AppColors.textSecondary,
+                    size: 16.sp,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: 16.h),
+          SizedBox(
+            height: 197.h,
+            child: isLoading || items.isEmpty
+                ? Skeletonizer(
+                    enabled: true,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: EdgeInsets.zero,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: 4, // Show 4 skeleton cards
+                      separatorBuilder: (context, index) => SizedBox(width: 12.w),
+                      itemBuilder: (context, index) {
+                        return SizedBox(
+                          width: 137.w,
+                          height: 197.h,
+                          child: _buildTopRatedDoctorSkeletonCard(),
+                        );
+                      },
+                    ),
+                  )
+                : ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: EdgeInsets.zero,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: items.length,
+                    separatorBuilder: (context, index) => SizedBox(width: 12.w),
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+                      return SizedBox(
+                        width: 137.w,
+                        height: 197.h,
+                        child: _buildTopRatedDoctorCardFromItem(item),
                       );
                     },
                   ),
+          ),
+        ],
+      );
+    });
+  }
+}
+
+Widget _buildTopRatedDoctorCardFromItem(Map<String, dynamic> item) {
+  final String doctorId = (item['doctorId'] ?? '').toString();
+  final String name = (item['name'] ?? 'طبيب').toString();
+  final String specialty = (item['specialty'] ?? '').toString();
+  final double avg = (item['avg'] ?? 0.0) is num
+      ? (item['avg'] as num).toDouble()
+      : 0.0;
+  final int count = (item['count'] ?? 0) is num
+      ? (item['count'] as num).toInt()
+      : 0;
+  'د. آرين';
+  'د. صوفيا';
+  'د. سونجوز';
+  'د. مالوون';
+  'د. أحمد';
+  'د. فاطمة';
+  'د. خالد';
+  'د. مريم';
+
+  final List<String> specialties = [
+    'جراحة القلب',
+    'طب العيون',
+    'جراحة القلب',
+    'جراحة العيون',
+    'طب الأسنان',
+    'طب الأطفال',
+    'جراحة العظام',
+    'طب الجلدية',
+  ];
+
+  return GestureDetector(
+    onTap: () {
+      Get.to(
+        () => DoctorProfilePage(
+          doctorId: doctorId,
+          doctorName: name,
+          specialization: specialty,
+        ),
+      );
+    },
+    child: Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(height: 5.h),
+          Center(
+            child: Container(
+              width: 126.w,
+              height: 135.h,
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight,
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16.r),
+                child: Image.asset(
+                  'assets/icons/home/doctor.png',
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(16.r),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.person,
+                          color: AppColors.primary,
+                          size: 40,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
-            SizedBox(height: 8.h),
-            // Doctor name
-            MyText(
-              doctorNames[index],
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(height: 6.h), // زيادة المسافة بين الاسم والتخصص
-            // Specialty
-            SpecialtyText(
-              specialties[index],
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const Spacer(),
-          ],
-        ),
+          ),
+          SizedBox(height: 8.h),
+          MyText(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+          SizedBox(height: 6.h),
+          SpecialtyText(
+            specialty,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const Spacer(),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget _buildBottomTabs(MainController controller) {
-    final List<String> tabLabels = ['أطباء', 'مستشفيات', 'مجمعات'];
+Widget _buildBottomTabs(MainController controller) {
+  final List<String> tabLabels = ['أطباء', 'مستشفيات', 'مجمعات'];
 
-    return Obx(
-      () => Container(
-        height: 50.h,
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFFFFF), // أبيض
-          borderRadius: BorderRadius.circular(25.r),
-        ),
-        child: Row(
-          children: List.generate(3, (index) {
-            final isSelected = controller.homeTabIndex.value == index;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () => controller.changeHomeTab(index),
-                child: Container(
-                  height: 50.h,
-                  decoration: isSelected
-                      ? BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(25.r),
-                        )
-                      : null,
-                  child: Center(
-                    child: MyText(
-                      tabLabels[index],
-                      fontFamily: 'Expo Arabic',
-                      fontWeight: FontWeight.w600, // SemiBold
-                      fontSize: 16.sp,
-                      height: 1.0, // line-height: 100%
-                      letterSpacing: 0, // letter-spacing: 0%
-                      color: isSelected ? Colors.white : AppColors.primary,
-                      textAlign: TextAlign.right,
-                    ),
+  return Obx(
+    () => Container(
+      height: 50.h,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFFFF), // أبيض
+        borderRadius: BorderRadius.circular(25.r),
+      ),
+      child: Row(
+        children: List.generate(3, (index) {
+          final isSelected = controller.homeTabIndex.value == index;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => controller.changeHomeTab(index),
+              child: Container(
+                height: 50.h,
+                decoration: isSelected
+                    ? BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(25.r),
+                      )
+                    : null,
+                child: Center(
+                  child: MyText(
+                    tabLabels[index],
+                    fontFamily: 'Expo Arabic',
+                    fontWeight: FontWeight.w600, // SemiBold
+                    fontSize: 16.sp,
+                    height: 1.0, // line-height: 100%
+                    letterSpacing: 0, // letter-spacing: 0%
+                    color: isSelected ? Colors.white : AppColors.primary,
+                    textAlign: TextAlign.right,
                   ),
                 ),
               ),
-            );
-          }),
-        ),
+            ),
+          );
+        }),
       ),
-    );
-  }
+    ),
+  );
+}
+
+Future<void> _ensureDataRefresh(HomeController home) async {
+  try {
+    if (home.doctors.isEmpty && !home.isLoadingDoctors.value) {
+      await home.fetchDoctors(reset: true);
+    }
+    if (home.topRatedDoctors.isEmpty && !home.isLoadingTopRated.value) {
+      await home.fetchTopRatedDoctors();
+    }
+  } catch (_) {}
 }

@@ -7,37 +7,52 @@ import '../../../widget/specialty_text.dart';
 import '../../../widget/doctors_filter_dialog.dart';
 import 'doctor_profile_page.dart';
 
-class TopRatedDoctorsPage extends StatelessWidget {
+import '../../../service_layer/services/ratings_service.dart';
+
+class TopRatedDoctorsPage extends StatefulWidget {
   const TopRatedDoctorsPage({super.key});
 
   @override
+  State<TopRatedDoctorsPage> createState() => _TopRatedDoctorsPageState();
+}
+
+class _TopRatedDoctorsPageState extends State<TopRatedDoctorsPage> {
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _items = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTopDoctors();
+  }
+
+  Future<void> _loadTopDoctors() async {
+    setState(() => _isLoading = true);
+    try {
+      final service = RatingsService();
+      final res = await service.getTopDoctors(page: 1, limit: 20);
+      if (res['ok'] == true) {
+        final data = res['data'];
+        final list = (data is Map && data['data'] is List) ? data['data'] as List : (data as List? ?? []);
+        _items = list.map<Map<String, dynamic>>((e) {
+          final m = e as Map<String, dynamic>;
+          return {
+            'doctorId': m['_id']?.toString() ?? '',
+            'name': m['name']?.toString() ?? '',
+            'specialty': m['specialization']?.toString() ?? '',
+            'avg': (m['averageRating'] is num) ? (m['averageRating'] as num).toDouble() : 0.0,
+            'count': (m['totalRatings'] is num) ? (m['totalRatings'] as num).toInt() : 0,
+          };
+        }).toList();
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final List<String> doctorNames = [
-      'آرين',
-      'مالوون',
-      'نهاد',
-      'أيكورت',
-      'د. أحمد',
-      'د. فاطمة',
-      'د. خالد',
-      'د. مريم',
-      'د. محمد',
-      'د. سارة',
-    ];
-
-    final List<String> specialties = [
-      'جراحة الفم',
-      'جراحة العيون',
-      'جراحة الفم',
-      'جراحة الفم',
-      'طب الأسنان',
-      'طب الأطفال',
-      'جراحة العظام',
-      'طب الجلدية',
-      'طب القلب',
-      'طب النساء',
-    ];
-
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
       appBar: AppBar(
@@ -88,37 +103,33 @@ class TopRatedDoctorsPage extends StatelessWidget {
       ),
       body: Padding(
         padding: EdgeInsets.all(16.w),
-        child: GridView.builder(
-          physics: const BouncingScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12.w,
-            mainAxisSpacing: 12.h,
-            childAspectRatio:
-                178 / 247, // نفس نسبة كاردات الأطباء في الصفحة الرئيسية
-          ),
-          itemCount: doctorNames.length,
-          itemBuilder: (context, index) {
-            return _buildDoctorCard(index, doctorNames, specialties);
-          },
-        ),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : GridView.builder(
+                physics: const BouncingScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12.w,
+                  mainAxisSpacing: 12.h,
+                  childAspectRatio: 178 / 247,
+                ),
+                itemCount: _items.length,
+                itemBuilder: (context, index) {
+                  return _buildDoctorCard(_items[index]);
+                },
+              ),
       ),
     );
   }
 
-  Widget _buildDoctorCard(
-    int index,
-    List<String> doctorNames,
-    List<String> specialties,
-  ) {
+  Widget _buildDoctorCard(Map<String, dynamic> item) {
     return GestureDetector(
       onTap: () {
-        // الانتقال إلى صفحة تفاصيل الطبيب
         Get.to(
           () => DoctorProfilePage(
-            doctorId: 'unknown',
-            doctorName: doctorNames[index],
-            specialization: specialties[index],
+            doctorId: item['doctorId'] ?? '',
+            doctorName: item['name'] ?? 'طبيب',
+            specialization: item['specialty'] ?? '',
           ),
         );
       },
@@ -138,59 +149,36 @@ class TopRatedDoctorsPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             SizedBox(height: 8.h),
-            // Doctor image with rounded rectangle
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 8.w),
               child: AspectRatio(
-                aspectRatio: 1.0, // Perfect square
+                aspectRatio: 1.0,
                 child: Container(
                   decoration: BoxDecoration(
                     color: AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(16.r),
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16.r),
-                    child: Image.asset(
-                      'assets/icons/home/doctor.png',
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryLight,
-                            borderRadius: BorderRadius.circular(16.r),
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.person,
-                              color: AppColors.primary,
-                              size: 40,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                  child: const Center(
+                    child: Icon(Icons.person, color: AppColors.primary, size: 40),
                   ),
                 ),
               ),
             ),
             SizedBox(height: 8.h),
-            // Doctor name
             MyText(
-              doctorNames[index],
+              item['name'] ?? 'طبيب',
               fontSize: 15.sp,
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             SizedBox(height: 6.h),
-            // Specialty
             SpecialtyText(
-              specialties[index],
+              (item['specialty'] ?? '').toString(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+            SizedBox(height: 6.h),
             const Spacer(),
           ],
         ),

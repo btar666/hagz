@@ -6,6 +6,7 @@ import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 import '../../controller/past_appointments_controller.dart';
 import '../../controller/session_controller.dart';
+import '../../service_layer/services/ratings_service.dart';
 
 class AppointmentDetailsPage extends StatefulWidget {
   final Map<String, dynamic> details;
@@ -18,6 +19,13 @@ class AppointmentDetailsPage extends StatefulWidget {
 class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
   late String _statusText;
   late Color _statusColor;
+
+  // Ratings state
+  bool _isLoadingRating = false;
+  bool _triedLoadRating = false;
+  String? _ratingId;
+  int? _ratingValue; // 1..5
+  String? _ratingComment;
 
   Color statusColor(String s) {
     switch (s) {
@@ -46,6 +54,28 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
     _statusColor = (widget.details['statusColor'] as Color?) ?? statusColor(_statusText);
   }
 
+  Future<void> _loadAppointmentRating(String appointmentId) async {
+    if (appointmentId.isEmpty) return;
+    setState(() => _isLoadingRating = true);
+    try {
+      final service = RatingsService();
+      final res = await service.getByAppointment(appointmentId);
+      if (res['ok'] == true) {
+        final data = res['data'];
+        if (data is Map<String, dynamic>) {
+          final obj = data['data'] is Map<String, dynamic> ? data['data'] as Map<String, dynamic> : data as Map<String, dynamic>;
+          _ratingId = obj['_id']?.toString();
+          final num? r = obj['rating'] as num?;
+          _ratingValue = r?.toInt();
+          _ratingComment = obj['comment']?.toString();
+        }
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _isLoadingRating = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final String patient = (widget.details['patient'] ?? 'اسم المريض') as String;
@@ -66,6 +96,16 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
     final pastCtrl = Get.isRegistered<PastAppointmentsController>()
         ? Get.find<PastAppointmentsController>()
         : Get.put(PastAppointmentsController());
+
+    // تحميل التقييم مرة واحدة فقط عند الدخول
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_triedLoadRating) return;
+      final role = Get.find<SessionController>().role.value;
+      if (role == 'user' && _statusText == 'مكتمل' && appointmentId.isNotEmpty) {
+        _triedLoadRating = true;
+        _loadAppointmentRating(appointmentId);
+      }
+    });
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -134,6 +174,11 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
                     ],
                   ),
                 ),
+
+                SizedBox(height: 16.h),
+
+                // Ratings card (user only when completed)
+                if (role == 'user' && _statusText == 'مكتمل') _buildRatingsCard(appointmentId: appointmentId, doctorId: (widget.details['doctorId'] ?? '') as String),
 
                 SizedBox(height: 16.h),
 
@@ -301,5 +346,298 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
   }
 
   String _formatDate(DateTime dt) => '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
+  Widget _buildRatingsCard({required String appointmentId, required String doctorId}) {
+    return _infoCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              MyText(
+                'تقييم الموعد',
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+              if (_isLoadingRating)
+                const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          if (_ratingId != null && _ratingValue != null) ...[
+            Container(
+              padding: EdgeInsets.symmetric(vertical: 8.h),
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: _starsRow(_ratingValue!),
+            ),
+            if ((_ratingComment ?? '').isNotEmpty) ...[
+              SizedBox(height: 10.h),
+              MyText(
+                _ratingComment!,
+                fontSize: 14.sp,
+                color: AppColors.textSecondary,
+                textAlign: TextAlign.right,
+              ),
+            ],
+            SizedBox(height: 14.h),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => _openRatingDialog(
+                      appointmentId: appointmentId,
+                      doctorId: doctorId,
+                      initialRating: _ratingValue!,
+                      initialComment: _ratingComment ?? '',
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.primary, width: 1.5),
+                      foregroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                    ),
+                    child: MyText(
+                      'تعديل التقييم',
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      final ok = await _deleteRating();
+                      if (ok) {
+                        setState(() {
+                          _ratingId = null;
+                          _ratingValue = null;
+                          _ratingComment = null;
+                        });
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFFF3B30), width: 1.5),
+                      foregroundColor: const Color(0xFFFF3B30),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                    ),
+                    child: MyText(
+                      'حذف',
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFFFF3B30),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            SizedBox(
+              height: 52.h,
+              child: ElevatedButton(
+                onPressed: _isLoadingRating ? null : () => _openRatingDialog(appointmentId: appointmentId, doctorId: doctorId),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+                  elevation: 0,
+                ),
+                child: MyText(
+                  'قيّم هذا الموعد',
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _starsRow(int rating, {void Function(int)? onTap}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(5, (i) {
+        final filled = i < rating;
+        return GestureDetector(
+          onTap: onTap == null ? null : () => onTap(i + 1),
+          child: Icon(
+            filled ? Icons.star_rounded : Icons.star_border_rounded,
+            color: const Color(0xFFFFB800),
+            size: 28.r,
+          ),
+        );
+      }),
+    );
+  }
+
+  Future<void> _openRatingDialog({
+    required String appointmentId,
+    required String doctorId,
+    int initialRating = 5,
+    String initialComment = '',
+  }) async {
+    final ratingCtrl = ValueNotifier<int>(initialRating);
+    final TextEditingController commentCtrl = TextEditingController(text: initialComment);
+    await Get.dialog(
+      Dialog(
+        insetPadding: EdgeInsets.symmetric(horizontal: 24.w),
+        backgroundColor: const Color(0xFFF4FEFF),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 16.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Icon(Icons.star_rounded, color: AppColors.primary, size: 48.r),
+              ),
+              SizedBox(height: 10.h),
+              MyText(
+                'تقييم الموعد',
+                fontSize: 20.sp,
+                fontWeight: FontWeight.w900,
+                color: AppColors.primary,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 12.h),
+              ValueListenableBuilder<int>(
+                valueListenable: ratingCtrl,
+                builder: (_, value, __) => _starsRow(value, onTap: (v) => ratingCtrl.value = v),
+              ),
+              SizedBox(height: 12.h),
+              TextField(
+                controller: commentCtrl,
+                maxLines: 4,
+                textAlign: TextAlign.right,
+                decoration: InputDecoration(
+                  hintText: 'أضف تعليقك (اختياري)',
+                  hintStyle: TextStyle(
+                    color: AppColors.textLight,
+                    fontFamily: 'Expo Arabic',
+                    fontSize: 14.sp,
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                    borderSide: BorderSide(color: AppColors.divider),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                  ),
+                ),
+              ),
+              SizedBox(height: 14.h),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Get.back(),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.primary, width: 1.5),
+                        foregroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                      ),
+                      child: MyText('إلغاء', fontSize: 16.sp, fontWeight: FontWeight.w800, color: AppColors.primary),
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        final int r = ratingCtrl.value.clamp(1, 5);
+                        final String c = commentCtrl.text.trim();
+                        Get.back();
+                        await _saveRating(appointmentId: appointmentId, doctorId: doctorId, rating: r, comment: c);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        elevation: 0,
+                      ),
+                      child: MyText('حفظ', fontSize: 16.sp, fontWeight: FontWeight.w900, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  Future<bool> _saveRating({
+    required String appointmentId,
+    required String doctorId,
+    required int rating,
+    String? comment,
+  }) async {
+    try {
+      final service = RatingsService();
+      Map<String, dynamic> res;
+      if (_ratingId == null) {
+        res = await service.createRating(appointmentId: appointmentId, rating: rating, comment: comment);
+      } else {
+        res = await service.updateRating(id: _ratingId!, rating: rating, comment: comment);
+      }
+      if (res['ok'] == true) {
+        // إعادة الحساب للطبيب
+        await service.recalcDoctor(doctorId);
+        setState(() {
+          _ratingId = res['data']?['data']?['_id']?.toString() ?? _ratingId;
+          _ratingValue = rating;
+          _ratingComment = comment;
+        });
+        Get.snackbar('تم', 'تم حفظ تقييمك بنجاح');
+        return true;
+      } else {
+        Get.snackbar('خطأ', res['data']?['message']?.toString() ?? 'تعذر حفظ التقييم');
+        return false;
+      }
+    } catch (e) {
+      Get.snackbar('خطأ', 'تعذر حفظ التقييم');
+      return false;
+    }
+  }
+
+  Future<bool> _deleteRating() async {
+    if (_ratingId == null) return true;
+    try {
+      final service = RatingsService();
+      final res = await service.deleteRating(_ratingId!);
+      if (res['ok'] == true) {
+        Get.snackbar('تم', 'تم حذف التقييم');
+        return true;
+      }
+      Get.snackbar('خطأ', res['data']?['message']?.toString() ?? 'تعذر حذف التقييم');
+      return false;
+    } catch (e) {
+      Get.snackbar('خطأ', 'تعذر حذف التقييم');
+      return false;
+    }
+  }
 }
 

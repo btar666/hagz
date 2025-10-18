@@ -38,6 +38,12 @@ class DoctorProfileManagePage extends StatelessWidget {
     );
     // Prefill CV from server if exists
     controller.fetchMyCvIfAny();
+    // تحميل سعر الحجز الحالي
+    final session = Get.find<SessionController>();
+    final String? userId = session.currentUser.value?.id;
+    if (userId != null && userId.isNotEmpty) {
+      controller.loadDoctorPricing(userId);
+    }
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
       body: SafeArea(
@@ -510,6 +516,7 @@ class DoctorProfileManagePage extends StatelessWidget {
           _bioManageTile(),
           _addressManageTile(),
           _opinionsManageTile(),
+          _pricingManageTile(),
           _availabilityManageTile(),
           _sequenceManageTile(),
           _casesManageTile(),
@@ -1075,6 +1082,216 @@ class DoctorProfileManagePage extends StatelessWidget {
           Divider(color: AppColors.divider, height: 1),
         ],
       ),
+    );
+  }
+
+  // Pricing manage tile
+  Widget _pricingManageTile() {
+    final controller = Get.find<DoctorProfileController>();
+    final TextEditingController priceCtrl = TextEditingController();
+
+    return Obx(
+      () => Column(
+        children: [
+          InkWell(
+            onTap: () {
+              controller.toggleInsuranceExpansion();
+              // تحميل السعر إلى الحقل عند الفتح
+              if (controller.defaultPrice.value > 0) {
+                priceCtrl.text = controller.defaultPrice.value.toStringAsFixed(0);
+              }
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: MyText(
+                      'سعر الحجز',
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  AnimatedRotation(
+                    turns: controller.isInsuranceExpanded.value ? 0.5 : 0.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: const Icon(
+                      Icons.expand_more,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 250),
+            crossFadeState: controller.isInsuranceExpanded.value
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            firstChild: const SizedBox.shrink(),
+            secondChild: Padding(
+              padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+              child: _pricingEditContent(controller, priceCtrl),
+            ),
+          ),
+          Divider(color: AppColors.divider, height: 1),
+        ],
+      ),
+    );
+  }
+
+  Widget _pricingEditContent(
+    DoctorProfileController controller,
+    TextEditingController priceCtrl,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        MyText(
+          'حدد سعر الحجز للمرضى',
+          fontSize: 16.sp,
+          fontWeight: FontWeight.w700,
+          color: AppColors.textPrimary,
+          textAlign: TextAlign.center,
+        ),
+        SizedBox(height: 16.h),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: AppColors.divider),
+          ),
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+          child: Row(
+            children: [
+              Obx(() => MyText(
+                controller.currency.value,
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+              )),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: TextField(
+                  controller: priceCtrl,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Expo Arabic',
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18.sp,
+                    color: AppColors.textPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'أدخل السعر',
+                    hintStyle: TextStyle(
+                      fontFamily: 'Expo Arabic',
+                      color: AppColors.textLight,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.attach_money,
+                color: AppColors.primary,
+                size: 24.r,
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 16.h),
+        SizedBox(
+          height: 56.h,
+          child: ElevatedButton(
+            onPressed: () async {
+              final text = priceCtrl.text.trim();
+              if (text.isEmpty) {
+                Get.snackbar(
+                  'خطأ',
+                  'يرجى إدخال السعر',
+                  backgroundColor: const Color(0xFFFF3B30),
+                  colorText: Colors.white,
+                );
+                return;
+              }
+              final double? price = double.tryParse(text);
+              if (price == null || price <= 0) {
+                Get.snackbar(
+                  'خطأ',
+                  'يرجى إدخال سعر صحيح',
+                  backgroundColor: const Color(0xFFFF3B30),
+                  colorText: Colors.white,
+                );
+                return;
+              }
+              final session = Get.find<SessionController>();
+              final String? userId = session.currentUser.value?.id;
+              if (userId == null || userId.isEmpty) {
+                Get.snackbar(
+                  'خطأ',
+                  'يرجى تسجيل الدخول',
+                  backgroundColor: const Color(0xFFFF3B30),
+                  colorText: Colors.white,
+                );
+                return;
+              }
+              await LoadingDialog.show(message: 'جاري الحفظ...');
+              try {
+                final res = await controller.saveOrUpdatePricing(
+                  doctorId: userId,
+                  price: price,
+                  curr: controller.currency.value,
+                );
+                LoadingDialog.hide();
+                if (res['ok'] == true) {
+                  await showStatusDialog(
+                    title: 'تم الحفظ',
+                    message: 'تم حفظ سعر الحجز بنجاح',
+                    color: AppColors.primary,
+                    icon: Icons.check_circle_outline,
+                  );
+                } else {
+                  await showStatusDialog(
+                    title: 'فشل الحفظ',
+                    message: res['data']?['message']?.toString() ??
+                        'تعذر حفظ السعر',
+                    color: const Color(0xFFFF3B30),
+                    icon: Icons.error_outline,
+                  );
+                }
+              } catch (e) {
+                LoadingDialog.hide();
+                await showStatusDialog(
+                  title: 'خطأ',
+                  message: 'حدث خطأ غير متوقع',
+                  color: const Color(0xFFFF3B30),
+                  icon: Icons.error_outline,
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              elevation: 0,
+            ),
+            child: MyText(
+              'حفظ السعر',
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

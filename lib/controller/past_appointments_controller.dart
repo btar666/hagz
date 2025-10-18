@@ -123,6 +123,15 @@ class PastAppointmentsController extends GetxController {
                 if (parsed != null) appointmentSequence = parsed;
               }
 
+              // استخراج doctorId من العنصر الخام
+              String doctorId = '';
+              final rawDoctor = item['doctor'];
+              if (rawDoctor is Map<String, dynamic>) {
+                doctorId = rawDoctor['_id']?.toString() ?? '';
+              } else if (rawDoctor != null) {
+                doctorId = rawDoctor.toString();
+              }
+
               final result = {
                 'title': title,
                 'date': appointmentDate,
@@ -136,6 +145,7 @@ class PastAppointmentsController extends GetxController {
                 'patientPhone': patientPhone,
                 'patientAge': patientAge,
                 'appointmentSequence': appointmentSequence,
+                'doctorId': doctorId,
               };
 
               return result;

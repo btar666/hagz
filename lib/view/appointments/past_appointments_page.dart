@@ -234,6 +234,7 @@ class PastAppointmentsPage extends StatelessWidget {
                             'date': _formatDate(date),
                             'price': price,
                             'appointmentId': item['_id'],
+                            'doctorId': item['doctorId'] ?? '',
                           };
 
                           Get.to(() => AppointmentDetailsPage(details: details));

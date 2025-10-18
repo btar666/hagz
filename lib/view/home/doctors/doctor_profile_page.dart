@@ -29,6 +29,7 @@ class DoctorProfilePage extends StatelessWidget {
     // Load opinions and read-only CV for this doctor
     controller.loadOpinionsForTarget(doctorId);
     controller.loadCvForUserId(doctorId);
+    controller.loadDoctorPricing(doctorId);
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -342,6 +343,15 @@ class DoctorProfilePage extends StatelessWidget {
             ),
             const Divider(height: 1, thickness: 1),
             _buildExpandableSection(
+              title: 'سعر الحجز',
+              isExpanded: controller.isInsuranceExpanded,
+              onToggle: controller.toggleInsuranceExpansion,
+              content: _buildPricingContent(controller),
+              isFirst: false,
+              isLast: false,
+            ),
+            const Divider(height: 1, thickness: 1),
+            _buildExpandableSection(
               title: 'صور لحالات تمت معالجتها',
               isExpanded: controller.isCasesExpanded,
               onToggle: controller.toggleCasesExpansion,
@@ -352,8 +362,8 @@ class DoctorProfilePage extends StatelessWidget {
             const Divider(height: 1, thickness: 1),
             _buildExpandableSection(
               title: 'طلب سيارة أجرة',
-              isExpanded: controller.isInsuranceExpanded,
-              onToggle: controller.toggleInsuranceExpansion,
+              isExpanded: controller.isAvailabilityExpanded,
+              onToggle: controller.toggleAvailabilityExpansion,
               content: _buildInsuranceContent(controller),
               isFirst: false,
               isLast: true,
@@ -1010,6 +1020,67 @@ class DoctorProfilePage extends StatelessWidget {
     } catch (_) {
       return iso.contains('T') ? iso.split('T').first : iso;
     }
+  }
+
+  Widget _buildPricingContent(DoctorProfileController controller) {
+    return Obx(() {
+      if (controller.isLoadingPricing.value) {
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: CircularProgressIndicator(),
+          ),
+        );
+      }
+
+      if (controller.defaultPrice.value == 0.0) {
+        return Padding(
+          padding: EdgeInsets.all(16.w),
+          child: MyText(
+            'لم يتم تحديد سعر الحجز بعد',
+            fontSize: 14.sp,
+            color: AppColors.textSecondary,
+            textAlign: TextAlign.center,
+          ),
+        );
+      }
+
+      return Container(
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: AppColors.primaryLight.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            MyText(
+              'سعر الحجز:',
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+            Row(
+              children: [
+                MyText(
+                  controller.defaultPrice.value.toStringAsFixed(0),
+                  fontSize: 24.sp,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+                SizedBox(width: 6.w),
+                MyText(
+                  controller.currency.value,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildInsuranceContent(DoctorProfileController controller) {

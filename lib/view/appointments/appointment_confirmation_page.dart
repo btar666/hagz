@@ -7,6 +7,7 @@ import '../../widget/my_text.dart';
 import '../../widget/loading_dialog.dart';
 import '../../widget/status_dialog.dart';
 import 'appointment_success_page.dart';
+import '../../service_layer/services/doctor_pricing_service.dart';
 
 class CircularProgressPainter extends CustomPainter {
   final double progress; // 0..1
@@ -70,7 +71,7 @@ class CircularProgressPainter extends CustomPainter {
   bool shouldRepaint(CustomPainter oldDelegate) => true;
 }
 
-class AppointmentConfirmationPage extends StatelessWidget {
+class AppointmentConfirmationPage extends StatefulWidget {
   final String doctorId;
   final String doctorName;
   final String doctorSpecialty;
@@ -93,6 +94,43 @@ class AppointmentConfirmationPage extends StatelessWidget {
     required this.appointmentDate,
     required this.appointmentTime,
   }) : super(key: key);
+
+  @override
+  State<AppointmentConfirmationPage> createState() => _AppointmentConfirmationPageState();
+}
+
+class _AppointmentConfirmationPageState extends State<AppointmentConfirmationPage> {
+  double? _price;
+  String _currency = 'IQ';
+  bool _isLoadingPrice = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPricing();
+  }
+
+  Future<void> _loadPricing() async {
+    try {
+      final service = DoctorPricingService();
+      final res = await service.getPricingByDoctorId(widget.doctorId);
+      print('[PRICING] confirmation _loadPricing doctorId=${widget.doctorId} -> $res');
+      final data = res['data'];
+      if (data is Map<String, dynamic>) {
+        final inner = data['data'];
+        final obj = inner is Map<String, dynamic> ? inner : data;
+        final num? p = obj['defaultPrice'] as num?;
+        if (p != null) _price = p.toDouble();
+        final curr = obj['currency']?.toString();
+        if (curr != null && curr.isNotEmpty) _currency = curr;
+        print('[PRICING] confirmation parsed price=$_price, currency=$_currency');
+      }
+    } catch (e) {
+      print('[PRICING][ERR] confirmation _loadPricing failed: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingPrice = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -277,7 +315,7 @@ class AppointmentConfirmationPage extends StatelessWidget {
           ),
           SizedBox(height: 15.h),
           MyText(
-            doctorName,
+            widget.doctorName,
             fontSize: 20.sp,
             fontWeight: FontWeight.w700,
             color: Colors.black87,
@@ -285,7 +323,7 @@ class AppointmentConfirmationPage extends StatelessWidget {
           ),
           SizedBox(height: 5.h),
           MyText(
-            doctorSpecialty,
+            widget.doctorSpecialty,
             fontSize: 16.sp,
             fontWeight: FontWeight.w500,
             color: Colors.grey[600],
@@ -295,13 +333,21 @@ class AppointmentConfirmationPage extends StatelessWidget {
           Divider(color: Colors.grey[200], thickness: 1),
           SizedBox(height: 20.h),
           // Patient and appointment details
-          _buildInfoRow('اسم المريض', patientName),
+          _buildInfoRow('اسم المريض', widget.patientName),
           SizedBox(height: 12.h),
-          _buildInfoRow('تاريخ الحجز', appointmentDate),
+          _buildInfoRow('تاريخ الحجز', widget.appointmentDate),
           SizedBox(height: 12.h),
-          _buildInfoRow('وقت الحجز', '$appointmentTime صباحاً'),
+          _buildInfoRow('وقت الحجز', '${widget.appointmentTime} صباحاً'),
           SizedBox(height: 12.h),
-          _buildInfoRow('سعر الحجز', '10,000 د.ع', isPrice: true),
+          _buildInfoRow(
+            'سعر الحجز',
+            _isLoadingPrice
+                ? 'جاري التحميل...'
+                : _price != null && _price! > 0
+                    ? '${_price!.toStringAsFixed(0)} $_currency'
+                    : '—',
+            isPrice: true,
+          ),
         ],
       ),
     );
@@ -488,18 +534,18 @@ class AppointmentConfirmationPage extends StatelessWidget {
                         LoadingDialog.show(message: 'جاري حجز الموعد...');
 
                         // تحويل التاريخ من yyyy/MM/dd إلى yyyy-MM-dd
-                        final dateForApi = appointmentDate.replaceAll('/', '-');
+                        final dateForApi = widget.appointmentDate.replaceAll('/', '-');
 
                         // إرسال الحجز للـ API مع المعلومات المطلوبة
                         final result = await controller.bookAppointment(
-                          doctorId: doctorId,
-                          patientName: patientName,
-                          patientAge: patientAge,
-                          patientPhone: patientPhone,
+                          doctorId: widget.doctorId,
+                          patientName: widget.patientName,
+                          patientAge: widget.patientAge,
+                          patientPhone: widget.patientPhone,
                           appointmentDate: dateForApi,
-                          appointmentTime: appointmentTime,
+                          appointmentTime: widget.appointmentTime,
                           patientNotes: 'حجز من التطبيق',
-                          amount: 15000, // يمكن تمريره كمعامل لاحقاً
+                          amount: _price ?? 0,
                         );
 
                         // إخفاء dialog التحميل

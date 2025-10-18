@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import '../service_layer/services/opinion_service.dart';
 import '../service_layer/services/cv_service.dart';
 import '../service_layer/services/case_service.dart';
+import '../service_layer/services/doctor_pricing_service.dart';
 import 'session_controller.dart';
 
 class DoctorProfileController extends GetxController {
@@ -72,6 +73,7 @@ class DoctorProfileController extends GetxController {
   final OpinionService _opinionService = OpinionService();
   final CvService _cvService = CvService();
   final CaseService _caseService = CaseService();
+  final DoctorPricingService _pricingService = DoctorPricingService();
   final SessionController _session = Get.find<SessionController>();
 
   // CV state
@@ -83,6 +85,11 @@ class DoctorProfileController extends GetxController {
   // Cases state from API
   var apiCases = <Map<String, dynamic>>[].obs;
   var isLoadingCases = false.obs;
+
+  // Doctor Pricing state
+  var defaultPrice = 0.0.obs;
+  var currency = 'IQ'.obs;
+  var isLoadingPricing = false.obs;
 
   // Sample treated cases
   var treatedCases = <Map<String, String>>[
@@ -552,6 +559,62 @@ class DoctorProfileController extends GetxController {
     if (res['ok'] == true) {
       // إزالة الحالة من القائمة المحلية
       apiCases.removeWhere((c) => c['_id'] == caseId);
+    }
+    return res;
+  }
+
+  // ==================== Doctor Pricing Management ====================
+
+  /// تحميل سعر الحجز للطبيب
+  Future<void> loadDoctorPricing(String doctorId) async {
+    if (doctorId.isEmpty) return;
+    isLoadingPricing.value = true;
+    try {
+      final res = await _pricingService.getPricingByDoctorId(doctorId);
+      print('[PRICING] loadDoctorPricing doctorId=$doctorId -> $res');
+      if (res['ok'] == true) {
+        final dynamic dataWrap = res['data'];
+        Map<String, dynamic>? obj;
+        if (dataWrap is Map<String, dynamic>) {
+          final inner = dataWrap['data'];
+          if (inner is Map<String, dynamic>) {
+            obj = inner;
+          } else {
+            obj = dataWrap;
+          }
+        }
+        if (obj != null) {
+          final num? p = obj['defaultPrice'] as num?;
+          defaultPrice.value = (p != null) ? p.toDouble() : 0.0;
+          currency.value = obj['currency']?.toString() ?? 'IQ';
+          print('[PRICING] parsed pricing -> price=${defaultPrice.value}, currency=${currency.value}');
+        }
+      }
+    } catch (e) {
+      print('[PRICING][ERR] loadDoctorPricing failed: $e');
+    } finally {
+      isLoadingPricing.value = false;
+    }
+  }
+
+  /// حفظ أو تحديث سعر الحجز
+  Future<Map<String, dynamic>> saveOrUpdatePricing({
+    required String doctorId,
+    required double price,
+    String curr = 'IQ',
+  }) async {
+    print('[PRICING] saveOrUpdatePricing doctorId=$doctorId, price=$price, currency=$curr');
+    final res = await _pricingService.createOrUpdatePricing(
+      doctorId: doctorId,
+      defaultPrice: price,
+      currency: curr,
+    );
+    print('[PRICING] saveOrUpdatePricing response -> $res');
+    if (res['ok'] == true) {
+      defaultPrice.value = price;
+      currency.value = curr;
+      // إعادة الجلب من السيرفر للتأكد من القيمة المخزنة فعلياً
+      await loadDoctorPricing(doctorId);
     }
     return res;
   }
