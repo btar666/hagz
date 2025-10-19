@@ -4,14 +4,26 @@ import 'package:get/get.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
+import '../../controller/chat_controller.dart';
+import '../../controller/session_controller.dart';
 
 class ChatDetailsPage extends StatelessWidget {
   final String title;
-  const ChatDetailsPage({super.key, required this.title});
+  final String? receiverId;
+  const ChatDetailsPage({super.key, required this.title, this.receiverId});
 
   @override
   Widget build(BuildContext context) {
     final TextEditingController _msgCtrl = TextEditingController();
+    final ChatController ctrl = Get.find<ChatController>();
+    final SessionController session = Get.find<SessionController>();
+    
+    // Set receiverId and load doctor conversation if provided
+    if (receiverId != null && receiverId!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ctrl.openDoctorChat(receiverId!, title);
+      });
+    }
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
       appBar: AppBar(
@@ -52,45 +64,107 @@ class ChatDetailsPage extends StatelessWidget {
       body: Column(
         children: [
           Expanded(
-            child: ListView(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-              children: [
-                _timeSeparator('اليوم , 6:36 مساءً'),
-                _bubble(
-                  'مرحباً دكتور , هل يمكنني حجز موعد اليوم ؟',
-                  isMe: true,
-                ),
-                _time('6:36 م'),
-                _bubble(
-                  'أهلاً و سهلاً بك , بالتأكيد يمكنك !\nهل الحالة طارئة ؟',
-                  isMe: false,
-                ),
-                _time('6:36 م'),
-                _bubble(
-                  'مرحباً دكتور , هل يمكنني حجز موعد اليوم ؟',
-                  isMe: true,
-                ),
-                _time('6:36 م'),
-                _bubble(
-                  'أهلاً و سهلاً بك , بالتأكيد يمكنك !\nهل الحالة طارئة ؟',
-                  isMe: false,
-                ),
-              ],
-            ),
+            child: Obx(() {
+              final items = ctrl.messages;
+              final currentUserId = session.currentUser.value?.id ?? '';
+              
+              return ListView.builder(
+                reverse: false,
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                itemCount: items.length,
+                itemBuilder: (_, i) {
+                  final m = items[i];
+                  final text = (m['content'] ?? m['text'] ?? '').toString();
+                  
+                  // Determine if message is from current user
+                  bool isMe = false;
+                  
+                  // First check if it's a local message (from sendMessage)
+                  if (m['isMe'] == true || m['sender'] == 'me') {
+                    isMe = true;
+                  } else {
+                    // Check against actual sender ID from API
+                    final sender = m['sender'];
+                    if (sender is Map && sender['_id'] != null) {
+                      final senderId = sender['_id'].toString();
+                      isMe = (senderId == currentUserId);
+                    } else if (sender is String) {
+                      // Sometimes sender might be just an ID string
+                      isMe = (sender == currentUserId);
+                    }
+                  }
+                  
+                  print('Message $i: "$text", isMe: $isMe, sender: ${m['sender']}, currentUserId: $currentUserId');
+                  
+                  return _bubble(text, isMe: isMe);
+                },
+              );
+            }),
           ),
           Padding(
             padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 16.h),
             child: Row(
               children: [
-                Container(
-                  width: 56.w,
-                  height: 56.w,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(14.r),
+                Obx(() => GestureDetector(
+                  onTap: ctrl.isSendingMessage.value ? null : () async {
+                    final text = _msgCtrl.text.trim();
+                    if (text.isEmpty) {
+                      Get.snackbar(
+                        'رسالة فارغة',
+                        'يرجى كتابة رسالة قبل الإرسال',
+                        backgroundColor: AppColors.warning,
+                        colorText: Colors.white,
+                        duration: const Duration(seconds: 2),
+                      );
+                      return;
+                    }
+                    
+                    // Check if receiverId is set
+                    if (ctrl.receiverId.value.isEmpty) {
+                      Get.snackbar(
+                        'خطأ',
+                        'لا يمكن إرسال الرسالة، المستلم غير محدد',
+                        backgroundColor: const Color(0xFFFF3B30),
+                        colorText: Colors.white,
+                        duration: const Duration(seconds: 3),
+                      );
+                      return;
+                    }
+                    
+                    final ok = await ctrl.sendMessage(text);
+                    if (ok) {
+                      _msgCtrl.clear();
+                    } else {
+                      Get.snackbar(
+                        'فشل الإرسال',
+                        'تعذر إرسال الرسالة، يرجى المحاولة مرة أخرى',
+                        backgroundColor: const Color(0xFFFF3B30),
+                        colorText: Colors.white,
+                        duration: const Duration(seconds: 3),
+                      );
+                    }
+                  },
+                  child: Container(
+                    width: 56.w,
+                    height: 56.w,
+                    decoration: BoxDecoration(
+                      color: ctrl.isSendingMessage.value 
+                          ? AppColors.primary.withOpacity(0.6)
+                          : AppColors.primary,
+                      borderRadius: BorderRadius.circular(14.r),
+                    ),
+                    child: ctrl.isSendingMessage.value
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Icon(Icons.send, color: Colors.white),
                   ),
-                  child: const Icon(Icons.send, color: Colors.white),
-                ),
+                )),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Container(

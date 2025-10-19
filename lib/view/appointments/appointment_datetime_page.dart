@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../controller/appointments_controller.dart';
 import '../../widget/my_text.dart';
 import 'appointment_confirmation_page.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class AppointmentDateTimePage extends StatefulWidget {
   final String doctorId;
@@ -475,12 +476,33 @@ class _AppointmentDateTimePageState extends State<AppointmentDateTimePage> {
           ),
           SizedBox(height: 20.h),
           isLoading
-              ? Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40.h),
-                    child: const CircularProgressIndicator(
-                      color: Color(0xFF7FC8D6),
-                    ),
+              ? Skeletonizer(
+                  enabled: true,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final totalSpacing = 12.w * 2;
+                      final itemWidth = (constraints.maxWidth - totalSpacing) / 3;
+                      return Wrap(
+                        spacing: 12.w,
+                        runSpacing: 12.h,
+                        alignment: WrapAlignment.end,
+                        children: List.generate(
+                          6,
+                          (_) => Container(
+                            width: itemWidth,
+                            padding: EdgeInsets.symmetric(vertical: 14.h),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16.r),
+                              border: Border.all(color: Colors.grey[300]!, width: 1.5),
+                            ),
+                            child: Center(
+                              child: MyText(' ', fontSize: 14.sp),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 )
               : slots.isEmpty

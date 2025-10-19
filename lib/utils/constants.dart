@@ -29,4 +29,13 @@ class ApiConstants {
   static const String doctorPricing = '$baseUrl/api/doctor-pricing';
   // Ratings
   static const String ratings = '$baseUrl/api/ratings';
+  // Doctor Statistics
+  static const String doctorStatistics = '$baseUrl/api/doctor-statistics';
+  // Chat
+  static const String chats = '$baseUrl/api/chats';
+  static const String chatSend = '$chats/send';
+  static const String chatConversations = '$chats/conversations';
+  static const String chatMessages = '$chats/conversations'; // + /{conversationId}/messages
+  static const String chatDeleteMessage = '$chats/messages'; // + /{messageId}
+  static const String chatDoctorConversations = '$chats/doctor'; // + /{doctorId}/conversations
 }

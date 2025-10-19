@@ -6,6 +6,7 @@ import 'package:hagz/widget/my_text.dart';
 import '../../../controller/hospital_details_controller.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import '../../../widget/status_dialog.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class HospitalDetailsPage extends StatelessWidget {
   const HospitalDetailsPage({super.key});
@@ -26,11 +27,82 @@ class HospitalDetailsPage extends StatelessWidget {
 
             // Main content section
             Obx(() {
-              if (controller.isLoading.value ||
-                  controller.hospital.value == null) {
-                return const Padding(
-                  padding: EdgeInsets.all(24.0),
-                  child: CircularProgressIndicator(color: AppColors.primary),
+              if (controller.isLoading.value || controller.hospital.value == null) {
+                // Skeleton layout mimicking the card structure
+                return Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  child: Skeletonizer(
+                    enabled: true,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20.r),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.all(20.w),
+                              child: Column(
+                                children: [
+                                  Container(
+                                    width: 120.w,
+                                    height: 120.w,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(15.r),
+                                    ),
+                                  ),
+                                  SizedBox(height: 20.h),
+                                  MyText(' ', fontSize: 18.sp),
+                                  SizedBox(height: 12.h),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.location_on, size: 20.r),
+                                      SizedBox(width: 8.w),
+                                      Expanded(child: MyText(' ', fontSize: 12.sp)),
+                                    ],
+                                  ),
+                                  SizedBox(height: 12.h),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(children: [Icon(Icons.phone, size: 18.r)]),
+                                      Row(children: [Icon(Icons.phone, size: 18.r), SizedBox(width: 5.w), MyText(' ', fontSize: 14.sp)]),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 20.w),
+                        Container(
+                          width: 70.w,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20.r),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          height: 220.h,
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               }
               return _buildMainContent(controller);

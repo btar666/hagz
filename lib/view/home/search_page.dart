@@ -6,6 +6,7 @@ import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 import '../../widget/specialty_text.dart';
 import '../../controller/search_controller.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class SearchPage extends StatelessWidget {
   const SearchPage({super.key});
@@ -77,11 +78,6 @@ class SearchPage extends StatelessWidget {
             SizedBox(height: 12.h),
             Expanded(
               child: Obx(() {
-                if (c.isLoading.value && c.results.isEmpty) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  );
-                }
                 final items = c.results;
                 return NotificationListener<ScrollNotification>(
                   onNotification: (n) {
@@ -91,72 +87,83 @@ class SearchPage extends StatelessWidget {
                     }
                     return false;
                   },
-                  child: GridView.builder(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12.w,
-                      mainAxisSpacing: 12.h,
-                      childAspectRatio: 178 / 247,
-                    ),
-                    itemCount: items.length,
-                    itemBuilder: (context, index) {
-                      final item = items[index];
-                      final name = (item['name'] ?? '').toString();
-                      final spec = (item['specialization'] ?? '').toString();
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16.r),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.shadow,
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            SizedBox(height: 8.h),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8.w),
-                              child: AspectRatio(
-                                aspectRatio: 1.0,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryLight,
-                                    borderRadius: BorderRadius.circular(16.r),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(16.r),
-                                    child: Image.asset(
-                                      'assets/icons/home/doctor.png',
-                                      fit: BoxFit.cover,
+                  child: Skeletonizer(
+                    enabled: c.isLoading.value && items.isEmpty || c.isLoading.value && items.isNotEmpty,
+                    child: GridView.builder(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12.w,
+                        mainAxisSpacing: 12.h,
+                        childAspectRatio: 178 / 247,
+                      ),
+                      itemCount: items.isEmpty
+                          ? 8 // أول تحميل
+                          : items.length + (c.isLoading.value ? 4 : 0), // تحميل المزيد
+                      itemBuilder: (context, index) {
+                        final bool showingReal = index < items.length && items.isNotEmpty;
+                        final item = showingReal
+                            ? items[index]
+                            : {
+                                'name': '—',
+                                'specialization': '',
+                              };
+                        final name = (item['name'] ?? '').toString();
+                        final spec = (item['specialization'] ?? '').toString();
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16.r),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.shadow,
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              SizedBox(height: 8.h),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 8.w),
+                                child: AspectRatio(
+                                  aspectRatio: 1.0,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryLight,
+                                      borderRadius: BorderRadius.circular(16.r),
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      child: Image.asset(
+                                        'assets/icons/home/doctor.png',
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                            SizedBox(height: 8.h),
-                            MyText(
-                              name,
-                              fontSize: 15.sp,
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(height: 6.h),
-                            SpecialtyText(
-                              spec,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const Spacer(),
-                          ],
-                        ),
-                      );
-                    },
+                              SizedBox(height: 8.h),
+                              MyText(
+                                name,
+                                fontSize: 15.sp,
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(height: 6.h),
+                              SpecialtyText(
+                                spec,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const Spacer(),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 );
               }),

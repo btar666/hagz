@@ -6,6 +6,7 @@ import '../../utils/app_colors.dart';
 import '../../controller/past_appointments_controller.dart';
 import '../appointments/appointment_details_page.dart';
 import '../../controller/session_controller.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class PastAppointmentsPage extends StatelessWidget {
   const PastAppointmentsPage({super.key});
@@ -166,15 +167,10 @@ class PastAppointmentsPage extends StatelessWidget {
               SizedBox(height: 12.h),
               Expanded(
                 child: Obx(() {
-                  if (controller.isLoading.value) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primary,
-                      ),
-                    );
-                  }
+                  final isLoading = controller.isLoading.value;
+                  final items = controller.filtered;
 
-                  if (controller.filtered.isEmpty) {
+                  if (!isLoading && items.isEmpty) {
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -203,102 +199,111 @@ class PastAppointmentsPage extends StatelessWidget {
                     );
                   }
 
-                  return ListView.separated(
-                    padding: EdgeInsets.only(top: 4.h, bottom: 8.h),
-                    itemCount: controller.filtered.length,
-                    separatorBuilder: (_, __) => Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.w),
-                      child: Divider(color: AppColors.divider, height: 1),
-                    ),
-                    itemBuilder: (_, i) {
-                      final item = controller.filtered[i];
-                      final String title = item['title'] as String;
-                      final DateTime date = item['date'] as DateTime;
-                      final String status = item['status'] as String;
-                      final String time = item['time'] as String;
-                      return InkWell(
-                        onTap: () {
-                          final sColor = statusColor(status);
-                          final sText = statusLabel(status);
-                          final String price = '${item['amount'] ?? 0} د.ع';
+                  return Skeletonizer(
+                    enabled: isLoading,
+                    child: ListView.separated(
+                      padding: EdgeInsets.only(top: 4.h, bottom: 8.h),
+                      itemCount: isLoading ? 8 : items.length,
+                      separatorBuilder: (_, __) => Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        child: Divider(color: AppColors.divider, height: 1),
+                      ),
+                      itemBuilder: (_, i) {
+                        final hasReal = !isLoading && i < items.length;
+                        final item = hasReal
+                            ? items[i]
+                            : {
+                                'title': '—',
+                                'date': DateTime.now(),
+                                'status': 'pending',
+                                'time': '',
+                                'amount': 0,
+                              };
+                        final String title = item['title'] as String;
+                        final DateTime date = item['date'] as DateTime;
+                        final String status = item['status'] as String;
+                        final String time = item['time'] as String;
+                        return InkWell(
+                          onTap: hasReal
+                              ? () {
+                                  final sColor = statusColor(status);
+                                  final sText = statusLabel(status);
+                                  final String price = '${item['amount'] ?? 0} د.ع';
 
-                          // بناء تفاصيل الصفحة - عرض معلومات المريض دائماً
-                          final details = <String, dynamic>{
-                            'patient': item['patientName'] ?? title,
-                            'order': item['appointmentSequence'],
-                            'time': time.isEmpty ? '—' : time,
-                            'statusText': sText,
-                            'statusColor': sColor,
-                            'age': item['patientAge'],
-                            'phone': item['patientPhone'] ?? '—',
-                            'date': _formatDate(date),
-                            'price': price,
-                            'appointmentId': item['_id'],
-                            'doctorId': item['doctorId'] ?? '',
-                          };
+                                  final details = <String, dynamic>{
+                                    'patient': item['patientName'] ?? title,
+                                    'order': item['appointmentSequence'],
+                                    'time': time.isEmpty ? '—' : time,
+                                    'statusText': sText,
+                                    'statusColor': sColor,
+                                    'age': item['patientAge'],
+                                    'phone': item['patientPhone'] ?? '—',
+                                    'date': _formatDate(date),
+                                    'price': price,
+                                    'appointmentId': item['_id'],
+                                    'doctorId': item['doctorId'] ?? '',
+                                  };
 
-                          Get.to(() => AppointmentDetailsPage(details: details));
-                        },
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16.w,
-                            vertical: 14.h,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // top line RTL: title on right, arrow on left
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.chevron_left,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                  Expanded(
-                                    child: Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Text(
-                                        title,
-                                        style: TextStyle(
-                                          color: AppColors.textPrimary,
-                                          fontSize: 18.sp,
-                                          fontWeight: FontWeight.w800,
+                                  Get.to(() => AppointmentDetailsPage(details: details));
+                                }
+                              : null,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16.w,
+                              vertical: 14.h,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.chevron_left,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                    Expanded(
+                                      child: Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Text(
+                                          title,
+                                          style: TextStyle(
+                                            color: AppColors.textPrimary,
+                                            fontSize: 18.sp,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                          textAlign: TextAlign.right,
                                         ),
-                                        textAlign: TextAlign.right,
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 8.h),
-                              // second line RTL: status • date • (sequence) • time
-                              Wrap(
-                                alignment: WrapAlignment.end,
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                spacing: 10.w,
-                                runSpacing: 6.h,
-                                children: [
-                                  Text(
-                                    statusLabel(status),
-                                    style: TextStyle(
-                                      color: statusColor(status),
-                                      fontSize: 18.sp,
-                                      fontWeight: FontWeight.w900,
+                                  ],
+                                ),
+                                SizedBox(height: 8.h),
+                                Wrap(
+                                  alignment: WrapAlignment.end,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  spacing: 10.w,
+                                  runSpacing: 6.h,
+                                  children: [
+                                    Text(
+                                      statusLabel(status),
+                                      style: TextStyle(
+                                        color: statusColor(status),
+                                        fontSize: 18.sp,
+                                        fontWeight: FontWeight.w900,
+                                      ),
                                     ),
-                                  ),
-                                  _dot(),
-                                  Text(
-                                    _formatDate(date),
-                                    style: TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 18.sp,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                  if (item['appointmentSequence'] != null) ...[
                                     _dot(),
                                     Text(
-                                      'التسلسل : ${item['appointmentSequence']}',
+                                      _formatDate(date),
+                                      style: TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontSize: 18.sp,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    _dot(),
+                                    Text(
+                                      time.isEmpty ? '—' : time,
                                       style: TextStyle(
                                         color: AppColors.textPrimary,
                                         fontSize: 18.sp,
@@ -306,22 +311,13 @@ class PastAppointmentsPage extends StatelessWidget {
                                       ),
                                     ),
                                   ],
-                                  _dot(),
-                                  Text(
-                                    time.isEmpty ? '—' : time,
-                                    style: TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 18.sp,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   );
                 }),
               ),

@@ -66,4 +66,29 @@ class UserService {
     final res = await _api.put(ApiConstants.userInfo, body);
     return res;
   }
+
+  Future<Map<String, dynamic>> updateSocialMedia({
+    String? facebook,
+    String? twitter,
+    String? instagram,
+    String? linkedin,
+    String? youtube,
+    String? tiktok,
+    String? whatsapp,
+  }) async {
+    final Map<String, dynamic> socialMedia = {};
+    if (facebook != null && facebook.isNotEmpty) socialMedia['facebook'] = facebook;
+    if (twitter != null && twitter.isNotEmpty) socialMedia['twitter'] = twitter;
+    if (instagram != null && instagram.isNotEmpty) socialMedia['instagram'] = instagram;
+    if (linkedin != null && linkedin.isNotEmpty) socialMedia['linkedin'] = linkedin;
+    if (youtube != null && youtube.isNotEmpty) socialMedia['youtube'] = youtube;
+    if (tiktok != null && tiktok.isNotEmpty) socialMedia['tiktok'] = tiktok;
+    if (whatsapp != null && whatsapp.isNotEmpty) socialMedia['whatsapp'] = whatsapp;
+
+    final body = {
+      'socialMedia': socialMedia,
+    };
+    final res = await _api.put(ApiConstants.userInfo, body);
+    return res;
+  }
 }

@@ -79,7 +79,7 @@ class HomeController extends GetxController {
             'avg': (m['averageRating'] is num) ? (m['averageRating'] as num).toDouble() : 0.0,
             'count': (m['totalRatings'] is num) ? (m['totalRatings'] as num).toInt() : 0,
           };
-        }).toList(growable: false);
+        }).toList();
       }
     } catch (_) {
     } finally {

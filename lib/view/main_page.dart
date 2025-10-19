@@ -13,6 +13,7 @@ import 'secretary/secretary_all_appointments_page.dart';
 import 'delegate/delegate_home_page.dart';
 import 'delegate/delegate_all_visits_page.dart';
 import 'delegate/delegate_statistics_page.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class MainPage extends StatelessWidget {
   const MainPage({Key? key}) : super(key: key);
@@ -54,7 +55,10 @@ class MainPage extends StatelessWidget {
         index = pages.length - 1;
       }
       return Scaffold(
-        body: IndexedStack(index: index, children: pages),
+        body: Obx(() => Skeletonizer(
+              enabled: controller.isNavLoading.value,
+              child: IndexedStack(index: index, children: pages),
+            )),
         bottomNavigationBar: const BottomNavigationWidget(),
       );
     });

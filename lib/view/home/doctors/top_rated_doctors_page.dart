@@ -9,6 +9,7 @@ import 'doctor_profile_page.dart';
 import '../../../bindings/doctor_profile_binding.dart';
 
 import '../../../service_layer/services/ratings_service.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class TopRatedDoctorsPage extends StatefulWidget {
   const TopRatedDoctorsPage({super.key});
@@ -104,21 +105,29 @@ class _TopRatedDoctorsPageState extends State<TopRatedDoctorsPage> {
       ),
       body: Padding(
         padding: EdgeInsets.all(16.w),
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : GridView.builder(
-                physics: const BouncingScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12.w,
-                  mainAxisSpacing: 12.h,
-                  childAspectRatio: 178 / 247,
-                ),
-                itemCount: _items.length,
-                itemBuilder: (context, index) {
-                  return _buildDoctorCard(_items[index]);
-                },
-              ),
+        child: Skeletonizer(
+          enabled: _isLoading,
+          child: GridView.builder(
+            physics: const BouncingScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12.w,
+              mainAxisSpacing: 12.h,
+              childAspectRatio: 178 / 247,
+            ),
+            itemCount: _isLoading ? 8 : _items.length,
+            itemBuilder: (context, index) {
+              final item = _isLoading
+                  ? {
+                      'doctorId': '',
+                      'name': '—',
+                      'specialty': '',
+                    }
+                  : _items[index];
+              return _buildDoctorCard(item);
+            },
+          ),
+        ),
       ),
     );
   }

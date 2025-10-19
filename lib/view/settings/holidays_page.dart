@@ -9,6 +9,7 @@ import '../../widget/my_text.dart';
 import '../../widget/loading_dialog.dart';
 import '../../widget/status_dialog.dart';
 import '../../widget/confirm_dialogs.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class HolidaysPage extends StatelessWidget {
   HolidaysPage({super.key});
@@ -36,7 +37,41 @@ class HolidaysPage extends StatelessWidget {
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
+          // Skeleton while loading holidays
+          return SingleChildScrollView(
+            padding: EdgeInsets.all(16.w),
+            child: Skeletonizer(
+              enabled: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildInfoCard(),
+                  SizedBox(height: 16.h),
+                  ElevatedButton.icon(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+                      padding: EdgeInsets.symmetric(vertical: 14.h),
+                      elevation: 0,
+                    ),
+                    icon: const Icon(Icons.add, color: Colors.white),
+                    label: MyText('إضافة عطلة جديدة', fontSize: 16.sp, fontWeight: FontWeight.w900, color: Colors.white),
+                  ),
+                  SizedBox(height: 20.h),
+                  MyText('جميع العطل', fontSize: 18.sp, fontWeight: FontWeight.w900, color: AppColors.textPrimary, textAlign: TextAlign.right),
+                  SizedBox(height: 12.h),
+                  ...List.generate(3, (_) => _buildHolidayCard({
+                        'date': '',
+                        'reason': '',
+                        'isRecurring': false,
+                        'isFullDay': true,
+                        '_id': '',
+                      })),
+                ],
+              ),
+            ),
+          );
         }
 
         return SingleChildScrollView(

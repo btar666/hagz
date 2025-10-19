@@ -19,6 +19,7 @@ import '../../widget/doctors_filter_dialog.dart';
 import '../chat/chats_page.dart';
 import 'doctors/top_rated_doctors_page.dart';
 import 'doctors/doctor_profile_page.dart';
+import '../../model/hospital_model.dart';
 import '../../bindings/chats_binding.dart';
 import '../../bindings/doctor_profile_binding.dart';
 import '../../bindings/complex_details_binding.dart';
@@ -209,45 +210,41 @@ class HomePage extends StatelessWidget {
     return Obx(() {
       final items = home.doctors;
       final isLoading = home.isLoadingDoctors.value;
-      
-      // Show skeleton when loading or no data
-      if (isLoading || items.isEmpty) {
-        return Skeletonizer(
-          enabled: true,
-          child: GridView.builder(
-            padding: EdgeInsets.zero,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12.w,
-              mainAxisSpacing: 12.h,
-              childAspectRatio: 178 / 247,
-            ),
-            itemCount: 6, // Show 6 skeleton cards
-            itemBuilder: (context, index) {
-              return _buildDoctorSkeletonCard();
-            },
+      final isLoadingMore = home.isLoadingMoreDoctors.value;
+
+      return Skeletonizer(
+        enabled: isLoading,
+        child: GridView.builder(
+          padding: EdgeInsets.zero,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12.w,
+            mainAxisSpacing: 12.h,
+            childAspectRatio: 178 / 247,
           ),
-        );
-      }
-      
-      // Show actual data
-      return GridView.builder(
-        padding: EdgeInsets.zero,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12.w,
-          mainAxisSpacing: 12.h,
-          childAspectRatio: 178 / 247,
+          itemCount: isLoading ? 6 : items.length + (isLoadingMore ? 2 : 0),
+          itemBuilder: (context, index) {
+            if (isLoading) {
+              return _buildDoctorCardFromData({
+                'id': '',
+                'name': '—',
+                'specialization': '—',
+              });
+            }
+            if (index < items.length) {
+              final doctor = items[index];
+              return _buildDoctorCardFromData(doctor);
+            }
+            // loading more placeholders
+            return _buildDoctorCardFromData({
+              'id': '',
+              'name': '—',
+              'specialization': '—',
+            });
+          },
         ),
-        itemCount: items.length,
-        itemBuilder: (context, index) {
-          final doctor = items[index];
-          return _buildDoctorCardFromData(doctor);
-        },
       );
     });
   }
@@ -257,44 +254,38 @@ class HomePage extends StatelessWidget {
     return Obx(() {
       final items = hospitals.hospitals;
       final isLoading = hospitals.isLoading.value;
-      
-      // Show skeleton when loading or no data
-      if (isLoading || items.isEmpty) {
-        return Skeletonizer(
-          enabled: true,
-          child: GridView.builder(
-            padding: EdgeInsets.zero,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12.w,
-              mainAxisSpacing: 12.h,
-              childAspectRatio: 178 / 209,
-            ),
-            itemCount: 6, // Show 6 skeleton cards
-            itemBuilder: (context, index) {
-              return _buildHospitalSkeletonCard();
-            },
+
+      const placeholder = HospitalModel(
+        id: '',
+        name: '',
+        image: '',
+        address: '',
+        phone: '',
+        facebook: '',
+        instagram: '',
+        whatsapp: '',
+      );
+
+      return Skeletonizer(
+        enabled: isLoading,
+        child: GridView.builder(
+          padding: EdgeInsets.zero,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12.w,
+            mainAxisSpacing: 12.h,
+            childAspectRatio: 178 / 209,
           ),
-        );
-      }
-      
-      // Show actual data
-      return GridView.builder(
-        padding: EdgeInsets.zero,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12.w,
-          mainAxisSpacing: 12.h,
-          childAspectRatio: 178 / 209,
+          itemCount: isLoading ? 6 : items.length,
+          itemBuilder: (context, index) {
+            if (isLoading) {
+              return _buildHospitalCardFromData(placeholder);
+            }
+            return _buildHospitalCardFromData(items[index]);
+          },
         ),
-        itemCount: items.length,
-        itemBuilder: (context, index) {
-          return _buildHospitalCardFromData(items[index]);
-        },
       );
     });
   }
@@ -770,39 +761,30 @@ class HomePage extends StatelessWidget {
           SizedBox(height: 16.h),
           SizedBox(
             height: 197.h,
-            child: isLoading || items.isEmpty
-                ? Skeletonizer(
-                    enabled: true,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      padding: EdgeInsets.zero,
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: 4, // Show 4 skeleton cards
-                      separatorBuilder: (context, index) => SizedBox(width: 12.w),
-                      itemBuilder: (context, index) {
-                        return SizedBox(
-                          width: 137.w,
-                          height: 197.h,
-                          child: _buildTopRatedDoctorSkeletonCard(),
-                        );
-                      },
-                    ),
-                  )
-                : ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: EdgeInsets.zero,
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: items.length,
-                    separatorBuilder: (context, index) => SizedBox(width: 12.w),
-                    itemBuilder: (context, index) {
-                      final item = items[index];
-                      return SizedBox(
-                        width: 137.w,
-                        height: 197.h,
-                        child: _buildTopRatedDoctorCardFromItem(item),
-                      );
-                    },
-                  ),
+            child: Skeletonizer(
+              enabled: isLoading,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.zero,
+                physics: const BouncingScrollPhysics(),
+                itemCount: isLoading ? 4 : items.length,
+                separatorBuilder: (context, index) => SizedBox(width: 12.w),
+                itemBuilder: (context, index) {
+                  final item = isLoading
+                      ? {
+                          'doctorId': '',
+                          'name': '—',
+                          'specialty': '',
+                        }
+                      : items[index];
+                  return SizedBox(
+                    width: 137.w,
+                    height: 197.h,
+                    child: _buildTopRatedDoctorCardFromItem(item),
+                  );
+                },
+              ),
+            ),
           ),
         ],
       );
@@ -814,12 +796,10 @@ Widget _buildTopRatedDoctorCardFromItem(Map<String, dynamic> item) {
   final String doctorId = (item['doctorId'] ?? '').toString();
   final String name = (item['name'] ?? 'طبيب').toString();
   final String specialty = (item['specialty'] ?? '').toString();
-  final double avg = (item['avg'] ?? 0.0) is num
-      ? (item['avg'] as num).toDouble()
-      : 0.0;
-  final int count = (item['count'] ?? 0) is num
-      ? (item['count'] as num).toInt()
-      : 0;
+  final avgRaw = item['avg'];
+  final double avg = avgRaw is num ? avgRaw.toDouble() : 0.0;
+  final countRaw = item['count'];
+  final int count = countRaw is num ? countRaw.toInt() : 0;
   'د. آرين';
   'د. صوفيا';
   'د. سونجوز';

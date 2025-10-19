@@ -1,8 +1,9 @@
 import 'package:get/get.dart';
+import '../controller/chat_controller.dart';
 
 class ChatsBinding extends Bindings {
   @override
   void dependencies() {
-    // يمكن إضافة ChatsController هنا عند إنشائه
+    Get.lazyPut<ChatController>(() => ChatController());
   }
 }

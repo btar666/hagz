@@ -8,6 +8,7 @@ import '../../widget/my_text.dart';
 import '../../widget/loading_dialog.dart';
 import '../../widget/status_dialog.dart';
 import '../../widget/confirm_dialogs.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class WorkingHoursPage extends StatelessWidget {
   WorkingHoursPage({super.key});
@@ -35,7 +36,53 @@ class WorkingHoursPage extends StatelessWidget {
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
+          return SingleChildScrollView(
+            padding: EdgeInsets.all(16.w),
+            child: Skeletonizer(
+              enabled: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildInfoCard(),
+                  SizedBox(height: 16.h),
+                  ...List.generate(
+                    4,
+                    (i) => Container(
+                      margin: EdgeInsets.only(bottom: 12.h),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ListTile(
+                        leading: CircleAvatar(radius: 20.r, backgroundColor: Colors.grey[200]),
+                        title: MyText(' ', fontSize: 16.sp, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                        subtitle: MyText(' ', fontSize: 14.sp, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                        trailing: Switch(value: true, onChanged: (_) {}),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.delete_outline), label: MyText('حذف الكل', fontSize: 16.sp)),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.save, color: Colors.white), label: MyText('حفظ', fontSize: 16.sp, color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
         }
 
         return SingleChildScrollView(

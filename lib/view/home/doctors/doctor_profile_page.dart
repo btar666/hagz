@@ -10,6 +10,9 @@ import '../../../service_layer/services/opinion_service.dart';
 import '../../../widget/loading_dialog.dart';
 import '../../../widget/status_dialog.dart';
 import '../../appointments/patient_registration_page.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import '../../chat/chat_details_page.dart';
+import '../../../bindings/chats_binding.dart';
 
 class DoctorProfilePage extends StatelessWidget {
   final String doctorId;
@@ -26,6 +29,8 @@ class DoctorProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(DoctorProfileController());
+    final session = Get.find<SessionController>();
+
     // Load opinions and read-only CV for this doctor
     controller.loadOpinionsForTarget(doctorId);
     controller.loadCvForUserId(doctorId);
@@ -202,14 +207,57 @@ class DoctorProfilePage extends StatelessWidget {
   }
 
   Widget _buildDoctorInfo() {
+    final session = Get.find<SessionController>();
+    final currentUserId = session.currentUser.value?.id ?? '';
+    final isOwnProfile = currentUserId.isNotEmpty && currentUserId == doctorId;
+
     return Column(
       children: [
-        MyText(
-          doctorName,
-          fontSize: 24.sp,
-          fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
-          textAlign: TextAlign.center,
+        // Name + message button (only show message button if not own profile)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            MyText(
+              doctorName,
+              fontSize: 24.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+              textAlign: TextAlign.center,
+            ),
+            if (!isOwnProfile) ...[
+              SizedBox(width: 10.w),
+              GestureDetector(
+                onTap: () => Get.to(
+                  () =>
+                      ChatDetailsPage(title: doctorName, receiverId: doctorId),
+                  binding: ChatsBinding(),
+                ),
+                child: Container(
+                  width: 40.w,
+                  height: 40.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Center(
+                    child: Image.asset(
+                      'assets/icons/home/Message Icon.png',
+                      width: 20,
+                      height: 20,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.chat_bubble_outline,
+                          color: Colors.white,
+                          size: 18,
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
         SizedBox(height: 8.h),
         MyText(
@@ -808,7 +856,8 @@ class DoctorProfilePage extends StatelessWidget {
     try {
       final dt = DateTime.tryParse(time);
       if (dt != null) {
-        dateOnly = '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
+        dateOnly =
+            '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
       } else if (time.contains('T')) {
         dateOnly = time.split('T').first;
       }
@@ -907,10 +956,48 @@ class DoctorProfilePage extends StatelessWidget {
 
     return Obx(() {
       if (controller.isLoadingCases.value) {
-        return const Center(
-          child: Padding(
-            padding: EdgeInsets.all(32.0),
-            child: CircularProgressIndicator(),
+        return Skeletonizer(
+          enabled: true,
+          child: Column(
+            children: List.generate(
+              2,
+              (idx) => Container(
+                margin: EdgeInsets.only(bottom: 16.h),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      height: 150.h,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(12.r),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(16.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          MyText(
+                            ' ',
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          SizedBox(height: 8.h),
+                          MyText(' ', fontSize: 14.sp),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         );
       }
@@ -1025,10 +1112,27 @@ class DoctorProfilePage extends StatelessWidget {
   Widget _buildPricingContent(DoctorProfileController controller) {
     return Obx(() {
       if (controller.isLoadingPricing.value) {
-        return const Center(
-          child: Padding(
-            padding: EdgeInsets.all(24.0),
-            child: CircularProgressIndicator(),
+        return Skeletonizer(
+          enabled: true,
+          child: Container(
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                MyText(' ', fontSize: 16.sp, fontWeight: FontWeight.w600),
+                Row(
+                  children: [
+                    MyText(' ', fontSize: 24.sp, fontWeight: FontWeight.bold),
+                    SizedBox(width: 6.w),
+                    MyText(' ', fontSize: 16.sp, fontWeight: FontWeight.w600),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       }
@@ -1222,7 +1326,9 @@ class DoctorProfilePage extends StatelessWidget {
   ImageProvider _imageProvider(String path) {
     if (path.startsWith('http://') || path.startsWith('https://')) {
       final host = Uri.tryParse(path)?.host.toLowerCase() ?? '';
-      if (host.contains('scontent') || host.contains('fbcdn') || host.contains('facebook.com')) {
+      if (host.contains('scontent') ||
+          host.contains('fbcdn') ||
+          host.contains('facebook.com')) {
         return const AssetImage('assets/icons/home/doctor.png');
       }
       return NetworkImage(path);
