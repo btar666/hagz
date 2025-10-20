@@ -3,6 +3,8 @@ import '../service_layer/services/opinion_service.dart';
 import '../service_layer/services/cv_service.dart';
 import '../service_layer/services/case_service.dart';
 import '../service_layer/services/doctor_pricing_service.dart';
+import '../service_layer/services/user_service.dart';
+import '../service_layer/services/ratings_service.dart';
 import 'session_controller.dart';
 
 class DoctorProfileController extends GetxController {
@@ -74,6 +76,8 @@ class DoctorProfileController extends GetxController {
   final CvService _cvService = CvService();
   final CaseService _caseService = CaseService();
   final DoctorPricingService _pricingService = DoctorPricingService();
+  final UserService _userService = UserService();
+  final RatingsService _ratingsService = RatingsService();
   final SessionController _session = Get.find<SessionController>();
 
   // CV state
@@ -90,6 +94,15 @@ class DoctorProfileController extends GetxController {
   var defaultPrice = 0.0.obs;
   var currency = 'IQ'.obs;
   var isLoadingPricing = false.obs;
+
+  // Social media (doctor profile view)
+  var instagram = ''.obs;
+  var whatsapp = ''.obs;
+  var facebook = ''.obs;
+  var isLoadingSocial = false.obs;
+
+  // Ratings summary for doctor profile
+  var ratingsCount = 0.obs;
 
   // Sample treated cases
   var treatedCases = <Map<String, String>>[
@@ -617,5 +630,43 @@ class DoctorProfileController extends GetxController {
       await loadDoctorPricing(doctorId);
     }
     return res;
+  }
+
+  /// جلب وسائل التواصل للطبيب لعرضها في صفحة البروفايل (انستغرام/واتساب/فيسبوك)
+  Future<void> loadDoctorSocial(String doctorId) async {
+    if (doctorId.isEmpty || isLoadingSocial.value) return;
+    isLoadingSocial.value = true;
+    try {
+      final res = await _userService.getUserById(doctorId);
+      if (res['ok'] == true) {
+        final dynamic wrap = res['data'];
+        Map<String, dynamic>? obj;
+        if (wrap is Map<String, dynamic>) {
+          obj = (wrap['data'] is Map<String, dynamic>) ? (wrap['data'] as Map<String, dynamic>) : wrap;
+        }
+        final Map<String, dynamic> social = (obj?['socialMedia'] as Map<String, dynamic>?) ?? {};
+        instagram.value = social['instagram']?.toString() ?? '';
+        whatsapp.value = social['whatsapp']?.toString() ?? '';
+        facebook.value = social['facebook']?.toString() ?? '';
+      }
+    } catch (_) {
+    } finally {
+      isLoadingSocial.value = false;
+    }
+  }
+
+  /// جلب عدد التقييمات للطبيب (GET /api/ratings/doctor/{doctorId})
+  Future<void> loadRatingsCount(String doctorId) async {
+    if (doctorId.isEmpty) return;
+    try {
+      final res = await _ratingsService.getDoctorRatings(doctorId, page: 1, limit: 1);
+      if (res['ok'] == true) {
+        final data = res['data'] as Map<String, dynamic>?;
+        final num? total = data?['total'] as num?;
+        ratingsCount.value = total?.toInt() ?? 0;
+      }
+    } catch (_) {
+      // ignore
+    }
   }
 }

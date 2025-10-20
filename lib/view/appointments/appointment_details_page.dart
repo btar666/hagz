@@ -396,7 +396,6 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
                       appointmentId: appointmentId,
                       doctorId: doctorId,
                       initialRating: _ratingValue!,
-                      initialComment: _ratingComment ?? '',
                     ),
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: AppColors.primary, width: 1.5),
@@ -490,10 +489,8 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
     required String appointmentId,
     required String doctorId,
     int initialRating = 5,
-    String initialComment = '',
   }) async {
     final ratingCtrl = ValueNotifier<int>(initialRating);
-    final TextEditingController commentCtrl = TextEditingController(text: initialComment);
     await Get.dialog(
       Dialog(
         insetPadding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -521,31 +518,6 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
                 valueListenable: ratingCtrl,
                 builder: (_, value, __) => _starsRow(value, onTap: (v) => ratingCtrl.value = v),
               ),
-              SizedBox(height: 12.h),
-              TextField(
-                controller: commentCtrl,
-                maxLines: 4,
-                textAlign: TextAlign.right,
-                decoration: InputDecoration(
-                  hintText: 'أضف تعليقك (اختياري)',
-                  hintStyle: TextStyle(
-                    color: AppColors.textLight,
-                    fontFamily: 'Expo Arabic',
-                    fontSize: 14.sp,
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16.r),
-                    borderSide: BorderSide(color: AppColors.divider),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16.r),
-                    borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-                  ),
-                ),
-              ),
               SizedBox(height: 14.h),
               Row(
                 children: [
@@ -566,9 +538,8 @@ class _AppointmentDetailsPageState extends State<AppointmentDetailsPage> {
                     child: ElevatedButton(
                       onPressed: () async {
                         final int r = ratingCtrl.value.clamp(1, 5);
-                        final String c = commentCtrl.text.trim();
                         Get.back();
-                        await _saveRating(appointmentId: appointmentId, doctorId: doctorId, rating: r, comment: c);
+                        await _saveRating(appointmentId: appointmentId, doctorId: doctorId, rating: r, comment: null);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,

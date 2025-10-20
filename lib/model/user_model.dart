@@ -8,6 +8,7 @@ class UserModel {
   final int age;
   final String city;
   final String userType; // 'User' | 'Doctor' | 'Secretary' | 'Representative'
+  final Map<String, String> socialMedia; // Social media links
 
   const UserModel({
     required this.id,
@@ -17,6 +18,7 @@ class UserModel {
     required this.age,
     required this.city,
     required this.userType,
+    this.socialMedia = const <String, String>{},
   });
 
   UserModel copyWith({
@@ -27,6 +29,7 @@ class UserModel {
     int? age,
     String? city,
     String? userType,
+    Map<String, String>? socialMedia,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -36,6 +39,7 @@ class UserModel {
       age: age ?? this.age,
       city: city ?? this.city,
       userType: userType ?? this.userType,
+      socialMedia: socialMedia ?? this.socialMedia,
     );
   }
 
@@ -47,10 +51,23 @@ class UserModel {
     'age': age,
     'city': city,
     'userType': userType,
+    'socialMedia': socialMedia,
   };
 
   static UserModel fromJson(Map<String, dynamic> json) {
     final dynamic data = json['data'] ?? json; // some APIs wrap in data
+    
+    // Parse social media
+    final Map<String, String> socialMediaMap = <String, String>{};
+    final dynamic socialMediaData = data['socialMedia'];
+    if (socialMediaData is Map<String, dynamic>) {
+      socialMediaData.forEach((key, value) {
+        if (value != null) {
+          socialMediaMap[key.toString()] = value.toString();
+        }
+      });
+    }
+    
     return UserModel(
       id: (data['id'] ?? data['_id'] ?? '').toString(),
       name: (data['name'] ?? '').toString(),
@@ -59,6 +76,7 @@ class UserModel {
       age: int.tryParse((data['age'] ?? '0').toString()) ?? 0,
       city: (data['city'] ?? '').toString(),
       userType: (data['userType'] ?? '').toString(),
+      socialMedia: socialMediaMap,
     );
   }
 

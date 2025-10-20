@@ -20,23 +20,48 @@ import 'package:url_launcher/url_launcher.dart';
 class DoctorProfileManagePage extends StatelessWidget {
   DoctorProfileManagePage({super.key});
 
+  bool _prefillCalled = false;
+
   final TextEditingController _instagramCtrl = TextEditingController(
     text: 'http://ABCDEFG',
   );
   final TextEditingController _whatsappCtrl = TextEditingController(
     text: 'http://ABCDEFG',
   );
-  final TextEditingController _phoneCtrl = TextEditingController(
-    text: '0770 000 0000',
-  );
   final TextEditingController _facebookCtrl = TextEditingController();
-  final TextEditingController _twitterCtrl = TextEditingController();
-  final TextEditingController _linkedinCtrl = TextEditingController();
-  final TextEditingController _youtubeCtrl = TextEditingController();
-  final TextEditingController _tiktokCtrl = TextEditingController();
-  final TextEditingController _websiteCtrl = TextEditingController(
-    text: 'http://ABCDEFG',
-  );
+
+  void _loadExistingSocialMediaData(SessionController session) {
+    final user = session.currentUser.value;
+    if (user != null && user.socialMedia.isNotEmpty) {
+      final social = user.socialMedia;
+      _instagramCtrl.text = social['instagram'] ?? 'http://ABCDEFG';
+      _whatsappCtrl.text = social['whatsapp'] ?? 'http://ABCDEFG';
+      _facebookCtrl.text = social['facebook'] ?? '';
+    }
+  }
+
+  Future<void> _prefillSocialFromApi(String userId) async {
+    try {
+      final userService = Get.put(UserService());
+      final res = await userService.getUserById(userId);
+      if (res['ok'] == true) {
+        final dynamic wrap = res['data'];
+        Map<String, dynamic>? obj;
+        if (wrap is Map<String, dynamic>) {
+          obj = (wrap['data'] is Map<String, dynamic>) ? (wrap['data'] as Map<String, dynamic>) : wrap;
+        }
+        final Map<String, dynamic> social = (obj?['socialMedia'] as Map<String, dynamic>?) ?? {};
+        final String? ig = social['instagram']?.toString();
+        final String? wa = social['whatsapp']?.toString();
+        final String? fb = social['facebook']?.toString();
+        if (ig != null && ig.isNotEmpty) _instagramCtrl.text = ig;
+        if (wa != null && wa.isNotEmpty) _whatsappCtrl.text = wa;
+        if (fb != null && fb.isNotEmpty) _facebookCtrl.text = fb;
+      }
+    } catch (_) {
+      // ignore
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,8 +76,19 @@ class DoctorProfileManagePage extends StatelessWidget {
     if (userId != null && userId.isNotEmpty) {
       controller.loadDoctorPricing(userId);
     }
+
+    // Load existing social media data from user profile
+    _loadExistingSocialMediaData(session);
+
+    // Fetch latest from API by userId once after first frame
+    if (!_prefillCalled && userId != null && userId.isNotEmpty) {
+      _prefillCalled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _prefillSocialFromApi(userId);
+      });
+    }
+    
     return Scaffold(
-      backgroundColor: const Color(0xFFF4FEFF),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
@@ -223,12 +259,10 @@ class DoctorProfileManagePage extends StatelessWidget {
               _socialIconImage(
                 'assets/icons/home/instgram.png',
                 const Color(0xFFE4405F),
-                onTap: () => _openUrlIfAny(_instagramCtrl.text, fallbackHost: 'instagram.com'),
-              ),
-              _socialIconImage(
-                'assets/icons/home/phone.png',
-                const Color(0xFFFF3040),
-                onTap: () => _callIfAny(_phoneCtrl.text),
+                onTap: () => _openUrlIfAny(
+                  _instagramCtrl.text,
+                  fallbackHost: 'instagram.com',
+                ),
               ),
               _socialIconImage(
                 'assets/icons/home/watsapp.png',
@@ -238,12 +272,10 @@ class DoctorProfileManagePage extends StatelessWidget {
               _socialIconImage(
                 'assets/icons/home/facebook.png',
                 const Color(0xFF1877F2),
-                onTap: () => _openUrlIfAny(_facebookCtrl.text, fallbackHost: 'facebook.com'),
-              ),
-              _socialIconImage(
-                'assets/icons/home/link.png',
-                Colors.grey,
-                onTap: () => _openUrlIfAny(_websiteCtrl.text),
+                onTap: () => _openUrlIfAny(
+                  _facebookCtrl.text,
+                  fallbackHost: 'facebook.com',
+                ),
               ),
             ],
           ),
@@ -252,7 +284,11 @@ class DoctorProfileManagePage extends StatelessWidget {
     );
   }
 
-  Widget _socialIconImage(String imagePath, Color color, {VoidCallback? onTap}) {
+  Widget _socialIconImage(
+    String imagePath,
+    Color color, {
+    VoidCallback? onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -278,7 +314,12 @@ class DoctorProfileManagePage extends StatelessWidget {
   Future<void> _openWhatsapp(String input) async {
     final v = input.trim();
     if (v.isEmpty || v.startsWith('http://ABCDEFG')) {
-      Get.snackbar('لا يوجد رابط', 'لم يتم ضبط رابط الواتساب', backgroundColor: Colors.black87, colorText: Colors.white);
+      Get.snackbar(
+        'لا يوجد رابط',
+        'لم يتم ضبط رابط الواتساب',
+        backgroundColor: Colors.black87,
+        colorText: Colors.white,
+      );
       return;
     }
     String url = v;
@@ -290,23 +331,16 @@ class DoctorProfileManagePage extends StatelessWidget {
     await _launchExternal(url);
   }
 
-  Future<void> _callIfAny(String input) async {
-    final v = input.trim();
-    if (v.isEmpty) {
-      Get.snackbar('لا يوجد رقم', 'لم يتم ضبط رقم الهاتف', backgroundColor: Colors.black87, colorText: Colors.white);
-      return;
-    }
-    final digits = v.replaceAll(RegExp(r'[^0-9+]'), '');
-    final uri = Uri(scheme: 'tel', path: digits);
-    if (!await launchUrl(uri)) {
-      Get.snackbar('تعذر الاتصال', 'لا يمكن فتح تطبيق الهاتف', backgroundColor: Colors.black87, colorText: Colors.white);
-    }
-  }
 
   Future<void> _openUrlIfAny(String input, {String? fallbackHost}) async {
     var v = input.trim();
     if (v.isEmpty || v.startsWith('http://ABCDEFG')) {
-      Get.snackbar('لا يوجد رابط', 'لم يتم ضبط الرابط', backgroundColor: Colors.black87, colorText: Colors.white);
+      Get.snackbar(
+        'لا يوجد رابط',
+        'لم يتم ضبط الرابط',
+        backgroundColor: Colors.black87,
+        colorText: Colors.white,
+      );
       return;
     }
     if (!v.startsWith('http')) {
@@ -320,10 +354,20 @@ class DoctorProfileManagePage extends StatelessWidget {
     try {
       final uri = Uri.parse(url);
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        Get.snackbar('تعذر الفتح', 'لا يمكن فتح الرابط', backgroundColor: Colors.black87, colorText: Colors.white);
+        Get.snackbar(
+          'تعذر الفتح',
+          'لا يمكن فتح الرابط',
+          backgroundColor: Colors.black87,
+          colorText: Colors.white,
+        );
       }
     } catch (_) {
-      Get.snackbar('تعذر الفتح', 'الرابط غير صالح', backgroundColor: Colors.black87, colorText: Colors.white);
+      Get.snackbar(
+        'تعذر الفتح',
+        'الرابط غير صالح',
+        backgroundColor: Colors.black87,
+        colorText: Colors.white,
+      );
     }
   }
 
@@ -350,48 +394,10 @@ class DoctorProfileManagePage extends StatelessWidget {
             trailingAsset: 'assets/icons/home/watsapp.png',
           ),
           SizedBox(height: 12.h),
-          _editableRow(
-            _phoneCtrl,
-            hint: '0770 000 0000',
-            trailingAsset: 'assets/icons/home/phone.png',
-            keyboardType: TextInputType.phone,
-          ),
-          SizedBox(height: 12.h),
           _plainRow(
             _facebookCtrl,
             hint: 'ضع رابط حسابك على فيسبوك',
             trailingAsset: 'assets/icons/home/facebook.png',
-          ),
-          SizedBox(height: 12.h),
-          _plainRow(
-            _twitterCtrl,
-            hint: 'ضع رابط حسابك على تويتر',
-            trailingAsset: 'assets/icons/home/link.png',
-          ),
-          SizedBox(height: 12.h),
-          _plainRow(
-            _linkedinCtrl,
-            hint: 'ضع رابط حسابك على لينكدإن',
-            trailingAsset: 'assets/icons/home/link.png',
-          ),
-          SizedBox(height: 12.h),
-          _plainRow(
-            _youtubeCtrl,
-            hint: 'ضع رابط قناتك على يوتيوب',
-            trailingAsset: 'assets/icons/home/link.png',
-          ),
-          SizedBox(height: 12.h),
-          _plainRow(
-            _tiktokCtrl,
-            hint: 'ضع رابط حسابك على تيك توك',
-            trailingAsset: 'assets/icons/home/link.png',
-          ),
-          SizedBox(height: 12.h),
-          _labeledRow(
-            'افتراضي',
-            _websiteCtrl,
-            hint: 'http://ABCDEFG',
-            trailingAsset: 'assets/icons/home/link.png',
           ),
           SizedBox(height: 16.h),
           Row(
@@ -422,7 +428,12 @@ class DoctorProfileManagePage extends StatelessWidget {
                     final session = Get.find<SessionController>();
                     final String? token = session.token.value;
                     if (token == null || token.isEmpty) {
-                      Get.snackbar('غير مسجل', 'يرجى تسجيل الدخول أولاً', backgroundColor: const Color(0xFFFF3B30), colorText: Colors.white);
+                      Get.snackbar(
+                        'غير مسجل',
+                        'يرجى تسجيل الدخول أولاً',
+                        backgroundColor: const Color(0xFFFF3B30),
+                        colorText: Colors.white,
+                      );
                       return;
                     }
 
@@ -433,10 +444,6 @@ class DoctorProfileManagePage extends StatelessWidget {
                         instagram: _instagramCtrl.text.trim(),
                         whatsapp: _whatsappCtrl.text.trim(),
                         facebook: _facebookCtrl.text.trim(),
-                        twitter: _twitterCtrl.text.trim(),
-                        linkedin: _linkedinCtrl.text.trim(),
-                        youtube: _youtubeCtrl.text.trim(),
-                        tiktok: _tiktokCtrl.text.trim(),
                       );
                       LoadingDialog.hide();
                       if (res['ok'] == true) {
@@ -450,7 +457,9 @@ class DoctorProfileManagePage extends StatelessWidget {
                       } else {
                         await showStatusDialog(
                           title: 'فشل الحفظ',
-                          message: res['data']?['message']?.toString() ?? 'تعذر تحديث البيانات',
+                          message:
+                              res['data']?['message']?.toString() ??
+                              'تعذر تحديث البيانات',
                           color: const Color(0xFFFF3B30),
                           icon: Icons.error_outline,
                         );
@@ -580,52 +589,6 @@ class DoctorProfileManagePage extends StatelessWidget {
     );
   }
 
-  Widget _labeledRow(
-    String label,
-    TextEditingController controller, {
-    required String hint,
-    required String trailingAsset,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.textLight),
-      ),
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-      child: Row(
-        children: [
-          MyText(
-            label,
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textSecondary,
-          ),
-          SizedBox(width: 8.w),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(
-                hintText: hint,
-                hintStyle: TextStyle(
-                  fontFamily: 'Expo Arabic',
-                  color: AppColors.textLight,
-                ),
-                border: InputBorder.none,
-              ),
-              style: TextStyle(
-                fontFamily: 'Expo Arabic',
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          SizedBox(width: 8.w),
-          Image.asset(trailingAsset, width: 22.w, height: 22.w),
-        ],
-      ),
-    );
-  }
 
   Widget _minusButton(VoidCallback onTap) {
     return InkWell(
@@ -1238,7 +1201,9 @@ class DoctorProfileManagePage extends StatelessWidget {
               controller.toggleInsuranceExpansion();
               // تحميل السعر إلى الحقل عند الفتح
               if (controller.defaultPrice.value > 0) {
-                priceCtrl.text = controller.defaultPrice.value.toStringAsFixed(0);
+                priceCtrl.text = controller.defaultPrice.value.toStringAsFixed(
+                  0,
+                );
               }
             },
             child: Container(
@@ -1308,12 +1273,14 @@ class DoctorProfileManagePage extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
           child: Row(
             children: [
-              Obx(() => MyText(
-                controller.currency.value,
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textSecondary,
-              )),
+              Obx(
+                () => MyText(
+                  controller.currency.value,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
+              ),
               SizedBox(width: 12.w),
               Expanded(
                 child: TextField(
@@ -1338,11 +1305,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                   ),
                 ),
               ),
-              Icon(
-                Icons.attach_money,
-                color: AppColors.primary,
-                size: 24.r,
-              ),
+              Icon(Icons.attach_money, color: AppColors.primary, size: 24.r),
             ],
           ),
         ),
@@ -1400,8 +1363,8 @@ class DoctorProfileManagePage extends StatelessWidget {
                 } else {
                   await showStatusDialog(
                     title: 'فشل الحفظ',
-                    message: res['data']?['message']?.toString() ??
-                        'تعذر حفظ السعر',
+                    message:
+                        res['data']?['message']?.toString() ?? 'تعذر حفظ السعر',
                     color: const Color(0xFFFF3B30),
                     icon: Icons.error_outline,
                   );
@@ -1762,7 +1725,9 @@ class DoctorProfileManagePage extends StatelessWidget {
     if (p.startsWith('http://') || p.startsWith('https://')) {
       final host = Uri.tryParse(p)?.host.toLowerCase() ?? '';
       // Avoid providers that often block hotlinking (403), show local placeholder instead
-      if (host.contains('scontent') || host.contains('fbcdn') || host.contains('facebook.com')) {
+      if (host.contains('scontent') ||
+          host.contains('fbcdn') ||
+          host.contains('facebook.com')) {
         return const AssetImage('assets/icons/home/doctor.png');
       }
       return NetworkImage(p);
@@ -2224,7 +2189,9 @@ class DoctorProfileManagePage extends StatelessWidget {
                               color: AppColors.textSecondary,
                             ),
                             dot(
-                              color: AppColors.textSecondary.withValues(alpha: 0.6),
+                              color: AppColors.textSecondary.withValues(
+                                alpha: 0.6,
+                              ),
                             ),
                             MyText(
                               time,
@@ -2232,7 +2199,9 @@ class DoctorProfileManagePage extends StatelessWidget {
                               color: AppColors.textSecondary,
                             ),
                             dot(
-                              color: AppColors.textSecondary.withValues(alpha: 0.6),
+                              color: AppColors.textSecondary.withValues(
+                                alpha: 0.6,
+                              ),
                             ),
                             MyText(
                               statusLabel(status),
@@ -2660,7 +2629,10 @@ class DoctorProfileManagePage extends StatelessWidget {
                   (_) => Card(
                     margin: EdgeInsets.only(bottom: 8.h),
                     child: ListTile(
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 8.h,
+                      ),
                       leading: Container(
                         width: 48.w,
                         height: 48.w,
@@ -2669,8 +2641,18 @@ class DoctorProfileManagePage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                       ),
-                      title: MyText(' ', fontSize: 16.sp, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
-                      subtitle: MyText(' ', fontSize: 14.sp, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                      title: MyText(
+                        ' ',
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                      subtitle: MyText(
+                        ' ',
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ),
                 ),

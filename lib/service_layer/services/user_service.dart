@@ -49,44 +49,62 @@ class UserService {
     return res;
   }
 
+  Future<Map<String, dynamic>> getUserById(String userId) async {
+    final url = '${ApiConstants.baseUrl}/api/users/$userId';
+    final res = await _api.get(url);
+    return res;
+  }
+
   Future<Map<String, dynamic>> updateUserInfo({
     required String name,
     required String city,
     required String phone,
     required String gender,
     required int age,
+    String? specialization,
+    String? company,
+    String? deviceToken,
+    Map<String, String>? socialMedia,
   }) async {
-    final body = {
+    final Map<String, dynamic> body = {
       'name': name,
       'city': city,
       'phone': phone,
       'gender': gender,
       'age': age,
     };
+    
+    // Add optional fields if provided
+    if (specialization != null && specialization.isNotEmpty) {
+      body['specialization'] = specialization;
+    }
+    if (company != null && company.isNotEmpty) {
+      body['company'] = company;
+    }
+    if (deviceToken != null && deviceToken.isNotEmpty) {
+      body['deviceToken'] = deviceToken;
+    }
+    if (socialMedia != null && socialMedia.isNotEmpty) {
+      body['socialMedia'] = socialMedia;
+    }
+    
     final res = await _api.put(ApiConstants.userInfo, body);
     return res;
   }
 
+  /// Updates only social media info (Facebook, Instagram, WhatsApp).
   Future<Map<String, dynamic>> updateSocialMedia({
     String? facebook,
-    String? twitter,
     String? instagram,
-    String? linkedin,
-    String? youtube,
-    String? tiktok,
     String? whatsapp,
   }) async {
-    final Map<String, dynamic> socialMedia = {};
-    if (facebook != null && facebook.isNotEmpty) socialMedia['facebook'] = facebook;
-    if (twitter != null && twitter.isNotEmpty) socialMedia['twitter'] = twitter;
-    if (instagram != null && instagram.isNotEmpty) socialMedia['instagram'] = instagram;
-    if (linkedin != null && linkedin.isNotEmpty) socialMedia['linkedin'] = linkedin;
-    if (youtube != null && youtube.isNotEmpty) socialMedia['youtube'] = youtube;
-    if (tiktok != null && tiktok.isNotEmpty) socialMedia['tiktok'] = tiktok;
-    if (whatsapp != null && whatsapp.isNotEmpty) socialMedia['whatsapp'] = whatsapp;
+    final Map<String, String> socialMediaMap = {};
+    if (facebook != null && facebook.isNotEmpty) socialMediaMap['facebook'] = facebook;
+    if (instagram != null && instagram.isNotEmpty) socialMediaMap['instagram'] = instagram;
+    if (whatsapp != null && whatsapp.isNotEmpty) socialMediaMap['whatsapp'] = whatsapp;
 
     final body = {
-      'socialMedia': socialMedia,
+      'socialMedia': socialMediaMap,
     };
     final res = await _api.put(ApiConstants.userInfo, body);
     return res;

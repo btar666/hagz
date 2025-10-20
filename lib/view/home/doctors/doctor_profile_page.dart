@@ -11,6 +11,7 @@ import '../../../widget/loading_dialog.dart';
 import '../../../widget/status_dialog.dart';
 import '../../appointments/patient_registration_page.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../chat/chat_details_page.dart';
 import '../../../bindings/chats_binding.dart';
 
@@ -35,6 +36,8 @@ class DoctorProfilePage extends StatelessWidget {
     controller.loadOpinionsForTarget(doctorId);
     controller.loadCvForUserId(doctorId);
     controller.loadDoctorPricing(doctorId);
+    controller.loadDoctorSocial(doctorId);
+    controller.loadRatingsCount(doctorId);
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -47,7 +50,7 @@ class DoctorProfilePage extends StatelessWidget {
               _buildHeader(),
 
               // Doctor image section
-              _buildDoctorImage(),
+              _buildDoctorImage(controller),
 
               SizedBox(height: 20.h),
 
@@ -131,7 +134,7 @@ class DoctorProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildDoctorImage() {
+  Widget _buildDoctorImage(DoctorProfileController controller) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 28.w),
       child: Container(
@@ -187,12 +190,12 @@ class DoctorProfilePage extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      MyText(
-                        '200 تقييم',
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
+                      Obx(() => MyText(
+                            '${controller.ratingsCount.value} تقييم',
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          )),
                       SizedBox(width: 4.w),
                       const Icon(Icons.favorite, color: Colors.red, size: 16),
                     ],
@@ -215,17 +218,22 @@ class DoctorProfilePage extends StatelessWidget {
       children: [
         // Name + message button (only show message button if not own profile)
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            MyText(
-              doctorName,
-              fontSize: 24.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-              textAlign: TextAlign.center,
+            if (!isOwnProfile) SizedBox(width: 40.w + 60.w + 30.w),
+            Expanded(
+              child: Center(
+                child: MyText(
+                  doctorName,
+                  fontSize: 24.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
             if (!isOwnProfile) ...[
-              SizedBox(width: 10.w),
+              SizedBox(width: 60.w),
               GestureDetector(
                 onTap: () => Get.to(
                   () =>
@@ -256,6 +264,7 @@ class DoctorProfilePage extends StatelessWidget {
                   ),
                 ),
               ),
+              SizedBox(width: 30.w),
             ],
           ],
         ),
@@ -272,28 +281,36 @@ class DoctorProfilePage extends StatelessWidget {
   }
 
   Widget _buildSocialMediaIcons() {
+    final controller = Get.find<DoctorProfileController>();
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 60.w),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildSocialIconImage(
-            'assets/icons/home/instgram.png',
-            const Color(0xFFE4405F),
-          ),
-          _buildSocialIconImage(
-            'assets/icons/home/phone.png',
-            const Color(0xFFFF3040),
-          ),
-          _buildSocialIconImage(
-            'assets/icons/home/watsapp.png',
-            const Color(0xFF25D366),
-          ),
-          _buildSocialIconImage(
-            'assets/icons/home/facebook.png',
-            const Color(0xFF1877F2),
-          ),
-          _buildSocialIconImage('assets/icons/home/link.png', Colors.grey),
+          Obx(() {
+            final ig = controller.instagram.value;
+            return _buildSocialIconImage(
+              'assets/icons/home/instgram.png',
+              const Color(0xFFE4405F),
+              onTap: ig.trim().isEmpty ? null : () => _openUrlIfAny(ig),
+            );
+          }),
+          Obx(() {
+            final wa = controller.whatsapp.value;
+            return _buildSocialIconImage(
+              'assets/icons/home/watsapp.png',
+              const Color(0xFF25D366),
+              onTap: wa.trim().isEmpty ? null : () => _openWhatsapp(wa),
+            );
+          }),
+          Obx(() {
+            final fb = controller.facebook.value;
+            return _buildSocialIconImage(
+              'assets/icons/home/facebook.png',
+              const Color(0xFF1877F2),
+              onTap: fb.trim().isEmpty ? null : () => _openUrlIfAny(fb),
+            );
+          }),
         ],
       ),
     );
@@ -311,36 +328,43 @@ class DoctorProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildSocialIconImage(String imagePath, Color color) {
-    return Container(
-      width: 50.w,
-      height: 50.w,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(15.r),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(8.w),
-        child: Image.asset(
-          imagePath,
-          width: 34,
-          height: 34,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            // Fallback to icons if image fails to load
-            if (imagePath.contains('instgram')) {
-              return Icon(Icons.camera_alt, color: color, size: 28);
-            } else if (imagePath.contains('watsapp')) {
-              return Icon(Icons.phone, color: color, size: 28);
-            } else if (imagePath.contains('facebook')) {
-              return Icon(Icons.facebook, color: color, size: 28);
-            } else if (imagePath.contains('phone')) {
-              return Icon(Icons.phone, color: color, size: 28);
-            } else if (imagePath.contains('link')) {
+  Widget _buildSocialIconImage(
+    String imagePath,
+    Color color, {
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 50.w,
+        height: 50.w,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(15.r),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(8.w),
+          child: Image.asset(
+            imagePath,
+            width: 34,
+            height: 34,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              // Fallback to icons if image fails to load
+              if (imagePath.contains('instgram')) {
+                return Icon(Icons.camera_alt, color: color, size: 28);
+              } else if (imagePath.contains('watsapp')) {
+                return Icon(Icons.phone, color: color, size: 28);
+              } else if (imagePath.contains('facebook')) {
+                return Icon(Icons.facebook, color: color, size: 28);
+              } else if (imagePath.contains('phone')) {
+                return Icon(Icons.phone, color: color, size: 28);
+              } else if (imagePath.contains('link')) {
+                return Icon(Icons.link, color: color, size: 28);
+              }
               return Icon(Icons.link, color: color, size: 28);
-            }
-            return Icon(Icons.link, color: color, size: 28);
-          },
+            },
+          ),
         ),
       ),
     );
@@ -1321,6 +1345,63 @@ class DoctorProfilePage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _openWhatsapp(String input) async {
+    final v = input.trim();
+    if (v.isEmpty || v.startsWith('http://ABCDEFG')) {
+      Get.snackbar(
+        'لا يوجد رابط',
+        'لم يتم ضبط رابط الواتساب',
+        backgroundColor: Colors.black87,
+        colorText: Colors.white,
+      );
+      return;
+    }
+    String url = v;
+    if (!v.startsWith('http')) {
+      final digits = v.replaceAll(RegExp(r'[^0-9+]'), '');
+      url = 'https://wa.me/$digits';
+    }
+    await _launchExternal(url);
+  }
+
+  Future<void> _openUrlIfAny(String input) async {
+    var v = input.trim();
+    if (v.isEmpty || v.startsWith('http://ABCDEFG')) {
+      Get.snackbar(
+        'لا يوجد رابط',
+        'لم يتم ضبط الرابط',
+        backgroundColor: Colors.black87,
+        colorText: Colors.white,
+      );
+      return;
+    }
+    if (!v.startsWith('http')) {
+      v = 'https://$v';
+    }
+    await _launchExternal(v);
+  }
+
+  Future<void> _launchExternal(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        Get.snackbar(
+          'تعذر الفتح',
+          'لا يمكن فتح الرابط',
+          backgroundColor: Colors.black87,
+          colorText: Colors.white,
+        );
+      }
+    } catch (_) {
+      Get.snackbar(
+        'تعذر الفتح',
+        'الرابط غير صالح',
+        backgroundColor: Colors.black87,
+        colorText: Colors.white,
+      );
+    }
   }
 
   ImageProvider _imageProvider(String path) {
