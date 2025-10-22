@@ -42,16 +42,19 @@ class _LoginPageState extends State<LoginPage> {
               SizedBox(height: 24.h),
               Align(
                 alignment: Alignment.centerLeft,
-                child: Container(
-                  width: 48.h,
-                  height: 48.h,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_back_ios_new,
-                    color: Colors.white,
+                child: GestureDetector(
+                  onTap: () => Get.back(),
+                  child: Container(
+                    width: 48.h,
+                    height: 48.h,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back_ios_new,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),

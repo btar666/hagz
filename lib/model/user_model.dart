@@ -8,6 +8,8 @@ class UserModel {
   final int age;
   final String city;
   final String userType; // 'User' | 'Doctor' | 'Secretary' | 'Representative'
+  final String image; // profile image URL
+  final String specialization; // doctor's specialization if any
   final Map<String, String> socialMedia; // Social media links
 
   const UserModel({
@@ -18,6 +20,8 @@ class UserModel {
     required this.age,
     required this.city,
     required this.userType,
+    this.image = '',
+    this.specialization = '',
     this.socialMedia = const <String, String>{},
   });
 
@@ -29,6 +33,8 @@ class UserModel {
     int? age,
     String? city,
     String? userType,
+    String? image,
+    String? specialization,
     Map<String, String>? socialMedia,
   }) {
     return UserModel(
@@ -39,6 +45,8 @@ class UserModel {
       age: age ?? this.age,
       city: city ?? this.city,
       userType: userType ?? this.userType,
+      image: image ?? this.image,
+      specialization: specialization ?? this.specialization,
       socialMedia: socialMedia ?? this.socialMedia,
     );
   }
@@ -51,6 +59,8 @@ class UserModel {
     'age': age,
     'city': city,
     'userType': userType,
+    'image': image,
+    'specialization': specialization,
     'socialMedia': socialMedia,
   };
 
@@ -76,6 +86,8 @@ class UserModel {
       age: int.tryParse((data['age'] ?? '0').toString()) ?? 0,
       city: (data['city'] ?? '').toString(),
       userType: (data['userType'] ?? '').toString(),
+      image: (data['image'] ?? data['avatar'] ?? '').toString(),
+      specialization: (data['specialization'] ?? '').toString(),
       socialMedia: socialMediaMap,
     );
   }

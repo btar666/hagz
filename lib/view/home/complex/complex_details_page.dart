@@ -306,12 +306,14 @@ class ComplexDetailsPage extends StatelessWidget {
             ],
           ),
           SizedBox(height: 20.h),
-          Row(
-            children: [
-              Expanded(child: _doctorCard('آرين', 'جراحة الفم', 'assets/images/doctor1.jpg')),
-              SizedBox(width: 15.w),
-              Expanded(child: _doctorCard('مالهوزن', 'جراحة العيون', 'assets/images/doctor2.jpg')),
-            ],
+          Container(
+            padding: EdgeInsets.all(20.w),
+            child: MyText(
+              'لا توجد بيانات الأطباء حالياً',
+              fontSize: 14.sp,
+              color: Colors.grey[600],
+              textAlign: TextAlign.center,
+            ),
           ),
         ],
       ),

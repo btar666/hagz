@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../utils/app_colors.dart';
 import '../../../widget/my_text.dart';
-import '../../../widget/specialty_text.dart';
+import '../../../widget/specialization_text.dart';
 import '../../../widget/doctors_filter_dialog.dart';
 import 'doctor_profile_page.dart';
 import '../../../bindings/doctor_profile_binding.dart';
@@ -35,15 +35,21 @@ class _TopRatedDoctorsPageState extends State<TopRatedDoctorsPage> {
       final res = await service.getTopDoctors(page: 1, limit: 20);
       if (res['ok'] == true) {
         final data = res['data'];
-        final list = (data is Map && data['data'] is List) ? data['data'] as List : (data as List? ?? []);
+        final list = (data is Map && data['data'] is List)
+            ? data['data'] as List
+            : (data as List? ?? []);
         _items = list.map<Map<String, dynamic>>((e) {
           final m = e as Map<String, dynamic>;
           return {
             'doctorId': m['_id']?.toString() ?? '',
             'name': m['name']?.toString() ?? '',
             'specialty': m['specialization']?.toString() ?? '',
-            'avg': (m['averageRating'] is num) ? (m['averageRating'] as num).toDouble() : 0.0,
-            'count': (m['totalRatings'] is num) ? (m['totalRatings'] as num).toInt() : 0,
+            'avg': (m['averageRating'] is num)
+                ? (m['averageRating'] as num).toDouble()
+                : 0.0,
+            'count': (m['totalRatings'] is num)
+                ? (m['totalRatings'] as num).toInt()
+                : 0,
           };
         }).toList();
       }
@@ -118,11 +124,7 @@ class _TopRatedDoctorsPageState extends State<TopRatedDoctorsPage> {
             itemCount: _isLoading ? 8 : _items.length,
             itemBuilder: (context, index) {
               final item = _isLoading
-                  ? {
-                      'doctorId': '',
-                      'name': '—',
-                      'specialty': '',
-                    }
+                  ? {'doctorId': '', 'name': '—', 'specialty': ''}
                   : _items[index];
               return _buildDoctorCard(item);
             },
@@ -139,7 +141,7 @@ class _TopRatedDoctorsPageState extends State<TopRatedDoctorsPage> {
           () => DoctorProfilePage(
             doctorId: item['doctorId'] ?? '',
             doctorName: item['name'] ?? 'طبيب',
-            specialization: item['specialty'] ?? '',
+            specializationId: item['specialty'] ?? '',
           ),
           binding: DoctorProfileBinding(),
         );
@@ -170,7 +172,11 @@ class _TopRatedDoctorsPageState extends State<TopRatedDoctorsPage> {
                     borderRadius: BorderRadius.circular(16.r),
                   ),
                   child: const Center(
-                    child: Icon(Icons.person, color: AppColors.primary, size: 40),
+                    child: Icon(
+                      Icons.person,
+                      color: AppColors.primary,
+                      size: 40,
+                    ),
                   ),
                 ),
               ),
@@ -184,10 +190,15 @@ class _TopRatedDoctorsPageState extends State<TopRatedDoctorsPage> {
               overflow: TextOverflow.ellipsis,
             ),
             SizedBox(height: 6.h),
-            SpecialtyText(
-              (item['specialty'] ?? '').toString(),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            SpecializationText(
+              specializationId: (item['specialty'] ?? '').toString().isEmpty
+                  ? null
+                  : (item['specialty'] ?? '').toString(),
+              fontSize: 12.45.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+              textAlign: TextAlign.center,
+              defaultText: '—',
             ),
             SizedBox(height: 6.h),
             const Spacer(),

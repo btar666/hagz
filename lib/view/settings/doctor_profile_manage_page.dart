@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
+import '../../widget/specialization_text.dart';
 import '../../controller/doctor_profile_controller.dart';
 import '../../controller/session_controller.dart';
 import '../appointments/appointment_details_page.dart';
@@ -11,17 +12,39 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../../service_layer/services/upload_service.dart';
 import '../../service_layer/services/user_service.dart';
+import '../../service_layer/services/specialization_service.dart';
+import '../../model/specialization_model.dart';
 import '../../widget/loading_dialog.dart';
 import '../../widget/status_dialog.dart';
 import '../../widget/confirm_dialogs.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class DoctorProfileManagePage extends StatelessWidget {
-  DoctorProfileManagePage({super.key});
+class DoctorProfileManagePage extends StatefulWidget {
+  const DoctorProfileManagePage({super.key});
 
-  bool _prefillCalled = false;
+  @override
+  State<DoctorProfileManagePage> createState() =>
+      _DoctorProfileManagePageState();
+}
 
+class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
+  static bool _prefillCalled = false;
+
+  // Personal info controllers
+  final TextEditingController _namePersonalCtrl = TextEditingController();
+  final TextEditingController _phonePersonalCtrl = TextEditingController();
+  final TextEditingController _cityPersonalCtrl = TextEditingController();
+  final TextEditingController _agePersonalCtrl = TextEditingController();
+  final RxInt _genderPersonalIndex = 0.obs;
+
+  // Specialization state
+  List<SpecializationModel> _specializations = [];
+  String? _selectedSpecializationId;
+  bool _loadingSpecializations = false;
+  final SpecializationService _specializationService = SpecializationService();
+
+  // Social controllers
   final TextEditingController _instagramCtrl = TextEditingController(
     text: 'http://ABCDEFG',
   );
@@ -48,9 +71,12 @@ class DoctorProfileManagePage extends StatelessWidget {
         final dynamic wrap = res['data'];
         Map<String, dynamic>? obj;
         if (wrap is Map<String, dynamic>) {
-          obj = (wrap['data'] is Map<String, dynamic>) ? (wrap['data'] as Map<String, dynamic>) : wrap;
+          obj = (wrap['data'] is Map<String, dynamic>)
+              ? (wrap['data'] as Map<String, dynamic>)
+              : wrap;
         }
-        final Map<String, dynamic> social = (obj?['socialMedia'] as Map<String, dynamic>?) ?? {};
+        final Map<String, dynamic> social =
+            (obj?['socialMedia'] as Map<String, dynamic>?) ?? {};
         final String? ig = social['instagram']?.toString();
         final String? wa = social['whatsapp']?.toString();
         final String? fb = social['facebook']?.toString();
@@ -60,6 +86,45 @@ class DoctorProfileManagePage extends StatelessWidget {
       }
     } catch (_) {
       // ignore
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSpecializations();
+  }
+
+  @override
+  void dispose() {
+    _namePersonalCtrl.dispose();
+    _phonePersonalCtrl.dispose();
+    _cityPersonalCtrl.dispose();
+    _agePersonalCtrl.dispose();
+    _instagramCtrl.dispose();
+    _whatsappCtrl.dispose();
+    _facebookCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchSpecializations() async {
+    final session = Get.find<SessionController>();
+    if (session.currentUser.value?.userType != 'Doctor') return;
+
+    setState(() => _loadingSpecializations = true);
+    try {
+      final specializations = await _specializationService
+          .getSpecializationsList();
+      if (mounted) {
+        setState(() {
+          _specializations = specializations;
+          _loadingSpecializations = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loadingSpecializations = false);
+      }
     }
   }
 
@@ -75,19 +140,38 @@ class DoctorProfileManagePage extends StatelessWidget {
     final String? userId = session.currentUser.value?.id;
     if (userId != null && userId.isNotEmpty) {
       controller.loadDoctorPricing(userId);
+      controller.loadRatingsCount(userId);
     }
 
     // Load existing social media data from user profile
     _loadExistingSocialMediaData(session);
 
-    // Fetch latest from API by userId once after first frame
+    // Prefill personal info from session
+    final user = session.currentUser.value;
+    if (user != null) {
+      if (_namePersonalCtrl.text.isEmpty) _namePersonalCtrl.text = user.name;
+      if (_phonePersonalCtrl.text.isEmpty) _phonePersonalCtrl.text = user.phone;
+      if (_cityPersonalCtrl.text.isEmpty) _cityPersonalCtrl.text = user.city;
+      if (_agePersonalCtrl.text.isEmpty)
+        _agePersonalCtrl.text = (user.age > 0 ? user.age : 18).toString();
+      if (_selectedSpecializationId == null && user.specialization.isNotEmpty) {
+        _selectedSpecializationId = user.specialization;
+      }
+      final g = user.gender.trim();
+      if (g == 'ذكر' || g.toLowerCase() == 'male') {
+        _genderPersonalIndex.value = 0;
+      } else if (g == 'انثى' || g == 'أنثى' || g.toLowerCase() == 'female') {
+        _genderPersonalIndex.value = 1;
+      }
+    }
+
     if (!_prefillCalled && userId != null && userId.isNotEmpty) {
       _prefillCalled = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _prefillSocialFromApi(userId);
       });
     }
-    
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -160,6 +244,41 @@ class DoctorProfileManagePage extends StatelessWidget {
                     : const SizedBox.shrink(),
               ),
 
+              SizedBox(height: 12.h),
+
+              // Personal info edit button
+              Obx(
+                () => !controller.isEditingPersonal.value
+                    ? SizedBox(
+                        width: double.infinity,
+                        height: 56.h,
+                        child: OutlinedButton(
+                          onPressed: () => controller.toggleEditingPersonal(),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: AppColors.primary),
+                            foregroundColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18.r),
+                            ),
+                            padding: EdgeInsets.symmetric(vertical: 14.h),
+                          ),
+                          child: MyText(
+                            'تعديل المعلومات الشخصية',
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+
+              Obx(
+                () => controller.isEditingPersonal.value
+                    ? _buildPersonalEditCard(controller)
+                    : const SizedBox.shrink(),
+              ),
+
               SizedBox(height: 16.h),
 
               _buildSectionsList(),
@@ -172,6 +291,9 @@ class DoctorProfileManagePage extends StatelessWidget {
   }
 
   Widget _buildProfileCard() {
+    final session = Get.find<SessionController>();
+    final DoctorProfileController controller =
+        Get.find<DoctorProfileController>();
     // مطابق لتصميم صفحة بروفايل الطبيب الحالية
     return Column(
       children: [
@@ -194,11 +316,47 @@ class DoctorProfileManagePage extends StatelessWidget {
               borderRadius: BorderRadius.circular(20.r),
               child: Stack(
                 children: [
-                  Image.asset(
-                    'assets/icons/home/doctor.png',
-                    width: double.infinity,
-                    height: double.infinity,
-                    fit: BoxFit.cover,
+                  Obx(() {
+                    final img = session.currentUser.value?.image ?? '';
+                    if (img.isNotEmpty) {
+                      return Image.network(
+                        img,
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (c, e, s) => Image.asset(
+                          'assets/icons/home/doctor.png',
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      );
+                    }
+                    return Image.asset(
+                      'assets/icons/home/doctor.png',
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                    );
+                  }),
+                  Positioned(
+                    top: 12.h,
+                    right: 12.w,
+                    child: InkWell(
+                      onTap: _changeProfileImage,
+                      child: Container(
+                        padding: EdgeInsets.all(8.w),
+                        decoration: BoxDecoration(
+                          color: Colors.black45,
+                          borderRadius: BorderRadius.circular(20.r),
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
                   ),
                   Positioned(
                     bottom: 16.h,
@@ -215,11 +373,13 @@ class DoctorProfileManagePage extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          MyText(
-                            '200 تقييم',
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                          Obx(
+                            () => MyText(
+                              '${controller.ratingsCount.value} تقييم',
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
                           ),
                           SizedBox(width: 4.w),
                           const Icon(
@@ -237,19 +397,28 @@ class DoctorProfileManagePage extends StatelessWidget {
           ),
         ),
         SizedBox(height: 20.h),
-        MyText(
-          'د. أيكورت',
-          fontSize: 24.sp,
-          fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
-        ),
+        Obx(() {
+          final session = Get.find<SessionController>();
+          final name = session.currentUser.value?.name ?? '—';
+          return MyText(
+            name.isNotEmpty ? name : '—',
+            fontSize: 24.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          );
+        }),
         SizedBox(height: 8.h),
-        MyText(
-          'طب و جراحة العيون',
-          fontSize: 16.sp,
-          fontWeight: FontWeight.w400,
-          color: AppColors.textSecondary,
-        ),
+        Obx(() {
+          final session = Get.find<SessionController>();
+          final spec = session.currentUser.value?.specialization ?? '';
+          return SpecializationText(
+            specializationId: spec.isEmpty ? null : spec,
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w400,
+            color: AppColors.textSecondary,
+            defaultText: '—',
+          );
+        }),
         SizedBox(height: 20.h),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -330,7 +499,6 @@ class DoctorProfileManagePage extends StatelessWidget {
     }
     await _launchExternal(url);
   }
-
 
   Future<void> _openUrlIfAny(String input, {String? fallbackHost}) async {
     var v = input.trim();
@@ -551,7 +719,7 @@ class DoctorProfileManagePage extends StatelessWidget {
   Widget _plainRow(
     TextEditingController controller, {
     required String hint,
-    required String trailingAsset,
+    String? trailingAsset,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -560,35 +728,41 @@ class DoctorProfileManagePage extends StatelessWidget {
         border: Border.all(color: AppColors.textLight),
       ),
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: controller,
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(
-                hintText: hint,
-                hintStyle: TextStyle(
-                  fontFamily: 'Expo Arabic',
-                  color: AppColors.textLight,
-                  fontSize: 14.sp,
-                ),
-                border: InputBorder.none,
-              ),
-              style: TextStyle(
-                fontFamily: 'Expo Arabic',
-                fontWeight: FontWeight.w700,
-                fontSize: 16.sp,
-              ),
-            ),
+      child: TextField(
+        controller: controller,
+        textAlign: TextAlign.center,
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(
+            fontFamily: 'Expo Arabic',
+            color: AppColors.textLight,
+            fontSize: 14.sp,
           ),
-          SizedBox(width: 8.w),
-          Image.asset(trailingAsset, width: 22.w, height: 22.w),
-        ],
+          border: InputBorder.none,
+          suffixIcon: (trailingAsset != null && trailingAsset.isNotEmpty)
+              ? Padding(
+                  padding: EdgeInsets.all(4.w),
+                  child: Image.asset(
+                    trailingAsset,
+                    width: 22.w,
+                    height: 22.w,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.cake_outlined,
+                      size: 20,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                )
+              : null,
+        ),
+        style: TextStyle(
+          fontFamily: 'Expo Arabic',
+          fontWeight: FontWeight.w700,
+          fontSize: 16.sp,
+        ),
       ),
     );
   }
-
 
   Widget _minusButton(VoidCallback onTap) {
     return InkWell(
@@ -602,6 +776,296 @@ class DoctorProfileManagePage extends StatelessWidget {
           boxShadow: [BoxShadow(color: AppColors.shadow, blurRadius: 6)],
         ),
         child: Icon(Icons.remove_circle, color: Colors.redAccent, size: 26.sp),
+      ),
+    );
+  }
+
+  Widget _buildPersonalEditCard(DoctorProfileController controller) {
+    return Container(
+      margin: EdgeInsets.only(top: 8.h),
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24.r),
+        boxShadow: [BoxShadow(color: AppColors.shadow, blurRadius: 10)],
+      ),
+      child: Column(
+        children: [
+          _plainRow(_namePersonalCtrl, hint: 'الاسم الكامل'),
+          SizedBox(height: 12.h),
+          _plainRow(
+            _phonePersonalCtrl,
+            hint: 'رقم الهاتف',
+            trailingAsset: 'assets/icons/home/phone.png',
+          ),
+          SizedBox(height: 12.h),
+          // Gender selector
+          Row(
+            children: [
+              Expanded(
+                child: Obx(() {
+                  final sel = _genderPersonalIndex.value == 0;
+                  return OutlinedButton(
+                    onPressed: () => _genderPersonalIndex.value = 0,
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                        color: sel ? AppColors.primary : AppColors.divider,
+                      ),
+                      foregroundColor: sel
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                      ),
+                    ),
+                    child: MyText(
+                      'ذكر',
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w800,
+                      color: sel ? AppColors.primary : AppColors.textSecondary,
+                    ),
+                  );
+                }),
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Obx(() {
+                  final sel = _genderPersonalIndex.value == 1;
+                  return OutlinedButton(
+                    onPressed: () => _genderPersonalIndex.value = 1,
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                        color: sel ? AppColors.primary : AppColors.divider,
+                      ),
+                      foregroundColor: sel
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                      ),
+                    ),
+                    child: MyText(
+                      'انثى',
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w800,
+                      color: sel ? AppColors.primary : AppColors.textSecondary,
+                    ),
+                  );
+                }),
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          _plainRow(
+            _agePersonalCtrl,
+            hint: 'العمر',
+            trailingAsset: 'assets/icons/home/link.png',
+          ),
+          SizedBox(height: 12.h),
+          _plainRow(
+            _cityPersonalCtrl,
+            hint: 'المدينة',
+            trailingAsset: 'assets/icons/home/link.png',
+          ),
+          SizedBox(height: 12.h),
+          _specializationDropdown(),
+          SizedBox(height: 16.h),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => controller.toggleEditingPersonal(),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: AppColors.secondary),
+                    foregroundColor: AppColors.secondary,
+                    padding: EdgeInsets.symmetric(vertical: 16.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18.r),
+                    ),
+                  ),
+                  child: MyText(
+                    'إلغاء',
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.secondary,
+                  ),
+                ),
+              ),
+              SizedBox(width: 16.w),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    final name = _namePersonalCtrl.text.trim();
+                    final phone = _phonePersonalCtrl.text.trim();
+                    final city = _cityPersonalCtrl.text.trim();
+                    final ageText = _agePersonalCtrl.text.trim();
+                    if (name.isEmpty ||
+                        phone.isEmpty ||
+                        city.isEmpty ||
+                        ageText.isEmpty) {
+                      Get.snackbar(
+                        'خطأ',
+                        'يرجى تعبئة الحقول المطلوبة',
+                        backgroundColor: const Color(0xFFFF3B30),
+                        colorText: Colors.white,
+                      );
+                      return;
+                    }
+                    final age = int.tryParse(ageText) ?? 0;
+                    final gender = _genderPersonalIndex.value == 0
+                        ? 'ذكر'
+                        : 'انثى';
+                    await LoadingDialog.show(message: 'جاري الحفظ...');
+                    try {
+                      print('🔄 Updating user info...');
+                      print('📝 Name: $name');
+                      print('📞 Phone: $phone');
+                      print('🏙️ City: $city');
+                      print('👤 Gender: $gender');
+                      print('🎂 Age: $age');
+                      print('🏥 Specialization ID: $_selectedSpecializationId');
+
+                      final userService = Get.put(UserService());
+                      final res = await userService.updateUserInfo(
+                        name: name,
+                        city: city,
+                        phone: phone,
+                        gender: gender,
+                        age: age,
+                        specializationId: _selectedSpecializationId,
+                      );
+
+                      print('📥 UPDATE USER INFO RESPONSE:');
+                      print('Response: $res');
+                      print('res[ok]: ${res['ok']}');
+                      print('res[data]: ${res['data']}');
+
+                      LoadingDialog.hide();
+                      if (res['ok'] == true) {
+                        print('✅ Update successful!');
+                        controller.toggleEditingPersonal();
+
+                        // Update session model with data from server
+                        final session = Get.find<SessionController>();
+                        final current = session.currentUser.value;
+                        print(
+                          '👤 Current user before update: ${current?.toJson()}',
+                        );
+
+                        // Extract user data from server response
+                        final responseData = res['data'];
+                        final userData =
+                            (responseData is Map &&
+                                responseData['data'] != null)
+                            ? responseData['data'] as Map<String, dynamic>
+                            : null;
+
+                        print('📦 Server returned user data: $userData');
+
+                        if (current != null && userData != null) {
+                          final serverSpecialization =
+                              userData['specialization']?.toString();
+
+                          // Check if server accepted the specialization update
+                          if (_selectedSpecializationId != null &&
+                              serverSpecialization != null &&
+                              _selectedSpecializationId !=
+                                  serverSpecialization) {
+                            print(
+                              '⚠️ WARNING: Specialization NOT updated by server!',
+                            );
+                            print('   Sent: $_selectedSpecializationId');
+                            print('   Received: $serverSpecialization');
+                          }
+
+                          // Update with data from server response
+                          final updatedUser = current.copyWith(
+                            name: userData['name']?.toString() ?? name,
+                            phone:
+                                phone, // Phone not in response, use our value
+                            gender: userData['gender']?.toString() ?? gender,
+                            age: userData['age'] as int? ?? age,
+                            city: userData['city']?.toString() ?? city,
+                            specialization:
+                                serverSpecialization ?? current.specialization,
+                            image:
+                                userData['image']?.toString() ?? current.image,
+                          );
+                          print(
+                            '👤 Updated user from server: ${updatedUser.toJson()}',
+                          );
+                          session.setCurrentUser(updatedUser);
+
+                          // Update the selected specialization to match server
+                          setState(() {
+                            _selectedSpecializationId = serverSpecialization;
+                          });
+                        } else if (current != null) {
+                          // Fallback: use our sent data
+                          final updatedUser = current.copyWith(
+                            name: name,
+                            phone: phone,
+                            gender: gender,
+                            age: age,
+                            city: city,
+                            specialization:
+                                _selectedSpecializationId ??
+                                current.specialization,
+                          );
+                          print(
+                            '👤 Updated user (fallback): ${updatedUser.toJson()}',
+                          );
+                          session.setCurrentUser(updatedUser);
+                        }
+                        await showStatusDialog(
+                          title: 'تم الحفظ',
+                          message: 'تم تحديث المعلومات الشخصية بنجاح',
+                          color: AppColors.primary,
+                          icon: Icons.check_circle_outline,
+                        );
+                      } else {
+                        print('❌ Update failed!');
+                        print('Error message: ${res['data']?['message']}');
+                        await showStatusDialog(
+                          title: 'فشل الحفظ',
+                          message:
+                              res['data']?['message']?.toString() ??
+                              'تعذر تحديث البيانات',
+                          color: const Color(0xFFFF3B30),
+                          icon: Icons.error_outline,
+                        );
+                      }
+                    } catch (e) {
+                      LoadingDialog.hide();
+                      await showStatusDialog(
+                        title: 'خطأ',
+                        message: 'حدث خطأ غير متوقع: $e',
+                        color: const Color(0xFFFF3B30),
+                        icon: Icons.error_outline,
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: EdgeInsets.symmetric(vertical: 16.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18.r),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: MyText(
+                    'حفظ',
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1568,20 +2032,6 @@ class DoctorProfileManagePage extends StatelessWidget {
     final String comment = (item['comment'] ?? '') as String;
     final String? dateStr = item['date'] as String?;
     final bool published = (item['published'] as bool? ?? false);
-    // عرض التاريخ فقط بدون الوقت
-    String dateOnly = '';
-    try {
-      if (dateStr != null && dateStr.isNotEmpty) {
-        final dt = DateTime.parse(dateStr);
-        dateOnly = _formatDate(dt);
-      }
-    } catch (_) {
-      if ((dateStr ?? '').contains('T')) {
-        dateOnly = (dateStr ?? '').split('T').first;
-      } else {
-        dateOnly = dateStr ?? '';
-      }
-    }
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 16.h),
@@ -1719,6 +2169,78 @@ class DoctorProfileManagePage extends StatelessWidget {
   String _formatDate(DateTime dt) =>
       '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
 
+  Future<void> _changeProfileImage() async {
+    await LoadingDialog.show(message: 'جاري رفع الصورة...');
+    try {
+      final picker = ImagePicker();
+      final x = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (x == null) {
+        LoadingDialog.hide();
+        return;
+      }
+      final upload = UploadService();
+      final res = await upload.uploadImage(File(x.path));
+      if (res['ok'] == true) {
+        final url = (res['data']?['data']?['url']?.toString() ?? '');
+        if (url.isNotEmpty) {
+          final service = Get.put(UserService());
+          final update = await service.updateProfileImage(url);
+          LoadingDialog.hide();
+          if (update['ok'] == true) {
+            final session = Get.find<SessionController>();
+            final current = session.currentUser.value;
+            if (current != null) {
+              session.setCurrentUser(current.copyWith(image: url));
+            }
+            await showStatusDialog(
+              title: 'تم التحديث',
+              message: 'تم تحديث صورتك الشخصية',
+              color: AppColors.primary,
+              icon: Icons.check_circle_outline,
+            );
+          } else {
+            await showStatusDialog(
+              title: 'فشل التحديث',
+              message:
+                  update['data']?['message']?.toString() ?? 'تعذر تحديث الصورة',
+              color: const Color(0xFFFF3B30),
+              icon: Icons.error_outline,
+            );
+          }
+        } else {
+          LoadingDialog.hide();
+          await showStatusDialog(
+            title: 'فشل الرفع',
+            message: 'تعذر الحصول على الرابط من الخادم',
+            color: const Color(0xFFFF3B30),
+            icon: Icons.error_outline,
+          );
+        }
+      } else {
+        LoadingDialog.hide();
+        await showStatusDialog(
+          title: 'فشل الرفع',
+          message: res['message']?.toString().isNotEmpty == true
+              ? res['message'] as String
+              : 'يرجى المحاولة لاحقاً',
+          color: const Color(0xFFFF3B30),
+          icon: Icons.error_outline,
+        );
+      }
+    } catch (_) {
+      LoadingDialog.hide();
+      await showStatusDialog(
+        title: 'خطأ',
+        message: 'حدث خطأ أثناء رفع الصورة',
+        color: const Color(0xFFFF3B30),
+        icon: Icons.error_outline,
+      );
+    }
+  }
+
   ImageProvider _imageProvider(String path) {
     final p = path.trim();
     // Network URL
@@ -1730,7 +2252,24 @@ class DoctorProfileManagePage extends StatelessWidget {
           host.contains('facebook.com')) {
         return const AssetImage('assets/icons/home/doctor.png');
       }
-      return NetworkImage(p);
+      // Handle URLs with special characters by encoding them properly
+      try {
+        final uri = Uri.parse(p);
+        final encodedUrl = uri.toString();
+        return NetworkImage(encodedUrl);
+      } catch (_) {
+        // If URL parsing fails, try manual encoding of the path part
+        try {
+          final parts = p.split('/');
+          if (parts.length > 3) {
+            final baseParts = parts.take(parts.length - 1).join('/');
+            final fileName = Uri.encodeComponent(parts.last);
+            final encodedUrl = '$baseParts/$fileName';
+            return NetworkImage(encodedUrl);
+          }
+        } catch (_) {}
+        return const AssetImage('assets/icons/home/doctor.png');
+      }
     }
     // Local file (Unix or Windows)
     final isWindowsDrive = RegExp(r'^[A-Za-z]:\\').hasMatch(p);
@@ -2801,6 +3340,83 @@ class DoctorProfileManagePage extends StatelessWidget {
           const Icon(Icons.expand_more, color: AppColors.textSecondary),
         ],
       ),
+    );
+  }
+
+  Widget _specializationDropdown() {
+    return Column(
+      children: [
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: DropdownButtonFormField<String>(
+            value: _selectedSpecializationId,
+            decoration: InputDecoration(
+              hintText: _loadingSpecializations
+                  ? 'جاري التحميل...'
+                  : _specializations.isEmpty
+                  ? 'لا توجد اختصاصات'
+                  : 'اختر الاختصاص',
+              hintStyle: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 16.sp,
+                fontFamily: 'Expo Arabic',
+              ),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(vertical: 12.h),
+            ),
+            isExpanded: true,
+            items: _specializations.map((spec) {
+              return DropdownMenuItem<String>(
+                value: spec.id,
+                child: Text(
+                  spec.name,
+                  style: TextStyle(fontSize: 16.sp, fontFamily: 'Expo Arabic'),
+                  textAlign: TextAlign.right,
+                ),
+              );
+            }).toList(),
+            onChanged: _loadingSpecializations || _specializations.isEmpty
+                ? null
+                : (value) {
+                    setState(() {
+                      _selectedSpecializationId = value;
+                    });
+                  },
+          ),
+        ),
+        if (_specializations.isEmpty && !_loadingSpecializations) ...[
+          SizedBox(height: 8.h),
+          InkWell(
+            onTap: _fetchSpecializations,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(color: AppColors.primary, width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.refresh, color: AppColors.primary, size: 16.sp),
+                  SizedBox(width: 4.w),
+                  MyText(
+                    'إعادة المحاولة',
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

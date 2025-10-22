@@ -38,9 +38,10 @@ class AuthService {
     required int age,
     required String city,
     required String userType,
-    String specialization = '',
+    String specializationId = '',
     String company = '',
     String deviceToken = '',
+    String image = '',
   }) async {
     final uri = Uri.parse(ApiConstants.register);
     final payload = {
@@ -51,9 +52,10 @@ class AuthService {
       'age': age,
       'city': city,
       'userType': userType,
-      'specialization': specialization,
+      if (specializationId.isNotEmpty) 'specialization': specializationId,
       'company': company,
       'deviceToken': deviceToken,
+      if (image.isNotEmpty) 'image': image,
     };
 
     final response = await http.post(

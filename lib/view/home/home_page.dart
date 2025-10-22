@@ -14,7 +14,7 @@ import 'search_page.dart';
 import '../../bindings/search_binding.dart';
 import '../../widget/banner_carousel.dart';
 import '../../widget/my_text.dart';
-import '../../widget/specialty_text.dart';
+import '../../widget/specialization_text.dart';
 import '../../widget/doctors_filter_dialog.dart';
 import '../chat/chats_page.dart';
 import 'doctors/top_rated_doctors_page.dart';
@@ -23,6 +23,7 @@ import '../../model/hospital_model.dart';
 import '../../bindings/chats_binding.dart';
 import '../../bindings/doctor_profile_binding.dart';
 import '../../bindings/complex_details_binding.dart';
+import '../../controller/session_controller.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -102,19 +103,63 @@ class HomePage extends StatelessWidget {
                     SizedBox(width: 16.w),
 
                     // Profile avatar
-                    Container(
-                      width: 48.w,
-                      height: 48.w,
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.person,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
+                    Obx(() {
+                      final session = Get.find<SessionController>();
+                      final user = session.currentUser.value;
+                      final String img = user?.image ?? '';
+                      final String gender = (user?.gender ?? '').toLowerCase();
+                      final String type = (user?.userType ?? '')
+                          .toString(); // 'User' | 'Doctor' | 'Secretary' | 'Representative'
+                      String? fallbackAsset;
+                      if (img.isEmpty) {
+                        final isFemale =
+                            gender.contains('female') ||
+                            gender.contains('أنث') ||
+                            gender.contains('انث');
+                        if (type == 'Doctor') {
+                          fallbackAsset = 'assets/icons/home/doctor.png';
+                        } else {
+                          fallbackAsset = isFemale
+                              ? 'assets/icons/home/person_woman.jpg'
+                              : 'assets/icons/home/person_man.png';
+                        }
+                      }
+                      return Container(
+                        width: 48.w,
+                        height: 48.w,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primary,
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: img.isNotEmpty
+                            ? Image.network(
+                                img,
+                                fit: BoxFit.cover,
+                                errorBuilder: (c, e, s) =>
+                                    (fallbackAsset != null
+                                    ? Image.asset(
+                                        fallbackAsset!,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : const Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                        size: 28,
+                                      )),
+                              )
+                            : (fallbackAsset != null
+                                  ? Image.asset(
+                                      fallbackAsset,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : const Icon(
+                                      Icons.person,
+                                      color: Colors.white,
+                                      size: 28,
+                                    )),
+                      );
+                    }),
                   ],
                 ),
               ),
@@ -313,13 +358,14 @@ class HomePage extends StatelessWidget {
     final String id = (doctor['id'] ?? doctor['_id'] ?? '').toString();
     final String name = (doctor['name'] ?? '').toString();
     final String specialization = (doctor['specialization'] ?? '').toString();
+    final String image = (doctor['image'] ?? '').toString();
     return GestureDetector(
       onTap: () {
         Get.to(
           () => DoctorProfilePage(
             doctorId: id,
             doctorName: name,
-            specialization: specialization.isEmpty ? '—' : specialization,
+            specializationId: specialization.isEmpty ? '—' : specialization,
           ),
           binding: DoctorProfileBinding(),
         );
@@ -351,27 +397,23 @@ class HomePage extends StatelessWidget {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16.r),
-                    child: Image.asset(
-                      'assets/icons/home/doctor.png',
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryLight,
-                            borderRadius: BorderRadius.circular(16.r),
+                    child: image.isNotEmpty
+                        ? Image.network(
+                            image,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.asset(
+                                'assets/icons/home/doctor.png',
+                                fit: BoxFit.cover,
+                              );
+                            },
+                          )
+                        : Image.asset(
+                            'assets/icons/home/doctor.png',
+                            fit: BoxFit.cover,
                           ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.person,
-                              color: AppColors.primary,
-                              size: 40,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
                   ),
                 ),
               ),
@@ -385,10 +427,13 @@ class HomePage extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             SizedBox(height: 6.h),
-            SpecialtyText(
-              specialization.isEmpty ? '—' : specialization,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            SpecializationText(
+              specializationId: specialization.isEmpty ? null : specialization,
+              fontSize: 12.45.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+              textAlign: TextAlign.center,
+              defaultText: '—',
             ),
             const Spacer(),
           ],
@@ -576,7 +621,7 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
-  
+
   // Skeleton card for regular doctors grid
   Widget _buildDoctorSkeletonCard() {
     return Container(
@@ -608,23 +653,15 @@ class HomePage extends StatelessWidget {
             ),
           ),
           SizedBox(height: 8.h),
-          Container(
-            height: 20.h,
-            width: 100.w,
-            color: Colors.white,
-          ),
+          Container(height: 20.h, width: 100.w, color: Colors.white),
           SizedBox(height: 6.h),
-          Container(
-            height: 16.h,
-            width: 80.w,
-            color: Colors.white,
-          ),
+          Container(height: 16.h, width: 80.w, color: Colors.white),
           const Spacer(),
         ],
       ),
     );
   }
-  
+
   // Skeleton card for top-rated doctors
   Widget _buildTopRatedDoctorSkeletonCard() {
     return Container(
@@ -656,23 +693,15 @@ class HomePage extends StatelessWidget {
             ),
           ),
           SizedBox(height: 8.h),
-          Container(
-            height: 18.h,
-            width: 80.w,
-            color: Colors.white,
-          ),
+          Container(height: 18.h, width: 80.w, color: Colors.white),
           SizedBox(height: 6.h),
-          Container(
-            height: 14.h,
-            width: 90.w,
-            color: Colors.white,
-          ),
+          Container(height: 14.h, width: 90.w, color: Colors.white),
           const Spacer(),
         ],
       ),
     );
   }
-  
+
   // Skeleton card for hospitals
   Widget _buildHospitalSkeletonCard() {
     return Container(
@@ -703,11 +732,7 @@ class HomePage extends StatelessWidget {
             ),
           ),
           SizedBox(height: 6.h),
-          Container(
-            height: 20.h,
-            width: 120.w,
-            color: Colors.white,
-          ),
+          Container(height: 20.h, width: 120.w, color: Colors.white),
           SizedBox(height: 8.h),
         ],
       ),
@@ -718,7 +743,7 @@ class HomePage extends StatelessWidget {
     return Obx(() {
       final items = home.topRatedDoctors;
       final isLoading = home.isLoadingTopRated.value;
-      
+
       // إخفاء القسم تماماً إذا لم يكن هناك تحميل ولا بيانات
       if (!isLoading && items.isEmpty) return const SizedBox.shrink();
 
@@ -771,11 +796,7 @@ class HomePage extends StatelessWidget {
                 separatorBuilder: (context, index) => SizedBox(width: 12.w),
                 itemBuilder: (context, index) {
                   final item = isLoading
-                      ? {
-                          'doctorId': '',
-                          'name': '—',
-                          'specialty': '',
-                        }
+                      ? {'doctorId': '', 'name': '—', 'specialty': ''}
                       : items[index];
                   return SizedBox(
                     width: 137.w,
@@ -796,6 +817,7 @@ Widget _buildTopRatedDoctorCardFromItem(Map<String, dynamic> item) {
   final String doctorId = (item['doctorId'] ?? '').toString();
   final String name = (item['name'] ?? 'طبيب').toString();
   final String specialty = (item['specialty'] ?? '').toString();
+  final String image = (item['image'] ?? '').toString();
   final avgRaw = item['avg'];
   final double avg = avgRaw is num ? avgRaw.toDouble() : 0.0;
   final countRaw = item['count'];
@@ -826,7 +848,7 @@ Widget _buildTopRatedDoctorCardFromItem(Map<String, dynamic> item) {
         () => DoctorProfilePage(
           doctorId: doctorId,
           doctorName: name,
-          specialization: specialty,
+          specializationId: specialty,
         ),
         binding: DoctorProfileBinding(),
       );
@@ -859,37 +881,36 @@ Widget _buildTopRatedDoctorCardFromItem(Map<String, dynamic> item) {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16.r),
-                child: Image.asset(
-                  'assets/icons/home/doctor.png',
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: double.infinity,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(16.r),
+                child: image.isNotEmpty
+                    ? Image.network(
+                        image,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            'assets/icons/home/doctor.png',
+                            fit: BoxFit.cover,
+                          );
+                        },
+                      )
+                    : Image.asset(
+                        'assets/icons/home/doctor.png',
+                        fit: BoxFit.cover,
                       ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.person,
-                          color: AppColors.primary,
-                          size: 40,
-                        ),
-                      ),
-                    );
-                  },
-                ),
               ),
             ),
           ),
           SizedBox(height: 8.h),
           MyText(name, maxLines: 1, overflow: TextOverflow.ellipsis),
           SizedBox(height: 6.h),
-          SpecialtyText(
-            specialty,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          SpecializationText(
+            specializationId: specialty.isEmpty ? null : specialty,
+            fontSize: 12.45.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+            textAlign: TextAlign.center,
+            defaultText: '—',
           ),
           const Spacer(),
         ],

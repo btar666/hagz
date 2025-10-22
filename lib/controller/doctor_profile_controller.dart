@@ -18,6 +18,7 @@ class DoctorProfileController extends GetxController {
   var isSequenceExpanded = false.obs; // تسلسل المواعيد
   // Manage page UI states
   var isEditingSocial = false.obs;
+  var isEditingPersonal = false.obs;
 
   // Toggle methods for each section
   void toggleBioExpansion() {
@@ -99,6 +100,7 @@ class DoctorProfileController extends GetxController {
   var instagram = ''.obs;
   var whatsapp = ''.obs;
   var facebook = ''.obs;
+  var doctorImageUrl = ''.obs;
   var isLoadingSocial = false.obs;
 
   // Ratings summary for doctor profile
@@ -337,6 +339,10 @@ class DoctorProfileController extends GetxController {
   // Mutations used by manage page
   void toggleEditingSocial() {
     isEditingSocial.toggle();
+  }
+
+  void toggleEditingPersonal() {
+    isEditingPersonal.toggle();
   }
 
   void updateBio(String value) {
@@ -648,6 +654,16 @@ class DoctorProfileController extends GetxController {
         instagram.value = social['instagram']?.toString() ?? '';
         whatsapp.value = social['whatsapp']?.toString() ?? '';
         facebook.value = social['facebook']?.toString() ?? '';
+        // robust image parsing across possible keys
+        String parsedImage = '';
+        for (final k in ['image','imageUrl','avatar','profileImage','photo','picture']) {
+          final v = obj?[k];
+          if (v != null && v.toString().trim().isNotEmpty) {
+            parsedImage = v.toString().trim();
+            break;
+          }
+        }
+        doctorImageUrl.value = parsedImage;
       }
     } catch (_) {
     } finally {

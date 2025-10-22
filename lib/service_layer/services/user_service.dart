@@ -10,14 +10,27 @@ class UserService {
   final SessionController _session = Get.find<SessionController>();
 
   Future<Map<String, dynamic>> getUserInfo() async {
+    print('📋 GET USER INFO REQUEST: ${ApiConstants.userInfo}');
+    print('📋 Token: ${_session.token.value}');
+
     final res = await _api.get(ApiConstants.userInfo);
+
+    print('📋 GET USER INFO RESPONSE: $res');
+
     if (res['ok'] == true) {
       final data = res['data'] as Map<String, dynamic>;
+      print('📋 USER DATA: $data');
       try {
         final userJson = (data['user'] as Map<String, dynamic>?) ?? data;
+        print('📋 USER JSON: $userJson');
         final user = UserModel.fromJson(userJson);
         _session.setCurrentUser(user);
-      } catch (_) {}
+        print('📋 USER MODEL CREATED: ${user.name} - ${user.id}');
+      } catch (e) {
+        print('📋 ERROR PARSING USER: $e');
+      }
+    } else {
+      print('📋 GET USER INFO FAILED: ${res['message']}');
     }
     return res;
   }
@@ -61,10 +74,11 @@ class UserService {
     required String phone,
     required String gender,
     required int age,
-    String? specialization,
+    String? specializationId,
     String? company,
     String? deviceToken,
     Map<String, String>? socialMedia,
+    String? image,
   }) async {
     final Map<String, dynamic> body = {
       'name': name,
@@ -73,10 +87,15 @@ class UserService {
       'gender': gender,
       'age': age,
     };
-    
+
     // Add optional fields if provided
-    if (specialization != null && specialization.isNotEmpty) {
-      body['specialization'] = specialization;
+    if (specializationId != null && specializationId.isNotEmpty) {
+      // Try both field names to ensure compatibility
+      body['specialization'] = specializationId;
+      body['specializationId'] = specializationId;
+      print('✅ Adding specialization/Id to body: $specializationId');
+    } else {
+      print('⚠️ specializationId is null or empty: $specializationId');
     }
     if (company != null && company.isNotEmpty) {
       body['company'] = company;
@@ -87,8 +106,19 @@ class UserService {
     if (socialMedia != null && socialMedia.isNotEmpty) {
       body['socialMedia'] = socialMedia;
     }
-    
+    if (image != null && image.isNotEmpty) {
+      body['image'] = image;
+    }
+
+    print('📤 UPDATE USER INFO REQUEST BODY:');
+    print('URL: ${ApiConstants.userInfo}');
+    print('Body: $body');
+
     final res = await _api.put(ApiConstants.userInfo, body);
+
+    print('📥 UPDATE USER INFO SERVICE RESPONSE:');
+    print('Response: $res');
+
     return res;
   }
 
@@ -99,13 +129,21 @@ class UserService {
     String? whatsapp,
   }) async {
     final Map<String, String> socialMediaMap = {};
-    if (facebook != null && facebook.isNotEmpty) socialMediaMap['facebook'] = facebook;
-    if (instagram != null && instagram.isNotEmpty) socialMediaMap['instagram'] = instagram;
-    if (whatsapp != null && whatsapp.isNotEmpty) socialMediaMap['whatsapp'] = whatsapp;
+    if (facebook != null && facebook.isNotEmpty)
+      socialMediaMap['facebook'] = facebook;
+    if (instagram != null && instagram.isNotEmpty)
+      socialMediaMap['instagram'] = instagram;
+    if (whatsapp != null && whatsapp.isNotEmpty)
+      socialMediaMap['whatsapp'] = whatsapp;
 
-    final body = {
-      'socialMedia': socialMediaMap,
-    };
+    final body = {'socialMedia': socialMediaMap};
+    final res = await _api.put(ApiConstants.userInfo, body);
+    return res;
+  }
+
+  /// Update only profile image
+  Future<Map<String, dynamic>> updateProfileImage(String imageUrl) async {
+    final body = {'image': imageUrl};
     final res = await _api.put(ApiConstants.userInfo, body);
     return res;
   }

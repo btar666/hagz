@@ -49,7 +49,7 @@ class SettingsPage extends StatelessWidget {
                 color: AppColors.secondary,
                 onTap: () {
                   Get.to(
-                    () => DoctorProfileManagePage(),
+                    () => const DoctorProfileManagePage(),
                     binding: BindingsBuilder(() {
                       // يمكن إضافة controller هنا إذا لزم الأمر
                     }),

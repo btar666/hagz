@@ -14,17 +14,19 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../chat/chat_details_page.dart';
 import '../../../bindings/chats_binding.dart';
+import '../../../utils/constants.dart';
+import '../../../widget/specialization_text.dart';
 
 class DoctorProfilePage extends StatelessWidget {
   final String doctorId;
   final String doctorName;
-  final String specialization;
+  final String specializationId;
 
   const DoctorProfilePage({
     super.key,
     required this.doctorId,
     required this.doctorName,
-    required this.specialization,
+    required this.specializationId,
   });
 
   @override
@@ -155,24 +157,29 @@ class DoctorProfilePage extends StatelessWidget {
           child: Stack(
             children: [
               // Doctor image
-              Image.asset(
-                'assets/icons/home/doctor.png',
-                width: double.infinity,
-                height: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: AppColors.primaryLight,
-                    child: const Center(
-                      child: Icon(
-                        Icons.person,
-                        size: 100,
-                        color: AppColors.primary,
-                      ),
+              Obx(() {
+                final img = controller.doctorImageUrl.value.trim();
+                if (img.isNotEmpty) {
+                  return Image.network(
+                    img,
+                    width: double.infinity,
+                    height: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (c, e, s) => Image.asset(
+                      'assets/icons/home/doctor.png',
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
                     ),
                   );
-                },
-              ),
+                }
+                return Image.asset(
+                  'assets/icons/home/doctor.png',
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                );
+              }),
 
               // Rating badge
               Positioned(
@@ -190,12 +197,14 @@ class DoctorProfilePage extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Obx(() => MyText(
-                            '${controller.ratingsCount.value} تقييم',
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          )),
+                      Obx(
+                        () => MyText(
+                          '${controller.ratingsCount.value} تقييم',
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
                       SizedBox(width: 4.w),
                       const Icon(Icons.favorite, color: Colors.red, size: 16),
                     ],
@@ -269,8 +278,8 @@ class DoctorProfilePage extends StatelessWidget {
           ],
         ),
         SizedBox(height: 8.h),
-        MyText(
-          specialization,
+        SpecializationText(
+          specializationId: specializationId,
           fontSize: 16.sp,
           fontWeight: FontWeight.w400,
           color: AppColors.textSecondary,
@@ -564,8 +573,8 @@ class DoctorProfilePage extends StatelessWidget {
                     onTap: () => _openImage(url),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12.r),
-                      child: Image.network(
-                        url,
+                      child: Image(
+                        image: _imageProvider(url),
                         height: 120.h,
                         width: 160.w,
                         fit: BoxFit.cover,
@@ -953,8 +962,8 @@ class DoctorProfilePage extends StatelessWidget {
             onTap: () => Get.back(),
             child: InteractiveViewer(
               child: Center(
-                child: Image.network(
-                  url,
+                child: Image(
+                  image: _imageProvider(url),
                   fit: BoxFit.contain,
                   errorBuilder: (c, e, s) => const Icon(
                     Icons.broken_image,
@@ -1317,7 +1326,7 @@ class DoctorProfilePage extends StatelessWidget {
             () => PatientRegistrationPage(
               doctorId: doctorId,
               doctorName: doctorName,
-              doctorSpecialty: specialization,
+              doctorSpecialty: specializationId,
             ),
           );
         },
@@ -1405,19 +1414,75 @@ class DoctorProfilePage extends StatelessWidget {
   }
 
   ImageProvider _imageProvider(String path) {
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      final host = Uri.tryParse(path)?.host.toLowerCase() ?? '';
+    // Clean quotes and whitespace
+    String p = path.trim();
+    if (p.isEmpty) {
+      return const AssetImage('assets/icons/home/doctor.png');
+    }
+    if (p.startsWith('"') || p.startsWith("'")) {
+      p = p.substring(1);
+    }
+    if (p.endsWith('"') || p.endsWith("'")) {
+      p = p.substring(0, p.length - 1);
+    }
+
+    // Absolute http(s)
+    if (p.startsWith('http://') || p.startsWith('https://')) {
+      final host = Uri.tryParse(p)?.host.toLowerCase() ?? '';
       if (host.contains('scontent') ||
           host.contains('fbcdn') ||
           host.contains('facebook.com')) {
         return const AssetImage('assets/icons/home/doctor.png');
       }
-      return NetworkImage(path);
-    } else if (path.startsWith('/') ||
-        path.contains('\\') ||
-        path.contains(':\\')) {
-      return FileImage(File(path));
+      // Handle URLs with special characters by encoding them properly
+      try {
+        final uri = Uri.parse(p);
+        final encodedUrl = uri.toString();
+        return NetworkImage(encodedUrl);
+      } catch (_) {
+        // If URL parsing fails, try manual encoding of the path part
+        try {
+          final parts = p.split('/');
+          if (parts.length > 3) {
+            final baseParts = parts.take(parts.length - 1).join('/');
+            final fileName = Uri.encodeComponent(parts.last);
+            final encodedUrl = '$baseParts/$fileName';
+            return NetworkImage(encodedUrl);
+          }
+        } catch (_) {}
+        return const AssetImage('assets/icons/home/doctor.png');
+      }
     }
-    return AssetImage(path);
+    // Server-relative path
+    if (p.startsWith('/')) {
+      final url = ApiConstants.baseUrl + p;
+      return NetworkImage(url);
+    }
+    // Windows or local file
+    final isWindowsDrive = RegExp(r'^[A-Za-z]:\\').hasMatch(p);
+    if (p.contains('\\') || isWindowsDrive || p.startsWith('/')) {
+      return FileImage(File(p));
+    }
+    // Looks like a filename (relative server resource) - but avoid bare filenames like 'image.jpg'
+    if (RegExp(
+      r'^[\w\-\./]+\.(jpg|jpeg|png|gif|webp)$',
+      caseSensitive: false,
+    ).hasMatch(p)) {
+      // Skip bare filenames without path structure - these are likely invalid/test data
+      if (p == 'image.jpg' || p == 'image.png' || !p.contains('/')) {
+        return const AssetImage('assets/icons/home/doctor.png');
+      }
+      // If it already contains a directory like images/, keep it; otherwise prepend /images/
+      final needsImagesPrefix =
+          !p.contains('/') ||
+          (!p.startsWith('images/') && !p.contains('/images/'));
+      final pathPart = needsImagesPrefix
+          ? '/images/' + p
+          : (p.startsWith('/') ? p : '/' + p);
+      final url = ApiConstants.baseUrl + pathPart;
+      return NetworkImage(url);
+    }
+    // Fallback to asset
+    return const AssetImage('assets/icons/home/doctor.png');
   }
 }

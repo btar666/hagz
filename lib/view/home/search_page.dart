@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
-import '../../widget/specialty_text.dart';
+import '../../widget/specialization_text.dart';
 import '../../controller/search_controller.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
@@ -88,7 +88,9 @@ class SearchPage extends StatelessWidget {
                     return false;
                   },
                   child: Skeletonizer(
-                    enabled: c.isLoading.value && items.isEmpty || c.isLoading.value && items.isNotEmpty,
+                    enabled:
+                        c.isLoading.value && items.isEmpty ||
+                        c.isLoading.value && items.isNotEmpty,
                     child: GridView.builder(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
@@ -98,15 +100,14 @@ class SearchPage extends StatelessWidget {
                       ),
                       itemCount: items.isEmpty
                           ? 8 // أول تحميل
-                          : items.length + (c.isLoading.value ? 4 : 0), // تحميل المزيد
+                          : items.length +
+                                (c.isLoading.value ? 4 : 0), // تحميل المزيد
                       itemBuilder: (context, index) {
-                        final bool showingReal = index < items.length && items.isNotEmpty;
+                        final bool showingReal =
+                            index < items.length && items.isNotEmpty;
                         final item = showingReal
                             ? items[index]
-                            : {
-                                'name': '—',
-                                'specialization': '',
-                              };
+                            : {'name': '—', 'specialization': ''};
                         final name = (item['name'] ?? '').toString();
                         final spec = (item['specialization'] ?? '').toString();
                         return Container(
@@ -153,10 +154,13 @@ class SearchPage extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               SizedBox(height: 6.h),
-                              SpecialtyText(
-                                spec,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              SpecializationText(
+                                specializationId: spec.isEmpty ? null : spec,
+                                fontSize: 12.45.sp,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                                textAlign: TextAlign.center,
+                                defaultText: '—',
                               ),
                               const Spacer(),
                             ],

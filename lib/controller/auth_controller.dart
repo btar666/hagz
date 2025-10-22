@@ -26,8 +26,10 @@ class AuthController extends GetxController {
   final TextEditingController regPhoneCtrl = TextEditingController();
   final TextEditingController regPasswordCtrl = TextEditingController();
   final TextEditingController specializationCtrl = TextEditingController();
+  final RxString specializationId = ''.obs; // ID الاختصاص بدلاً من النص
   final RxString gender = ''.obs; // 'ذكر' | 'انثى'
   final RxInt age = 18.obs; // default
+  final RxString imageUrl = ''.obs;
 
   String _mapApiUserTypeToInternal(String? apiUserType) {
     switch (apiUserType) {
@@ -120,8 +122,8 @@ class AuthController extends GetxController {
 
   Future<void> registerUser() async {
     if (_session.role.value == 'doctor' &&
-        (specializationCtrl.text.trim().isEmpty)) {
-      _showSnack('يرجى إدخال التخصص للطبيب');
+        specializationId.value.isEmpty) {
+      _showSnack('يرجى اختيار الاختصاص للطبيب');
       return;
     }
     if (nameCtrl.text.trim().isEmpty ||
@@ -144,11 +146,12 @@ class AuthController extends GetxController {
         age: age.value,
         city: cityCtrl.text.trim(),
         userType: _session.apiUserType, // 'User' | 'Doctor'
-        specialization: _session.role.value == 'doctor'
-            ? specializationCtrl.text.trim()
+        specializationId: _session.role.value == 'doctor'
+            ? specializationId.value
             : '',
         company: '',
         deviceToken: deviceToken,
+        image: imageUrl.value,
       );
       // ignore: avoid_print
       print('REGISTER RESPONSE: ${res.toString()}');
@@ -156,6 +159,8 @@ class AuthController extends GetxController {
         LoadingDialog.hide();
         // optional: auto login if token returned
         final data = res['data'] as Map<String, dynamic>;
+        // ignore: avoid_print
+        print('REGISTER DATA: $data');
         final token = data['token'] ?? data['data']?['token'];
         final serverUserType = data['data']?['userType']?.toString();
         final internalType = _mapApiUserTypeToInternal(serverUserType);
@@ -183,10 +188,21 @@ class AuthController extends GetxController {
               data;
           final user = UserModel.fromJson(userJson);
           _session.setCurrentUser(user);
-        } catch (_) {}
+          // ignore: avoid_print
+          print('REGISTER USER => id=${user.id}, name=${user.name}, image=${user.image}');
+          if (token != null) {
+            // ignore: avoid_print
+            print('REGISTER TOKEN: $token');
+          }
+        } catch (e) {
+          // ignore: avoid_print
+          print('REGISTER USER PARSE ERROR: $e');
+        }
         Get.offAll(() => const MainPage());
       } else {
         LoadingDialog.hide();
+        // ignore: avoid_print
+        print('REGISTER FAILED -> error=${res['error']}, data=${res['data']}');
         await showStatusDialog(
           title: 'فشل إنشاء الحساب',
           message:

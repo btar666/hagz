@@ -9,6 +9,10 @@ import '../../model/user_model.dart';
 import '../../service_layer/services/user_service.dart';
 import '../../service_layer/services/cv_service.dart';
 import '../../service_layer/services/upload_service.dart';
+import '../../service_layer/services/specialization_service.dart';
+import '../../model/specialization_model.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../widget/loading_dialog.dart';
 import '../../widget/status_dialog.dart';
 
@@ -20,6 +24,8 @@ class UserProfileEditPage extends StatefulWidget {
 }
 
 class _UserProfileEditPageState extends State<UserProfileEditPage> {
+  String? _imageUrl; // profile image url
+  bool _uploadingImage = false;
   final _nameCtrl = TextEditingController(text: '');
   final _phoneCtrl = TextEditingController(text: '');
   int _genderIndex = 1; // 0 ذكر - 1 انثى
@@ -30,11 +36,17 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
   final UserService _userService = UserService();
   final CvService _cvService = CvService();
   final UploadService _uploadService = UploadService();
+  final SpecializationService _specializationService = SpecializationService();
 
   // CV state
   final TextEditingController _cvDescCtrl = TextEditingController(text: '');
   final List<String> _cvCertificates = [];
   String _cvId = '';
+
+  // Specialization state
+  List<SpecializationModel> _specializations = [];
+  String? _selectedSpecializationId;
+  bool _loadingSpecializations = false;
 
   final List<String> _cities = ['دهوك', 'أربيل', 'السليمانية', 'بغداد'];
   final List<String> _ages = [for (int i = 10; i <= 80; i++) i.toString()];
@@ -45,6 +57,7 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
     _prefillFromSession();
     _fetchLatestUser();
     _fetchCvIfAny();
+    _fetchSpecializations();
   }
 
   void _prefillFromSession() {
@@ -61,6 +74,8 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
     } else if (g == 'female' || g == 'انثى' || g == 'أنثى') {
       _genderIndex = 1;
     }
+
+    _imageUrl = user.image;
 
     if (user.city.trim().isNotEmpty) {
       if (!_cities.contains(user.city)) {
@@ -111,6 +126,21 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
     } catch (_) {}
   }
 
+  Future<void> _fetchSpecializations() async {
+    if (_session.currentUser.value?.userType != 'Doctor') return;
+    
+    setState(() => _loadingSpecializations = true);
+    try {
+      final specializations = await _specializationService.getSpecializationsList();
+      setState(() {
+        _specializations = specializations;
+        _loadingSpecializations = false;
+      });
+    } catch (_) {
+      setState(() => _loadingSpecializations = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -137,6 +167,46 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Profile image picker
+              Center(
+                child: GestureDetector(
+                  onTap: _uploadingImage ? null : _pickAndUploadProfileImage,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 140.w,
+                        height: 140.w,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFD9D9D9),
+                          shape: BoxShape.circle,
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: (_imageUrl == null || _imageUrl!.isEmpty)
+                            ? const Icon(Icons.person, size: 60, color: Colors.white)
+                            : Image.network(
+                                _imageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (c, e, s) => const Icon(Icons.person, size: 60, color: Colors.white),
+                              ),
+                      ),
+                      Positioned(
+                        bottom: 6.h,
+                        right: 6.w,
+                        child: Container(
+                          padding: EdgeInsets.all(6.w),
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(_uploadingImage ? Icons.hourglass_top : Icons.camera_alt, color: Colors.white, size: 18),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 16.h),
               // Name label
               _label('اسم المستخدم'),
               SizedBox(height: 8.h),
@@ -198,6 +268,12 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
 
               if ((_session.currentUser.value?.userType.trim() ?? '') ==
                   'Doctor') ...[
+                // Specialization dropdown (doctors only)
+                _label('الاختصاص'),
+                SizedBox(height: 8.h),
+                _specializationDropdown(),
+                SizedBox(height: 16.h),
+                
                 // CV section (doctors only)
                 _label('السيرة الذاتية (CV)'),
                 SizedBox(height: 8.h),
@@ -314,6 +390,49 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
       fontWeight: FontWeight.w700,
       color: AppColors.textPrimary,
       textAlign: TextAlign.right,
+    );
+  }
+
+  Widget _specializationDropdown() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22.r),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: DropdownButtonFormField<String>(
+        value: _selectedSpecializationId,
+        decoration: InputDecoration(
+          hintText: _loadingSpecializations ? 'جاري التحميل...' : 'اختر الاختصاص',
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 20.w,
+            vertical: 16.h,
+          ),
+        ),
+        isExpanded: true,
+        items: _specializations.map((spec) {
+          return DropdownMenuItem<String>(
+            value: spec.id,
+            child: Text(
+              spec.name,
+              style: TextStyle(fontSize: 16.sp),
+              textAlign: TextAlign.right,
+            ),
+          );
+        }).toList(),
+        onChanged: _loadingSpecializations ? null : (value) {
+          setState(() {
+            _selectedSpecializationId = value;
+          });
+        },
+      ),
     );
   }
 
@@ -630,6 +749,8 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
         phone: phone,
         gender: gender,
         age: age,
+        specializationId: (_session.currentUser.value?.userType == 'Doctor') ? _selectedSpecializationId : null,
+        image: _imageUrl,
       );
       if (res['ok'] == true) {
         // حدث جلسة المستخدم
@@ -651,6 +772,7 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
                   gender: gender,
                   age: age,
                   city: _city,
+                  image: _imageUrl,
                 );
         _session.setCurrentUser(updated);
         Get.back();
@@ -680,6 +802,26 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
       );
     } finally {
       LoadingDialog.hide();
+    }
+  }
+
+  Future<void> _pickAndUploadProfileImage() async {
+    try {
+      setState(() => _uploadingImage = true);
+      final ImagePicker picker = ImagePicker();
+      final XFile? picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+      if (picked == null) {
+        setState(() => _uploadingImage = false);
+        return;
+      }
+      final res = await _uploadService.uploadImage(File(picked.path));
+      if (res['ok'] == true) {
+        final url = (res['data']?['data']?['url']?.toString() ?? '');
+        if (url.isNotEmpty) setState(() => _imageUrl = url);
+      }
+    } catch (_) {
+    } finally {
+      setState(() => _uploadingImage = false);
     }
   }
 }
