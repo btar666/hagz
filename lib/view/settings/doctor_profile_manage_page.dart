@@ -93,6 +93,22 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
   void initState() {
     super.initState();
     _fetchSpecializations();
+    _fetchLatestUserInfo();
+  }
+
+  Future<void> _fetchLatestUserInfo() async {
+    try {
+      final userService = Get.put(UserService());
+      print('📥 Fetching latest user info for profile page...');
+      final res = await userService.getUserInfo();
+      print('📥 User info response: ${res['ok']}');
+      if (res['ok'] == true) {
+        print('✅ User info updated successfully - image should now be visible');
+        // Session will be updated automatically by getUserInfo()
+      }
+    } catch (e) {
+      print('❌ Error fetching user info: $e');
+    }
   }
 
   @override

@@ -66,7 +66,7 @@ class UserModel {
 
   static UserModel fromJson(Map<String, dynamic> json) {
     final dynamic data = json['data'] ?? json; // some APIs wrap in data
-    
+
     // Parse social media
     final Map<String, String> socialMediaMap = <String, String>{};
     final dynamic socialMediaData = data['socialMedia'];
@@ -77,7 +77,28 @@ class UserModel {
         }
       });
     }
-    
+
+    // Parse specialization - can be String (ID) or Map (object)
+    String specializationId = '';
+    final dynamic specializationData = data['specialization'];
+    if (specializationData is String) {
+      // It's already an ID
+      specializationId = specializationData;
+      print('🔍 Specialization is String (ID): $specializationId');
+    } else if (specializationData is Map) {
+      // It's an object, extract the ID
+      specializationId =
+          (specializationData['_id'] ?? specializationData['id'] ?? '')
+              .toString();
+      print(
+        '🔍 Specialization is Map (object), extracted ID: $specializationId',
+      );
+    } else if (specializationData != null) {
+      print(
+        '⚠️ Specialization is unknown type: ${specializationData.runtimeType}',
+      );
+    }
+
     return UserModel(
       id: (data['id'] ?? data['_id'] ?? '').toString(),
       name: (data['name'] ?? '').toString(),
@@ -87,7 +108,7 @@ class UserModel {
       city: (data['city'] ?? '').toString(),
       userType: (data['userType'] ?? '').toString(),
       image: (data['image'] ?? data['avatar'] ?? '').toString(),
-      specialization: (data['specialization'] ?? '').toString(),
+      specialization: specializationId,
       socialMedia: socialMediaMap,
     );
   }
