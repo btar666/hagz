@@ -34,6 +34,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _specializationCtrl = TextEditingController();
   int? _genderIndex; // 0 male, 1 female
   String? _age; // kept for future submission
+  bool _obscurePassword = true; // لإظهار/إخفاء كلمة المرور
 
   // Specialization dropdown state
   List<SpecializationModel> _specializations = [];
@@ -245,6 +246,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 _roundedField(
                   controller: _passwordCtrl,
                   hint: '••••••••',
+                  isPassword: true,
                   validator: (v) => (v == null || v.trim().isEmpty)
                       ? 'هذا الحقل مطلوب !'
                       : null,
@@ -440,7 +442,7 @@ class _RegisterPageState extends State<RegisterPage> {
       controller: controller,
       keyboardType: keyboardType,
       textAlign: TextAlign.center,
-      obscureText: isPassword,
+      obscureText: isPassword ? _obscurePassword : false,
       validator: validator,
       decoration: InputDecoration(
         hintText: hint,
@@ -451,7 +453,21 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: EdgeInsets.symmetric(vertical: 18.h),
+        contentPadding: EdgeInsets.symmetric(vertical: 18.h, horizontal: 20.w),
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  color: AppColors.textSecondary,
+                  size: 24.r,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                },
+              )
+            : null,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20.r),
           borderSide: BorderSide.none,

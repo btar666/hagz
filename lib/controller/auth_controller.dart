@@ -19,6 +19,7 @@ class AuthController extends GetxController {
   final TextEditingController phoneCtrl = TextEditingController();
   final TextEditingController passwordCtrl = TextEditingController();
   final RxBool isLoading = false.obs;
+  final RxBool obscurePassword = true.obs;
 
   // Register (User role only for now)
   final TextEditingController nameCtrl = TextEditingController();
@@ -121,8 +122,7 @@ class AuthController extends GetxController {
   }
 
   Future<void> registerUser() async {
-    if (_session.role.value == 'doctor' &&
-        specializationId.value.isEmpty) {
+    if (_session.role.value == 'doctor' && specializationId.value.isEmpty) {
       _showSnack('يرجى اختيار الاختصاص للطبيب');
       return;
     }
@@ -189,7 +189,9 @@ class AuthController extends GetxController {
           final user = UserModel.fromJson(userJson);
           _session.setCurrentUser(user);
           // ignore: avoid_print
-          print('REGISTER USER => id=${user.id}, name=${user.name}, image=${user.image}');
+          print(
+            'REGISTER USER => id=${user.id}, name=${user.name}, image=${user.image}',
+          );
           if (token != null) {
             // ignore: avoid_print
             print('REGISTER TOKEN: $token');
@@ -241,5 +243,23 @@ class AuthController extends GetxController {
         duration: const Duration(seconds: 2),
       ),
     );
+  }
+
+  void resetLoginForm() {
+    phoneCtrl.clear();
+    passwordCtrl.clear();
+    obscurePassword.value = true;
+  }
+
+  @override
+  void onClose() {
+    phoneCtrl.dispose();
+    passwordCtrl.dispose();
+    nameCtrl.dispose();
+    cityCtrl.dispose();
+    regPhoneCtrl.dispose();
+    regPasswordCtrl.dispose();
+    specializationCtrl.dispose();
+    super.onClose();
   }
 }

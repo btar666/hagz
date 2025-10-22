@@ -11,26 +11,12 @@ import '../delegate/delegate_terms_page.dart';
 import '../../bindings/delegate_terms_binding.dart';
 import '../../bindings/register_binding.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
-  final TextEditingController _phoneCtrl = TextEditingController();
-  final TextEditingController _passwordCtrl = TextEditingController();
-
-  @override
-  void dispose() {
-    _phoneCtrl.dispose();
-    _passwordCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final AuthController auth = Get.put(AuthController());
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -98,7 +84,7 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
                 child: TextField(
-                  controller: _phoneCtrl,
+                  controller: auth.phoneCtrl,
                   keyboardType: TextInputType.phone,
                   textAlign: TextAlign.center,
                   decoration: InputDecoration(
@@ -143,38 +129,54 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ],
                 ),
-                child: TextField(
-                  controller: _passwordCtrl,
-                  obscureText: true,
-                  textAlign: TextAlign.center,
-                  decoration: InputDecoration(
-                    hintText: '••••••••',
-                    hintStyle: TextStyle(
-                      color: AppColors.textLight,
+                child: Obx(
+                  () => TextField(
+                    controller: auth.passwordCtrl,
+                    obscureText: auth.obscurePassword.value,
+                    textAlign: TextAlign.center,
+                    decoration: InputDecoration(
+                      hintText: '••••••••',
+                      hintStyle: TextStyle(
+                        color: AppColors.textLight,
+                        fontSize: 18.sp,
+                        fontFamily: 'Expo Arabic',
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20.r),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: EdgeInsets.symmetric(
+                        vertical: 18.h,
+                        horizontal: 20.w,
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          auth.obscurePassword.value
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: AppColors.textSecondary,
+                          size: 24.r,
+                        ),
+                        onPressed: () {
+                          auth.obscurePassword.value =
+                              !auth.obscurePassword.value;
+                        },
+                      ),
+                    ),
+                    style: TextStyle(
                       fontSize: 18.sp,
                       fontFamily: 'Expo Arabic',
                     ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20.r),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: EdgeInsets.symmetric(vertical: 18.h),
                   ),
-                  style: TextStyle(fontSize: 18.sp, fontFamily: 'Expo Arabic'),
                 ),
               ),
               SizedBox(height: 24.h),
               SizedBox(
                 height: 64.h,
                 child: ElevatedButton(
-                  onPressed: () {
-                    final auth = Get.put(AuthController());
-                    auth.phoneCtrl.text = _phoneCtrl.text.trim();
-                    auth.passwordCtrl.text = _passwordCtrl.text.trim();
-                    auth.login();
-                  },
+                  onPressed: () => auth.login(),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(
