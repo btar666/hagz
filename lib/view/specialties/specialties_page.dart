@@ -22,6 +22,7 @@ class _SpecialtiesPageState extends State<SpecialtiesPage> {
   List<SpecializationModel> _specializations = [];
   List<Map<String, dynamic>> _doctors = [];
   String? _selectedSpecializationId;
+  String? _selectedSpecializationName;
   bool _isLoadingSpecializations = false;
   bool _isLoadingDoctors = false;
   final TextEditingController _searchController = TextEditingController();
@@ -60,20 +61,80 @@ class _SpecialtiesPageState extends State<SpecialtiesPage> {
   Future<void> _fetchDoctorsBySpecialization(String specializationId) async {
     setState(() => _isLoadingDoctors = true);
     try {
+      print('🔍 Fetching doctors for specialization: $specializationId');
       final response = await _specializationService.getDoctorsBySpecialization(
         specializationId: specializationId,
         search: _searchController.text.trim(),
       );
-      if (response['ok'] == true || response['status'] == true) {
-        final data = response['data'] as Map<String, dynamic>;
-        final List<dynamic> doctors = (data['doctors'] as List<dynamic>?) ?? [];
+
+      print('📥 Response received: $response');
+
+      if (response['ok'] == true) {
+        final responseData = response['data'];
+        print('📦 Response data: $responseData');
+
+        if (responseData is Map<String, dynamic>) {
+          // Check if data has nested structure with 'data' key
+          final dataMap = responseData['data'] is Map<String, dynamic>
+              ? responseData['data'] as Map<String, dynamic>
+              : responseData;
+
+          // Extract specialization info
+          final specializationInfo =
+              dataMap['specialization'] as Map<String, dynamic>?;
+          String? specId;
+          if (specializationInfo != null) {
+            _selectedSpecializationName = specializationInfo['name']
+                ?.toString();
+            specId = specializationInfo['id']?.toString();
+            print(
+              '🏥 Specialization: $_selectedSpecializationName (ID: $specId)',
+            );
+          }
+
+          final List<dynamic> doctors =
+              (dataMap['doctors'] as List<dynamic>?) ?? [];
+          print('👨‍⚕️ Found ${doctors.length} doctors');
+
+          // Add specialization ID to each doctor
+          final doctorsWithSpecialization = doctors.map((doc) {
+            final doctorMap = Map<String, dynamic>.from(
+              doc as Map<String, dynamic>,
+            );
+            // Add specialization ID if not present
+            if (!doctorMap.containsKey('specialization') && specId != null) {
+              doctorMap['specialization'] = specId;
+              print(
+                '➕ Added specialization $specId to doctor ${doctorMap['name']}',
+              );
+            }
+            return doctorMap;
+          }).toList();
+
+          setState(() {
+            _doctors = doctorsWithSpecialization;
+            _isLoadingDoctors = false;
+          });
+        } else {
+          print('⚠️ Unexpected data format');
+          setState(() {
+            _doctors = [];
+            _isLoadingDoctors = false;
+          });
+        }
+      } else {
+        print('❌ Request failed: ${response['message']}');
         setState(() {
-          _doctors = doctors.map((doc) => doc as Map<String, dynamic>).toList();
+          _doctors = [];
           _isLoadingDoctors = false;
         });
       }
-    } catch (_) {
-      setState(() => _isLoadingDoctors = false);
+    } catch (e) {
+      print('❌ Error fetching doctors: $e');
+      setState(() {
+        _doctors = [];
+        _isLoadingDoctors = false;
+      });
     }
   }
 
