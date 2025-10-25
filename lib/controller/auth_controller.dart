@@ -6,6 +6,7 @@ import '../widget/my_text.dart';
 import '../view/main_page.dart';
 import '../controller/session_controller.dart';
 import '../service_layer/services/auth_service.dart';
+import '../service_layer/services/user_service.dart';
 import '../model/user_model.dart';
 import '../service_layer/services/device_token_service.dart';
 import '../widget/loading_dialog.dart';
@@ -92,6 +93,11 @@ class AuthController extends GetxController {
               data;
           final user = UserModel.fromJson(userJson);
           _session.setCurrentUser(user);
+
+          // Fetch complete user info to get associatedDoctor for secretaries
+          print('🔄 Fetching complete user info after login...');
+          final userService = Get.put(UserService());
+          await userService.getUserInfo();
         } catch (_) {
           // ignore parse errors silently
         }

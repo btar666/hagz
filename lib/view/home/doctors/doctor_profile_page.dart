@@ -32,7 +32,7 @@ class DoctorProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(DoctorProfileController());
-    final session = Get.find<SessionController>();
+    // final session = Get.find<SessionController>();
 
     // Load opinions and read-only CV for this doctor
     controller.loadOpinionsForTarget(doctorId);
@@ -159,25 +159,37 @@ class DoctorProfilePage extends StatelessWidget {
               // Doctor image
               Obx(() {
                 final img = controller.doctorImageUrl.value.trim();
-                if (img.isNotEmpty) {
-                  return Image.network(
-                    img,
-                    width: double.infinity,
-                    height: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (c, e, s) => Image.asset(
-                      'assets/icons/home/doctor.png',
-                      width: double.infinity,
-                      height: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
-                  );
-                }
-                return Image.asset(
-                  'assets/icons/home/doctor.png',
-                  width: double.infinity,
-                  height: double.infinity,
-                  fit: BoxFit.cover,
+                final loading = controller.isLoadingSocial.value;
+                return Hero(
+                  tag: 'doctor-image-$doctorId',
+                  child: loading
+                      ? Skeletonizer(
+                          enabled: true,
+                          child: Container(
+                            width: double.infinity,
+                            height: double.infinity,
+                            color: Colors.grey[300],
+                          ),
+                        )
+                      : (img.isNotEmpty
+                            ? Image.network(
+                                img,
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (c, e, s) => Image.asset(
+                                  'assets/icons/home/doctor.png',
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : Image.asset(
+                                'assets/icons/home/doctor.png',
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                              )),
                 );
               }),
 
@@ -232,12 +244,16 @@ class DoctorProfilePage extends StatelessWidget {
             if (!isOwnProfile) SizedBox(width: 40.w + 60.w + 30.w),
             Expanded(
               child: Center(
-                child: MyText(
-                  doctorName,
-                  fontSize: 24.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                  textAlign: TextAlign.center,
+                child: Hero(
+                  tag: 'doctor-name-$doctorId',
+                  flightShuttleBuilder: (ctx, anim, dir, from, to) => to.widget,
+                  child: MyText(
+                    doctorName,
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
             ),
@@ -325,17 +341,17 @@ class DoctorProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildSocialIcon(IconData icon, Color color) {
-    return Container(
-      width: 50.w,
-      height: 50.w,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(15.r),
-      ),
-      child: Icon(icon, color: color, size: 24),
-    );
-  }
+  // Widget _buildSocialIcon(IconData icon, Color color) {
+  //   return Container(
+  //     width: 50.w,
+  //     height: 50.w,
+  //     decoration: BoxDecoration(
+  //       color: color.withValues(alpha: 0.1),
+  //       borderRadius: BorderRadius.circular(15.r),
+  //     ),
+  //     child: Icon(icon, color: color, size: 24),
+  //   );
+  // }
 
   Widget _buildSocialIconImage(
     String imagePath,
@@ -885,18 +901,19 @@ class DoctorProfilePage extends StatelessWidget {
     double rating,
   ) {
     // عرض التاريخ فقط بدون الوقت
-    String dateOnly = time;
-    try {
-      final dt = DateTime.tryParse(time);
-      if (dt != null) {
-        dateOnly =
-            '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
-      } else if (time.contains('T')) {
-        dateOnly = time.split('T').first;
-      }
-    } catch (_) {
-      if (time.contains('T')) dateOnly = time.split('T').first;
-    }
+    // Keep original computed date only if needed in future
+    // String dateOnly = time;
+    // try {
+    //   final dt = DateTime.tryParse(time);
+    //   if (dt != null) {
+    //     dateOnly =
+    //         '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
+    //   } else if (time.contains('T')) {
+    //     dateOnly = time.split('T').first;
+    //   }
+    // } catch (_) {
+    //   if (time.contains('T')) dateOnly = time.split('T').first;
+    // }
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,

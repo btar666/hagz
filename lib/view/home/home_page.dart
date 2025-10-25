@@ -15,6 +15,7 @@ import '../../bindings/search_binding.dart';
 import '../../widget/banner_carousel.dart';
 import '../../widget/my_text.dart';
 import '../../widget/specialization_text.dart';
+import '../../widget/animated_pressable.dart';
 import '../../widget/doctors_filter_dialog.dart';
 import '../chat/chats_page.dart';
 import 'doctors/top_rated_doctors_page.dart';
@@ -139,7 +140,7 @@ class HomePage extends StatelessWidget {
                                 errorBuilder: (c, e, s) =>
                                     (fallbackAsset != null
                                     ? Image.asset(
-                                        fallbackAsset!,
+                                        fallbackAsset,
                                         fit: BoxFit.cover,
                                       )
                                     : const Icon(
@@ -359,7 +360,7 @@ class HomePage extends StatelessWidget {
     final String name = (doctor['name'] ?? '').toString();
     final String specialization = (doctor['specialization'] ?? '').toString();
     final String image = (doctor['image'] ?? '').toString();
-    return GestureDetector(
+    return AnimatedPressable(
       onTap: () {
         Get.to(
           () => DoctorProfilePage(
@@ -397,34 +398,41 @@ class HomePage extends StatelessWidget {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16.r),
-                    child: image.isNotEmpty
-                        ? Image.network(
-                            image,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Image.asset(
-                                'assets/icons/home/doctor.png',
-                                fit: BoxFit.cover,
-                              );
-                            },
-                          )
-                        : Image.asset(
-                            'assets/icons/home/doctor.png',
-                            fit: BoxFit.cover,
-                          ),
+                    child: Hero(
+                      tag: 'doctor-image-$id',
+                      child: image.isNotEmpty
+                          ? Image.network(
+                              image,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/icons/home/doctor.png',
+                                  fit: BoxFit.cover,
+                                );
+                              },
+                            )
+                          : Image.asset(
+                              'assets/icons/home/doctor.png',
+                              fit: BoxFit.cover,
+                            ),
+                    ),
                   ),
                 ),
               ),
             ),
             SizedBox(height: 8.h),
-            MyText(
-              name,
-              fontSize: 15.sp,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            Hero(
+              tag: 'doctor-name-$id',
+              flightShuttleBuilder: (ctx, anim, dir, from, to) => to.widget,
+              child: MyText(
+                name,
+                fontSize: 15.sp,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             SizedBox(height: 6.h),
             SpecializationText(
@@ -623,121 +631,13 @@ class HomePage extends StatelessWidget {
   }
 
   // Skeleton card for regular doctors grid
-  Widget _buildDoctorSkeletonCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(height: 8.h),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8.w),
-            child: AspectRatio(
-              aspectRatio: 1.0,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(16.r),
-                ),
-              ),
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Container(height: 20.h, width: 100.w, color: Colors.white),
-          SizedBox(height: 6.h),
-          Container(height: 16.h, width: 80.w, color: Colors.white),
-          const Spacer(),
-        ],
-      ),
-    );
-  }
+  // Widget _buildDoctorSkeletonCard() { return SizedBox.shrink(); }
 
   // Skeleton card for top-rated doctors
-  Widget _buildTopRatedDoctorSkeletonCard() {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(height: 5.h),
-          Center(
-            child: Container(
-              width: 126.w,
-              height: 135.h,
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(16.r),
-              ),
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Container(height: 18.h, width: 80.w, color: Colors.white),
-          SizedBox(height: 6.h),
-          Container(height: 14.h, width: 90.w, color: Colors.white),
-          const Spacer(),
-        ],
-      ),
-    );
-  }
+  // Widget _buildTopRatedDoctorSkeletonCard() { return SizedBox.shrink(); }
 
   // Skeleton card for hospitals
-  Widget _buildHospitalSkeletonCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(height: 8.h),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 9.w),
-            child: Container(
-              width: 155.w,
-              height: 140.h,
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(16.r),
-              ),
-            ),
-          ),
-          SizedBox(height: 6.h),
-          Container(height: 20.h, width: 120.w, color: Colors.white),
-          SizedBox(height: 8.h),
-        ],
-      ),
-    );
-  }
+  // Widget _buildHospitalSkeletonCard() { return SizedBox.shrink(); }
 
   Widget _buildTopRatedDoctorsSection(HomeController home) {
     return Obx(() {
@@ -818,10 +718,8 @@ Widget _buildTopRatedDoctorCardFromItem(Map<String, dynamic> item) {
   final String name = (item['name'] ?? 'طبيب').toString();
   final String specialty = (item['specialty'] ?? '').toString();
   final String image = (item['image'] ?? '').toString();
-  final avgRaw = item['avg'];
-  final double avg = avgRaw is num ? avgRaw.toDouble() : 0.0;
-  final countRaw = item['count'];
-  final int count = countRaw is num ? countRaw.toInt() : 0;
+  // final avgRaw = item['avg'];
+  // final countRaw = item['count'];
   'د. آرين';
   'د. صوفيا';
   'د. سونجوز';
@@ -831,16 +729,7 @@ Widget _buildTopRatedDoctorCardFromItem(Map<String, dynamic> item) {
   'د. خالد';
   'د. مريم';
 
-  final List<String> specialties = [
-    'جراحة القلب',
-    'طب العيون',
-    'جراحة القلب',
-    'جراحة العيون',
-    'طب الأسنان',
-    'طب الأطفال',
-    'جراحة العظام',
-    'طب الجلدية',
-  ];
+  // final List<String> specialties = [];
 
   return GestureDetector(
     onTap: () {

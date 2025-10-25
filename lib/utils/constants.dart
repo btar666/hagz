@@ -36,7 +36,15 @@ class ApiConstants {
   static const String chats = '$baseUrl/api/chats';
   static const String chatSend = '$chats/send';
   static const String chatConversations = '$chats/conversations';
-  static const String chatMessages = '$chats/conversations'; // + /{conversationId}/messages
+  static const String chatMessages =
+      '$chats/conversations'; // + /{conversationId}/messages
   static const String chatDeleteMessage = '$chats/messages'; // + /{messageId}
-  static const String chatDoctorConversations = '$chats/doctor'; // + /{doctorId}/conversations
+  static const String chatDoctorConversations =
+      '$chats/doctor'; // + /{doctorId}/conversations
+  // Secretary Chat
+  static const String chatSecretarySend = '$chats/secretary/send';
+  static const String chatSecretaryConversations =
+      '$chats/secretary/conversations';
+  // Secretary
+  static const String secretary = '$baseUrl/api/secretary';
 }

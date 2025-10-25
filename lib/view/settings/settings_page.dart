@@ -14,6 +14,8 @@ import 'change_password_page.dart';
 import '../../bindings/change_password_binding.dart';
 import '../onboarding/user_type_selection_page.dart';
 import '../../widget/confirm_dialogs.dart';
+import '../secretary/secretary_profile_edit_page.dart';
+import '../../widget/animated_pressable.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -23,6 +25,7 @@ class SettingsPage extends StatelessWidget {
     final SessionController session = Get.find<SessionController>();
     final bool isDoctor = session.role.value == 'doctor';
     final bool isUser = session.role.value == 'user';
+    final bool isSecretary = session.role.value == 'secretary';
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
       appBar: AppBar(
@@ -101,7 +104,7 @@ class SettingsPage extends StatelessWidget {
               SizedBox(height: 16.h),
               _buildSettingsItem(
                 icon: Icons.event_note_rounded,
-                title: 'المواعيد السابقة',
+                title: 'كل المواعيد',
                 color: AppColors.secondary,
                 onTap: () {
                   Get.to(
@@ -144,7 +147,7 @@ class SettingsPage extends StatelessWidget {
               SizedBox(height: 16.h),
               _buildSettingsItem(
                 icon: Icons.event_note_rounded,
-                title: 'المواعيد السابقة',
+                title: 'كل المواعيد',
                 color: AppColors.secondary,
                 onTap: () {
                   Get.to(
@@ -152,6 +155,35 @@ class SettingsPage extends StatelessWidget {
                     binding: BindingsBuilder(() {
                       // يمكن إضافة PastAppointmentsController هنا إذا لزم الأمر
                     }),
+                  );
+                },
+              ),
+              SizedBox(height: 16.h),
+            ],
+
+            if (isSecretary) ...[
+              _buildSettingsItem(
+                icon: Icons.person,
+                title: 'تعديل الملف الشخصي',
+                color: AppColors.secondary,
+                onTap: () {
+                  Get.to(
+                    () => const SecretaryProfileEditPage(),
+                    binding: BindingsBuilder(() {
+                      // يمكن إضافة SecretaryProfileEditController هنا إذا لزم الأمر
+                    }),
+                  );
+                },
+              ),
+              SizedBox(height: 16.h),
+              _buildSettingsItem(
+                icon: Icons.lock,
+                title: 'تغيير كلمة السر',
+                color: AppColors.secondary,
+                onTap: () {
+                  Get.to(
+                    () => const ChangePasswordPage(),
+                    binding: ChangePasswordBinding(),
                   );
                 },
               ),
@@ -240,7 +272,7 @@ class SettingsPage extends StatelessWidget {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    return AnimatedPressable(
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),

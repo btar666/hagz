@@ -33,7 +33,8 @@ class ChatService {
     int page = 1,
     int limit = 50,
   }) async {
-    final url = '${ApiConstants.chatMessages}/$conversationId/messages?page=$page&limit=$limit';
+    final url =
+        '${ApiConstants.chatMessages}/$conversationId/messages?page=$page&limit=$limit';
     return await _api.get(url);
   }
 
@@ -53,7 +54,31 @@ class ChatService {
     int page = 1,
     int limit = 20,
   }) async {
-    final url = '${ApiConstants.chatDoctorConversations}/$doctorId/conversations?page=$page&limit=$limit';
+    final url =
+        '${ApiConstants.chatDoctorConversations}/$doctorId/conversations?page=$page&limit=$limit';
+    return await _api.get(url);
+  }
+
+  /// POST /api/chats/secretary/send
+  /// Send a message as secretary
+  Future<Map<String, dynamic>> sendSecretaryMessage({
+    required String receiverId,
+    required String content,
+  }) async {
+    return await _api.post(ApiConstants.chatSecretarySend, {
+      'receiverId': receiverId,
+      'content': content,
+    });
+  }
+
+  /// GET /api/chats/secretary/conversations
+  /// Get secretary conversations (with associated doctor)
+  Future<Map<String, dynamic>> getSecretaryConversations({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final url =
+        '${ApiConstants.chatSecretaryConversations}?page=$page&limit=$limit';
     return await _api.get(url);
   }
 }

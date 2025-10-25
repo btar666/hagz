@@ -11,6 +11,8 @@ class UserModel {
   final String image; // profile image URL
   final String specialization; // doctor's specialization if any
   final Map<String, String> socialMedia; // Social media links
+  final String
+  associatedDoctor; // For secretaries: ID of the doctor they work for
 
   const UserModel({
     required this.id,
@@ -23,6 +25,7 @@ class UserModel {
     this.image = '',
     this.specialization = '',
     this.socialMedia = const <String, String>{},
+    this.associatedDoctor = '',
   });
 
   UserModel copyWith({
@@ -36,6 +39,7 @@ class UserModel {
     String? image,
     String? specialization,
     Map<String, String>? socialMedia,
+    String? associatedDoctor,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -48,6 +52,7 @@ class UserModel {
       image: image ?? this.image,
       specialization: specialization ?? this.specialization,
       socialMedia: socialMedia ?? this.socialMedia,
+      associatedDoctor: associatedDoctor ?? this.associatedDoctor,
     );
   }
 
@@ -62,6 +67,7 @@ class UserModel {
     'image': image,
     'specialization': specialization,
     'socialMedia': socialMedia,
+    'associatedDoctor': associatedDoctor,
   };
 
   static UserModel fromJson(Map<String, dynamic> json) {
@@ -99,6 +105,10 @@ class UserModel {
       );
     }
 
+    // Parse associatedDoctor field (for secretaries)
+    final associatedDoctorValue =
+        data['associatedDoctor'] ?? data['doctorId'] ?? data['doctor'] ?? '';
+
     return UserModel(
       id: (data['id'] ?? data['_id'] ?? '').toString(),
       name: (data['name'] ?? '').toString(),
@@ -110,6 +120,7 @@ class UserModel {
       image: (data['image'] ?? data['avatar'] ?? '').toString(),
       specialization: specializationId,
       socialMedia: socialMediaMap,
+      associatedDoctor: associatedDoctorValue.toString(),
     );
   }
 

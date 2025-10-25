@@ -6,8 +6,10 @@ import '../../controller/appointments_controller.dart';
 import '../../widget/my_text.dart';
 import '../../widget/loading_dialog.dart';
 import '../../widget/status_dialog.dart';
+import '../../widget/specialization_text.dart';
 import 'appointment_success_page.dart';
 import '../../service_layer/services/doctor_pricing_service.dart';
+import '../../service_layer/services/appointments_service.dart';
 
 class CircularProgressPainter extends CustomPainter {
   final double progress; // 0..1
@@ -96,25 +98,32 @@ class AppointmentConfirmationPage extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<AppointmentConfirmationPage> createState() => _AppointmentConfirmationPageState();
+  State<AppointmentConfirmationPage> createState() =>
+      _AppointmentConfirmationPageState();
 }
 
-class _AppointmentConfirmationPageState extends State<AppointmentConfirmationPage> {
+class _AppointmentConfirmationPageState
+    extends State<AppointmentConfirmationPage> {
   double? _price;
   String _currency = 'IQ';
   bool _isLoadingPrice = true;
+  int _queueNumber = 1; // تسلسل الموعد
+  bool _isLoadingQueue = true;
 
   @override
   void initState() {
     super.initState();
     _loadPricing();
+    _loadQueueNumber();
   }
 
   Future<void> _loadPricing() async {
     try {
       final service = DoctorPricingService();
       final res = await service.getPricingByDoctorId(widget.doctorId);
-      print('[PRICING] confirmation _loadPricing doctorId=${widget.doctorId} -> $res');
+      print(
+        '[PRICING] confirmation _loadPricing doctorId=${widget.doctorId} -> $res',
+      );
       final data = res['data'];
       if (data is Map<String, dynamic>) {
         final inner = data['data'];
@@ -123,12 +132,78 @@ class _AppointmentConfirmationPageState extends State<AppointmentConfirmationPag
         if (p != null) _price = p.toDouble();
         final curr = obj['currency']?.toString();
         if (curr != null && curr.isNotEmpty) _currency = curr;
-        print('[PRICING] confirmation parsed price=$_price, currency=$_currency');
+        print(
+          '[PRICING] confirmation parsed price=$_price, currency=$_currency',
+        );
       }
     } catch (e) {
       print('[PRICING][ERR] confirmation _loadPricing failed: $e');
     } finally {
       if (mounted) setState(() => _isLoadingPrice = false);
+    }
+  }
+
+  Future<void> _loadQueueNumber() async {
+    try {
+      // استخدام API مختلف للحصول على مواعيد الطبيب
+      final service = AppointmentsService();
+      final dateStr = widget.appointmentDate.replaceAll('/', '-');
+
+      // جلب مواعيد الطبيب باستخدام API مباشر
+      final response = await service.getDoctorAppointmentsByDate(
+        doctorId: widget.doctorId,
+        date: dateStr,
+      );
+
+      print('[QUEUE] API Response: $response');
+
+      List<Map<String, dynamic>> appointments = [];
+      if (response['ok'] == true && response['data'] != null) {
+        final data = response['data'];
+        if (data['data'] != null && data['data'] is List) {
+          appointments = List<Map<String, dynamic>>.from(data['data']);
+        }
+      }
+
+      // طباعة البيانات المجلوبة للتشخيص
+      print('[QUEUE] Doctor appointments data: $appointments');
+
+      // العثور على أعلى تسلسل في مواعيد الطبيب في ذلك اليوم
+      int maxQueueNumber = 0;
+      for (final appointment in appointments) {
+        print('[QUEUE] Checking doctor appointment: $appointment');
+
+        // البحث عن تسلسل الموعد في البيانات
+        final queueNumber =
+            appointment['appointmentSequence'] ??
+            appointment['queueNumber'] ??
+            appointment['sequenceNumber'] ??
+            appointment['sequence'] ??
+            appointment['order'] ??
+            appointment['position'] ??
+            0;
+
+        print('[QUEUE] Found doctor appointment queue number: $queueNumber');
+
+        if (queueNumber is int && queueNumber > maxQueueNumber) {
+          maxQueueNumber = queueNumber;
+        }
+      }
+
+      // تسلسل الموعد الجديد = أعلى تسلسل في مواعيد الطبيب + 1
+      _queueNumber = maxQueueNumber + 1;
+
+      print(
+        '[QUEUE] Found ${appointments.length} doctor appointments for date $dateStr',
+      );
+      print(
+        '[QUEUE] Max doctor appointment queue number: $maxQueueNumber, New appointment queue number: $_queueNumber',
+      );
+    } catch (e) {
+      print('[QUEUE][ERR] Failed to load doctor appointment queue number: $e');
+      _queueNumber = 1; // القيمة الافتراضية
+    } finally {
+      if (mounted) setState(() => _isLoadingQueue = false);
     }
   }
 
@@ -322,8 +397,8 @@ class _AppointmentConfirmationPageState extends State<AppointmentConfirmationPag
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 5.h),
-          MyText(
-            widget.doctorSpecialty,
+          SpecializationText(
+            specializationId: widget.doctorSpecialty,
             fontSize: 16.sp,
             fontWeight: FontWeight.w500,
             color: Colors.grey[600],
@@ -344,8 +419,8 @@ class _AppointmentConfirmationPageState extends State<AppointmentConfirmationPag
             _isLoadingPrice
                 ? 'جاري التحميل...'
                 : _price != null && _price! > 0
-                    ? '${_price!.toStringAsFixed(0)} $_currency'
-                    : '—',
+                ? '${_price!.toStringAsFixed(0)} $_currency'
+                : '—',
             isPrice: true,
           ),
         ],
@@ -394,7 +469,7 @@ class _AppointmentConfirmationPageState extends State<AppointmentConfirmationPag
       child: Column(
         children: [
           MyText(
-            '22',
+            _isLoadingQueue ? '...' : '$_queueNumber',
             fontSize: 47.sp,
             fontWeight: FontWeight.w900,
             color: Colors.black87,
@@ -534,7 +609,10 @@ class _AppointmentConfirmationPageState extends State<AppointmentConfirmationPag
                         LoadingDialog.show(message: 'جاري حجز الموعد...');
 
                         // تحويل التاريخ من yyyy/MM/dd إلى yyyy-MM-dd
-                        final dateForApi = widget.appointmentDate.replaceAll('/', '-');
+                        final dateForApi = widget.appointmentDate.replaceAll(
+                          '/',
+                          '-',
+                        );
 
                         // إرسال الحجز للـ API مع المعلومات المطلوبة
                         final result = await controller.bookAppointment(

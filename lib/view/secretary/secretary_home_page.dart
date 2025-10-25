@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
@@ -7,6 +8,9 @@ import '../../widget/search_widget.dart';
 import '../../widget/appointment_status_filter_dialog.dart';
 import 'appointment_details_page.dart';
 import '../appointments/patient_registration_page.dart';
+import '../../controller/session_controller.dart';
+import '../../controller/secretary_appointments_controller.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class SecretaryHomePage extends StatefulWidget {
   const SecretaryHomePage({super.key});
@@ -18,14 +22,10 @@ class SecretaryHomePage extends StatefulWidget {
 class _SecretaryHomePageState extends State<SecretaryHomePage> {
   bool _openNotifications = false;
   final List<String> _activeStatuses = [];
-
-  final List<Map<String, dynamic>> _appointments = [
-    {'name': 'اسم المريض', 'status': 'مكتمل', 'time': '6:00 صباحاً', 'seq': 1},
-    {'name': 'اسم المريض', 'status': 'مكتمل', 'time': '6:20 صباحاً', 'seq': 2},
-    {'name': 'اسم المريض', 'status': 'مكتمل', 'time': '6:40 صباحاً', 'seq': 3},
-    {'name': 'اسم المريض', 'status': 'مكتمل', 'time': '7:00 صباحاً', 'seq': 4},
-    {'name': 'اسم المريض', 'status': 'مكتمل', 'time': '7:20 صباحاً', 'seq': 5},
-  ];
+  final SessionController _sessionController = Get.find<SessionController>();
+  final SecretaryAppointmentsController _appointmentsController = Get.put(
+    SecretaryAppointmentsController(),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -42,15 +42,24 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
                 children: [
                   GestureDetector(
                     onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const PatientRegistrationPage(
-                            doctorId: 'doctor_id_placeholder',
-                            doctorName: 'اسم الطبيب',
-                            doctorSpecialty: 'التخصص',
+                      final user = _sessionController.currentUser.value;
+
+                      if (user?.associatedDoctor.isNotEmpty == true) {
+                        Get.to(
+                          () => PatientRegistrationPage(
+                            doctorId: user!.associatedDoctor,
+                            doctorName: user.name,
+                            doctorSpecialty: 'طبيب', // يمكن تحسين هذا لاحقاً
                           ),
-                        ),
-                      );
+                        );
+                      } else {
+                        Get.snackbar(
+                          'خطأ',
+                          'لا يمكن العثور على معلومات الطبيب المرتبط',
+                          backgroundColor: Colors.red,
+                          colorText: Colors.white,
+                        );
+                      }
                     },
                     child: Container(
                       width: 56.w,
@@ -60,7 +69,7 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
                         borderRadius: BorderRadius.circular(16.r),
                       ),
                       child: const Icon(
-                        Icons.add,
+                        Icons.calendar_today,
                         color: Colors.white,
                         size: 28,
                       ),
@@ -196,15 +205,59 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
                   ),
                 ),
 
-              ..._filteredAppointments().asMap().entries.map(
-                (e) => _appointmentItem(
-                  name: e.value['name'] as String,
-                  status: e.value['status'] as String,
-                  time: e.value['time'] as String,
-                  seq: e.value['seq'] as int,
-                  selected: e.key == 0,
-                ),
-              ),
+              Obx(() {
+                final isLoading = _appointmentsController.isLoading.value;
+                final appointments = _filteredAppointments();
+
+                if (isLoading) {
+                  return Skeletonizer(
+                    enabled: true,
+                    child: Column(
+                      children: List.generate(
+                        3,
+                        (index) => _appointmentItem(
+                          name: 'اسم المريض',
+                          status: 'مكتمل',
+                          time: '6:00 صباحاً',
+                          seq: index + 1,
+                          selected: false,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                if (appointments.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20.h),
+                      child: MyText(
+                        'لا توجد مواعيد اليوم',
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  );
+                }
+
+                return Column(
+                  children: appointments
+                      .asMap()
+                      .entries
+                      .map(
+                        (e) => _appointmentItem(
+                          name: e.value['title'] ?? 'مريض',
+                          status: _getStatusText(e.value['status']),
+                          time: e.value['time'] ?? '',
+                          seq: e.key + 1,
+                          selected: e.key == 0,
+                          appointment: e.value,
+                        ),
+                      )
+                      .toList(),
+                );
+              }),
               SizedBox(height: 16.h),
             ],
           ),
@@ -344,10 +397,40 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
   }
 
   List<Map<String, dynamic>> _filteredAppointments() {
-    if (_activeStatuses.isEmpty) return _appointments;
-    return _appointments
-        .where((a) => _activeStatuses.contains(a['status'] as String))
+    final appointments = _appointmentsController.appointments;
+
+    // فلترة المواعيد لليوم الحالي فقط
+    final today = DateTime.now();
+    final todayAppointments = appointments.where((appointment) {
+      final appointmentDate = appointment['date'] as DateTime;
+      return appointmentDate.year == today.year &&
+          appointmentDate.month == today.month &&
+          appointmentDate.day == today.day;
+    }).toList();
+
+    // تطبيق فلتر الحالة إذا كان موجود
+    if (_activeStatuses.isEmpty) return todayAppointments;
+    return todayAppointments
+        .where(
+          (a) =>
+              _activeStatuses.contains(_getStatusText(a['status'] as String)),
+        )
         .toList();
+  }
+
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'completed':
+        return 'مكتمل';
+      case 'pending':
+        return 'قيد الانتظار';
+      case 'cancelled':
+        return 'ملغي';
+      case 'confirmed':
+        return 'مؤكد';
+      default:
+        return status;
+    }
   }
 
   Widget _filterTag(String text, VoidCallback onClear) {
@@ -416,24 +499,31 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
     required String time,
     required int seq,
     required bool selected,
+    Map<String, dynamic>? appointment,
   }) {
     return InkWell(
       onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => AppointmentDetailsPage(
-              name: name,
-              age: '22',
-              gender: 'انثى',
-              phone: '0770 000 0000',
-              date: '2025 / 10 / 2',
-              time: time,
-              price: '10,000 د.ع',
-              paymentStatus: 'تم الدفع',
-              seq: seq,
+        if (appointment != null) {
+          final date = appointment['date'] as DateTime;
+          final formattedDate = '${date.year} / ${date.month} / ${date.day}';
+          final price = '${appointment['amount'] ?? 0} د.ع';
+
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => AppointmentDetailsPage(
+                name: appointment['patientName'] ?? name,
+                age: appointment['patientAge'] ?? '22',
+                gender: 'انثى', // يمكن إضافة هذا الحقل لاحقاً
+                phone: appointment['patientPhone'] ?? '0770 000 0000',
+                date: formattedDate,
+                time: time,
+                price: price,
+                paymentStatus: 'تم الدفع',
+                seq: seq,
+              ),
             ),
-          ),
-        );
+          );
+        }
       },
       child: Container(
         margin: EdgeInsets.only(bottom: 12.h),

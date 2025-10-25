@@ -4,8 +4,6 @@ import 'package:get/get.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
-import 'delegate_register_page.dart';
-import '../../bindings/delegate_register_binding.dart';
 
 class DelegateTermsPage extends StatelessWidget {
   const DelegateTermsPage({super.key});
@@ -61,10 +59,15 @@ class DelegateTermsPage extends StatelessWidget {
                 height: 64.h,
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => Get.to(
-                    () => const DelegateRegisterPage(),
-                    binding: DelegateRegisterBinding(),
-                  ),
+                  onPressed: () {
+                    // تم إزالة صفحة تسجيل المندوب
+                    Get.snackbar(
+                      'معلومة',
+                      'تم إزالة تسجيل المندوبين',
+                      backgroundColor: AppColors.primary,
+                      colorText: Colors.white,
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(

@@ -17,7 +17,7 @@ class ChatDetailsPage extends StatelessWidget {
     final TextEditingController _msgCtrl = TextEditingController();
     final ChatController ctrl = Get.find<ChatController>();
     final SessionController session = Get.find<SessionController>();
-    
+
     // Set receiverId and load doctor conversation if provided
     if (receiverId != null && receiverId!.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -67,7 +67,7 @@ class ChatDetailsPage extends StatelessWidget {
             child: Obx(() {
               final items = ctrl.messages;
               final currentUserId = session.currentUser.value?.id ?? '';
-              
+
               return ListView.builder(
                 reverse: false,
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
@@ -75,10 +75,10 @@ class ChatDetailsPage extends StatelessWidget {
                 itemBuilder: (_, i) {
                   final m = items[i];
                   final text = (m['content'] ?? m['text'] ?? '').toString();
-                  
+
                   // Determine if message is from current user
                   bool isMe = false;
-                  
+
                   // First check if it's a local message (from sendMessage)
                   if (m['isMe'] == true || m['sender'] == 'me') {
                     isMe = true;
@@ -93,9 +93,33 @@ class ChatDetailsPage extends StatelessWidget {
                       isMe = (sender == currentUserId);
                     }
                   }
-                  
-                  print('Message $i: "$text", isMe: $isMe, sender: ${m['sender']}, currentUserId: $currentUserId');
-                  
+
+                  // For secretary role: show doctor and secretary messages on right, patient on left
+                  final currentRole = session.role.value;
+                  if (currentRole == 'secretary') {
+                    // If it's from current user (secretary), show on right
+                    if (isMe) {
+                      isMe = true;
+                    } else {
+                      // Check if sender is doctor or secretary (show on right)
+                      final sender = m['sender'];
+                      String? senderRole;
+                      if (sender is Map) {
+                        senderRole = sender['userType']
+                            ?.toString()
+                            .toLowerCase();
+                      }
+                      // If sender is doctor or secretary, show on right (isMe = true)
+                      // If sender is patient/user, show on left (isMe = false)
+                      isMe =
+                          (senderRole == 'doctor' || senderRole == 'secretary');
+                    }
+                  }
+
+                  print(
+                    'Message $i: "$text", isMe: $isMe, sender: ${m['sender']}, currentUserId: $currentUserId',
+                  );
+
                   return _bubble(text, isMe: isMe);
                 },
               );
@@ -105,66 +129,70 @@ class ChatDetailsPage extends StatelessWidget {
             padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 16.h),
             child: Row(
               children: [
-                Obx(() => GestureDetector(
-                  onTap: ctrl.isSendingMessage.value ? null : () async {
-                    final text = _msgCtrl.text.trim();
-                    if (text.isEmpty) {
-                      Get.snackbar(
-                        'رسالة فارغة',
-                        'يرجى كتابة رسالة قبل الإرسال',
-                        backgroundColor: AppColors.warning,
-                        colorText: Colors.white,
-                        duration: const Duration(seconds: 2),
-                      );
-                      return;
-                    }
-                    
-                    // Check if receiverId is set
-                    if (ctrl.receiverId.value.isEmpty) {
-                      Get.snackbar(
-                        'خطأ',
-                        'لا يمكن إرسال الرسالة، المستلم غير محدد',
-                        backgroundColor: const Color(0xFFFF3B30),
-                        colorText: Colors.white,
-                        duration: const Duration(seconds: 3),
-                      );
-                      return;
-                    }
-                    
-                    final ok = await ctrl.sendMessage(text);
-                    if (ok) {
-                      _msgCtrl.clear();
-                    } else {
-                      Get.snackbar(
-                        'فشل الإرسال',
-                        'تعذر إرسال الرسالة، يرجى المحاولة مرة أخرى',
-                        backgroundColor: const Color(0xFFFF3B30),
-                        colorText: Colors.white,
-                        duration: const Duration(seconds: 3),
-                      );
-                    }
-                  },
-                  child: Container(
-                    width: 56.w,
-                    height: 56.w,
-                    decoration: BoxDecoration(
-                      color: ctrl.isSendingMessage.value 
-                          ? AppColors.primary.withOpacity(0.6)
-                          : AppColors.primary,
-                      borderRadius: BorderRadius.circular(14.r),
+                Obx(
+                  () => GestureDetector(
+                    onTap: ctrl.isSendingMessage.value
+                        ? null
+                        : () async {
+                            final text = _msgCtrl.text.trim();
+                            if (text.isEmpty) {
+                              Get.snackbar(
+                                'رسالة فارغة',
+                                'يرجى كتابة رسالة قبل الإرسال',
+                                backgroundColor: AppColors.warning,
+                                colorText: Colors.white,
+                                duration: const Duration(seconds: 2),
+                              );
+                              return;
+                            }
+
+                            // Check if receiverId is set
+                            if (ctrl.receiverId.value.isEmpty) {
+                              Get.snackbar(
+                                'خطأ',
+                                'لا يمكن إرسال الرسالة، المستلم غير محدد',
+                                backgroundColor: const Color(0xFFFF3B30),
+                                colorText: Colors.white,
+                                duration: const Duration(seconds: 3),
+                              );
+                              return;
+                            }
+
+                            final ok = await ctrl.sendMessage(text);
+                            if (ok) {
+                              _msgCtrl.clear();
+                            } else {
+                              Get.snackbar(
+                                'فشل الإرسال',
+                                'تعذر إرسال الرسالة، يرجى المحاولة مرة أخرى',
+                                backgroundColor: const Color(0xFFFF3B30),
+                                colorText: Colors.white,
+                                duration: const Duration(seconds: 3),
+                              );
+                            }
+                          },
+                    child: Container(
+                      width: 56.w,
+                      height: 56.w,
+                      decoration: BoxDecoration(
+                        color: ctrl.isSendingMessage.value
+                            ? AppColors.primary.withOpacity(0.6)
+                            : AppColors.primary,
+                        borderRadius: BorderRadius.circular(14.r),
+                      ),
+                      child: ctrl.isSendingMessage.value
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Icon(Icons.send, color: Colors.white),
                     ),
-                    child: ctrl.isSendingMessage.value
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Icon(Icons.send, color: Colors.white),
                   ),
-                )),
+                ),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Container(
@@ -196,28 +224,9 @@ class ChatDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _timeSeparator(String text) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 12.h),
-      child: Center(
-        child: MyText(text, fontSize: 14.sp, color: AppColors.textSecondary),
-      ),
-    );
-  }
-
-  Widget _time(String t) {
-    return Padding(
-      padding: EdgeInsets.only(top: 6.h, bottom: 12.h),
-      child: Align(
-        alignment: Alignment.centerRight,
-        child: MyText(t, fontSize: 12.sp, color: AppColors.textSecondary),
-      ),
-    );
-  }
-
   Widget _bubble(String text, {required bool isMe}) {
     return Align(
-      alignment: isMe ? Alignment.centerLeft : Alignment.centerRight,
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: EdgeInsets.symmetric(vertical: 6.h),
         padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
@@ -227,8 +236,8 @@ class ChatDetailsPage extends StatelessWidget {
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(18.r),
             topRight: Radius.circular(18.r),
-            bottomLeft: Radius.circular(isMe ? 4.r : 18.r),
-            bottomRight: Radius.circular(isMe ? 18.r : 4.r),
+            bottomLeft: Radius.circular(isMe ? 18.r : 4.r),
+            bottomRight: Radius.circular(isMe ? 4.r : 18.r),
           ),
           border: isMe ? null : Border.all(color: AppColors.divider),
         ),

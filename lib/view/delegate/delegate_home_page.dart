@@ -6,9 +6,7 @@ import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 import '../../widget/search_widget.dart';
 import '../home/search_page.dart';
-import 'delegate_register_page.dart';
 import '../../bindings/search_binding.dart';
-import '../../bindings/delegate_register_binding.dart';
 
 class DelegateHomePage extends StatelessWidget {
   const DelegateHomePage({super.key});
@@ -79,10 +77,15 @@ class DelegateHomePage extends StatelessWidget {
                   SizedBox(width: 12.w),
                   // Add button
                   GestureDetector(
-                    onTap: () => Get.to(
-                      () => const DelegateRegisterPage(),
-                      binding: DelegateRegisterBinding(),
-                    ),
+                    onTap: () {
+                      // تم إزالة صفحة تسجيل المندوب
+                      Get.snackbar(
+                        'معلومة',
+                        'تم إزالة تسجيل المندوبين',
+                        backgroundColor: AppColors.primary,
+                        colorText: Colors.white,
+                      );
+                    },
                     child: Container(
                       width: 56.w,
                       height: 56.w,

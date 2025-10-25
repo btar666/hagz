@@ -74,7 +74,7 @@ class PastAppointmentsPage extends StatelessWidget {
                     Expanded(
                       child: Center(
                         child: Text(
-                          'المواعيد السابقة',
+                          'كل المواعيد',
                           style: TextStyle(
                             color: AppColors.textPrimary,
                             fontSize: 22.sp,
@@ -141,7 +141,11 @@ class PastAppointmentsPage extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.calendar_today, color: AppColors.primary, size: 18.r),
+                        Icon(
+                          Icons.calendar_today,
+                          color: AppColors.primary,
+                          size: 18.r,
+                        ),
                         SizedBox(width: 8.w),
                         Expanded(
                           child: Text(
@@ -156,7 +160,11 @@ class PastAppointmentsPage extends StatelessWidget {
                         ),
                         TextButton.icon(
                           onPressed: () => _showDateRangeFilterSheet(context),
-                          icon: const Icon(Icons.tune, color: AppColors.primary, size: 18),
+                          icon: const Icon(
+                            Icons.tune,
+                            color: AppColors.primary,
+                            size: 18,
+                          ),
                           label: const Text('تحديد الفترة'),
                         ),
                       ],
@@ -228,7 +236,8 @@ class PastAppointmentsPage extends StatelessWidget {
                               ? () {
                                   final sColor = statusColor(status);
                                   final sText = statusLabel(status);
-                                  final String price = '${item['amount'] ?? 0} د.ع';
+                                  final String price =
+                                      '${item['amount'] ?? 0} د.ع';
 
                                   final details = <String, dynamic>{
                                     'patient': item['patientName'] ?? title,
@@ -244,7 +253,11 @@ class PastAppointmentsPage extends StatelessWidget {
                                     'doctorId': item['doctorId'] ?? '',
                                   };
 
-                                  Get.to(() => AppointmentDetailsPage(details: details));
+                                  Get.to(
+                                    () => AppointmentDetailsPage(
+                                      details: details,
+                                    ),
+                                  );
                                 }
                               : null,
                           child: Padding(
@@ -338,7 +351,10 @@ class PastAppointmentsPage extends StatelessWidget {
   );
 }
 
-void _showChangeStatusSheet(BuildContext context, {required void Function(String) onPick}) {
+void _showChangeStatusSheet(
+  BuildContext context, {
+  required void Function(String) onPick,
+}) {
   showModalBottomSheet(
     context: context,
     shape: const RoundedRectangleBorder(
@@ -360,7 +376,10 @@ void _showChangeStatusSheet(BuildContext context, {required void Function(String
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.check_circle, color: Color(0xFF2ECC71)),
+                leading: const Icon(
+                  Icons.check_circle,
+                  color: Color(0xFF2ECC71),
+                ),
                 title: const Text('تعيين كمكتمل'),
                 onTap: () {
                   Navigator.pop(context);
@@ -386,8 +405,10 @@ void _showChangeStatusSheet(BuildContext context, {required void Function(String
 
 void _showDateRangeFilterSheet(BuildContext context) {
   final c = Get.find<PastAppointmentsController>();
-  DateTime tempStart = c.startDate.value ?? DateTime.now().subtract(const Duration(days: 30));
+  DateTime tempStart =
+      c.startDate.value ?? DateTime.now().subtract(const Duration(days: 30));
   DateTime tempEnd = c.endDate.value ?? DateTime.now();
+  String? selectedQuickRange; // متغير لتتبع الخيار المختار
 
   showModalBottomSheet(
     context: context,
@@ -400,21 +421,45 @@ void _showDateRangeFilterSheet(BuildContext context) {
         textDirection: TextDirection.rtl,
         child: StatefulBuilder(
           builder: (context, setModalState) {
-            Widget _chip(String label, VoidCallback onTap) {
+            Widget _chip(
+              String label,
+              VoidCallback onTap, {
+              bool isSelected = false,
+            }) {
               return GestureDetector(
                 onTap: onTap,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.08),
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.primary.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.25)),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.primary.withOpacity(0.25),
+                      width: isSelected ? 2 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
                   ),
                   child: Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Expo Arabic',
                       fontWeight: FontWeight.w700,
+                      color: isSelected ? Colors.white : AppColors.textPrimary,
                     ),
                   ),
                 ),
@@ -455,6 +500,7 @@ void _showDateRangeFilterSheet(BuildContext context) {
 
             void applyQuickRange(String key) {
               final now = DateTime.now();
+              selectedQuickRange = key; // تحديث الخيار المختار
               switch (key) {
                 case 'today':
                   tempStart = DateTime(now.year, now.month, now.day);
@@ -470,9 +516,19 @@ void _showDateRangeFilterSheet(BuildContext context) {
                   break;
                 case 'lastMonth':
                   final firstThisMonth = DateTime(now.year, now.month, 1);
-                  final lastMonthEnd = firstThisMonth.subtract(const Duration(days: 1));
-                  tempStart = DateTime(lastMonthEnd.year, lastMonthEnd.month, 1);
-                  tempEnd = DateTime(lastMonthEnd.year, lastMonthEnd.month, lastMonthEnd.day);
+                  final lastMonthEnd = firstThisMonth.subtract(
+                    const Duration(days: 1),
+                  );
+                  tempStart = DateTime(
+                    lastMonthEnd.year,
+                    lastMonthEnd.month,
+                    1,
+                  );
+                  tempEnd = DateTime(
+                    lastMonthEnd.year,
+                    lastMonthEnd.month,
+                    lastMonthEnd.day,
+                  );
                   break;
                 case 'last30':
                   tempEnd = DateTime(now.year, now.month, now.day);
@@ -520,11 +576,31 @@ void _showDateRangeFilterSheet(BuildContext context) {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        _chip('اليوم', () => applyQuickRange('today')),
-                        _chip('آخر 7 أيام', () => applyQuickRange('last7')),
-                        _chip('هذا الشهر', () => applyQuickRange('thisMonth')),
-                        _chip('الشهر الماضي', () => applyQuickRange('lastMonth')),
-                        _chip('آخر 30 يوم', () => applyQuickRange('last30')),
+                        _chip(
+                          'اليوم',
+                          () => applyQuickRange('today'),
+                          isSelected: selectedQuickRange == 'today',
+                        ),
+                        _chip(
+                          'آخر 7 أيام',
+                          () => applyQuickRange('last7'),
+                          isSelected: selectedQuickRange == 'last7',
+                        ),
+                        _chip(
+                          'هذا الشهر',
+                          () => applyQuickRange('thisMonth'),
+                          isSelected: selectedQuickRange == 'thisMonth',
+                        ),
+                        _chip(
+                          'الشهر الماضي',
+                          () => applyQuickRange('lastMonth'),
+                          isSelected: selectedQuickRange == 'lastMonth',
+                        ),
+                        _chip(
+                          'آخر 30 يوم',
+                          () => applyQuickRange('last30'),
+                          isSelected: selectedQuickRange == 'last30',
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -539,9 +615,18 @@ void _showDateRangeFilterSheet(BuildContext context) {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.login, color: AppColors.textSecondary),
+                              const Icon(
+                                Icons.login,
+                                color: AppColors.textSecondary,
+                              ),
                               const SizedBox(width: 8),
-                              const Text('بداية الفترة', style: TextStyle(fontFamily: 'Expo Arabic', fontWeight: FontWeight.w700)),
+                              const Text(
+                                'بداية الفترة',
+                                style: TextStyle(
+                                  fontFamily: 'Expo Arabic',
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                               const Spacer(),
                               TextButton(
                                 onPressed: pickStart,
@@ -552,9 +637,18 @@ void _showDateRangeFilterSheet(BuildContext context) {
                           const Divider(),
                           Row(
                             children: [
-                              const Icon(Icons.logout, color: AppColors.textSecondary),
+                              const Icon(
+                                Icons.logout,
+                                color: AppColors.textSecondary,
+                              ),
                               const SizedBox(width: 8),
-                              const Text('نهاية الفترة', style: TextStyle(fontFamily: 'Expo Arabic', fontWeight: FontWeight.w700)),
+                              const Text(
+                                'نهاية الفترة',
+                                style: TextStyle(
+                                  fontFamily: 'Expo Arabic',
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                               const Spacer(),
                               TextButton(
                                 onPressed: pickEnd,
@@ -580,7 +674,9 @@ void _showDateRangeFilterSheet(BuildContext context) {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                           onPressed: () {
                             c.setDateRange(tempStart, tempEnd);

@@ -334,6 +334,19 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
                 children: [
                   Obx(() {
                     final img = session.currentUser.value?.image ?? '';
+                    final loading = controller.isLoadingSocial.value;
+
+                    if (loading) {
+                      return Skeletonizer(
+                        enabled: true,
+                        child: Container(
+                          width: double.infinity,
+                          height: double.infinity,
+                          color: Colors.grey[300],
+                        ),
+                      );
+                    }
+
                     if (img.isNotEmpty) {
                       return Image.network(
                         img,
