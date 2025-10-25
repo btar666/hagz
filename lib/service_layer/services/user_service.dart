@@ -79,6 +79,7 @@ class UserService {
     String? deviceToken,
     Map<String, String>? socialMedia,
     String? image,
+    String? address,
   }) async {
     final Map<String, dynamic> body = {
       'name': name,
@@ -108,6 +109,9 @@ class UserService {
     }
     if (image != null && image.isNotEmpty) {
       body['image'] = image;
+    }
+    if (address != null && address.isNotEmpty) {
+      body['address'] = address;
     }
 
     print('📤 UPDATE USER INFO REQUEST BODY:');

@@ -627,28 +627,18 @@ class DoctorProfilePage extends StatelessWidget {
             Icon(Icons.location_on, color: AppColors.primary, size: 20.r),
             SizedBox(width: 8.w),
             Expanded(
-              child: Obx(
-                () => MyText(
-                  controller.doctorAddress.value,
+              child: Obx(() {
+                final session = Get.find<SessionController>();
+                final user = session.currentUser.value;
+                final address = user?.address ?? controller.doctorAddress.value;
+
+                return MyText(
+                  address.isNotEmpty ? address : 'العنوان غير محدد',
                   fontSize: 14.sp,
                   color: AppColors.textSecondary,
                   textAlign: TextAlign.right,
-                ),
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 12.h),
-        Row(
-          children: [
-            Icon(Icons.phone, color: AppColors.primary, size: 20.r),
-            SizedBox(width: 8.w),
-            Obx(
-              () => MyText(
-                controller.doctorPhone.value,
-                fontSize: 14.sp,
-                color: AppColors.textSecondary,
-              ),
+                );
+              }),
             ),
           ],
         ),

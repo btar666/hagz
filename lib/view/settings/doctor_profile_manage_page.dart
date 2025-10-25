@@ -1560,6 +1560,8 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
   // Address manage tile
   Widget _addressManageTile() {
     final controller = Get.find<DoctorProfileController>();
+    final TextEditingController addressCtrl = TextEditingController();
+
     return Obx(
       () => Column(
         children: [
@@ -1599,7 +1601,7 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
             firstChild: const SizedBox.shrink(),
             secondChild: Padding(
               padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
-              child: _addressEditContent(controller),
+              child: _addressEditContent(controller, addressCtrl),
             ),
           ),
           Divider(color: AppColors.divider, height: 1),
@@ -1891,152 +1893,102 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
     );
   }
 
-  Widget _addressEditContent(DoctorProfileController controller) {
+  Widget _addressEditContent(
+    DoctorProfileController controller,
+    TextEditingController addressCtrl,
+  ) {
+    // تحميل العنوان الحالي عند فتح القسم
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = Get.find<SessionController>().currentUser.value;
+      if (user != null && user.address.isNotEmpty) {
+        addressCtrl.text = user.address;
+      }
+    });
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         MyText(
-          'اكتب عناوينك كتابة أو قم بوضع رابطه',
+          'أدخل عنوانك',
           fontSize: 18.sp,
           fontWeight: FontWeight.w900,
           color: AppColors.textPrimary,
           textAlign: TextAlign.center,
         ),
         SizedBox(height: 16.h),
-        Obx(
-          () => Column(
-            children: [
-              for (int i = 0; i < controller.addresses.length; i++)
-                _addressRow(controller, i),
-              SizedBox(height: 16.h),
-              _addAddressButton(controller),
-            ],
+        Container(
+          height: 60.h,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: AppColors.divider, width: 1),
+          ),
+          child: TextField(
+            controller: addressCtrl,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+            ),
+            decoration: InputDecoration(
+              hintText: 'أدخل عنوانك هنا...',
+              hintStyle: TextStyle(
+                fontSize: 16.sp,
+                color: AppColors.textSecondary,
+              ),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16.w,
+                vertical: 16.h,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(height: 16.h),
+        SizedBox(
+          height: 50.h,
+          child: ElevatedButton(
+            onPressed: () async {
+              if (addressCtrl.text.trim().isEmpty) {
+                Get.snackbar('خطأ', 'يرجى إدخال العنوان');
+                return;
+              }
+
+              LoadingDialog.show(message: 'جاري تحديث العنوان...');
+
+              final result = await controller.updateDoctorAddress(
+                addressCtrl.text.trim(),
+              );
+
+              LoadingDialog.hide();
+
+              if (result['ok'] == true) {
+                Get.snackbar('نجح', 'تم تحديث العنوان بنجاح');
+                controller.toggleAddressExpansion();
+              } else {
+                Get.snackbar(
+                  'خطأ',
+                  result['message'] ?? 'فشل في تحديث العنوان',
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              elevation: 0,
+            ),
+            child: MyText(
+              'حفظ العنوان',
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
           ),
         ),
       ],
-    );
-  }
-
-  Widget _addressRow(DoctorProfileController controller, int index) {
-    final item = controller.addresses[index];
-    final TextEditingController fieldCtrl = TextEditingController(
-      text: (item['value'] ?? '') as String,
-    );
-    final bool isLink = (item['isLink'] ?? false) as bool;
-    return Padding(
-      padding: EdgeInsets.only(bottom: 12.h),
-      child: Container(
-        height: 78.h,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(26.r),
-          border: Border.all(color: const Color(0xFF616E7C), width: 1.6),
-        ),
-        child: Stack(
-          children: [
-            // text field aligned to start (يمين) مع هامش للأيقونات اليسار
-            Align(
-              alignment: Alignment.center,
-              child: SizedBox(
-                width: double.infinity,
-                child: TextField(
-                  controller: fieldCtrl,
-                  textAlign: TextAlign.right,
-                  textDirection: TextDirection.rtl,
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    hintText: isLink
-                        ? 'الصق الرابط هنا ..'
-                        : 'اكتب العنوان هنا',
-                    hintStyle: TextStyle(
-                      color: AppColors.textLight,
-                      fontFamily: 'Expo Arabic',
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    contentPadding: EdgeInsets.only(right: 16.w, left: 96.w),
-                  ),
-                  style: TextStyle(
-                    fontFamily: 'Expo Arabic',
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
-                  onChanged: (v) => controller.updateAddressValue(index, v),
-                ),
-              ),
-            ),
-            // left side action buttons (inside the field)
-            Positioned(
-              left: 16.w,
-              top: 0,
-              bottom: 0,
-              child: Row(
-                children: [
-                  _minusRedCircle(() => controller.removeAddressAt(index)),
-                  SizedBox(width: 12.w),
-                  _editYellowIcon(() => controller.toggleAddressType(index)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _addAddressButton(DoctorProfileController controller) {
-    return InkWell(
-      onTap: () => controller.addAddress(isLink: false),
-      borderRadius: BorderRadius.circular(28.r),
-      child: Container(
-        height: 64.h,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF2F4F5),
-          borderRadius: BorderRadius.circular(28.r),
-        ),
-        child: Center(
-          child: Directionality(
-            textDirection: TextDirection.rtl,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.add, color: AppColors.textSecondary),
-                SizedBox(width: 8.w),
-                MyText(
-                  'أضف عنوان جديد',
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textSecondary,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // عناصر التحكم الخاصة بالقسم (تصميم جديد)
-  Widget _minusRedCircle(VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        width: 44.w,
-        height: 44.w,
-        decoration: const BoxDecoration(
-          color: Color(0xFFFF5252),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(Icons.remove, color: Colors.white, size: 22.sp),
-      ),
-    );
-  }
-
-  Widget _editYellowIcon(VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      child: Icon(Icons.edit, color: Color(0xFFFFC107), size: 28.sp),
     );
   }
 

@@ -181,23 +181,32 @@ class DoctorProfileController extends GetxController {
       final res = await _opinionService.getOpinionsByTarget(targetId);
       if (res['ok'] == true) {
         final List<dynamic> data = (res['data']?['data'] as List? ?? []);
-        opinions.value = data.map((item) {
-          final Map<String, dynamic> m = item as Map<String, dynamic>;
-          final user = (m['user'] as Map<String, dynamic>?);
-          final statusRaw = (m['stuats'] ?? m['status'] ?? '').toString().toLowerCase();
-          final bool published = statusRaw == 'puplish' || statusRaw == 'publish' || statusRaw == 'published' || (m['published'] == true);
-          // endpoint target/ يعيد المنشور فقط، لكن نبقي الحماية الاحتياطية
-          if (!published) return null;
-          return {
-            '_id': m['_id']?.toString() ?? '',
-            'patientName': user?['name']?.toString() ?? 'مستخدم',
-            'rating': 5.0,
-            'comment': m['comment']?.toString() ?? '',
-            'date': m['createdAt']?.toString(),
-            'avatar': 'assets/icons/home/doctor.png',
-            'published': published,
-          };
-        }).whereType<Map<String, dynamic>>().toList();
+        opinions.value = data
+            .map((item) {
+              final Map<String, dynamic> m = item as Map<String, dynamic>;
+              final user = (m['user'] as Map<String, dynamic>?);
+              final statusRaw = (m['stuats'] ?? m['status'] ?? '')
+                  .toString()
+                  .toLowerCase();
+              final bool published =
+                  statusRaw == 'puplish' ||
+                  statusRaw == 'publish' ||
+                  statusRaw == 'published' ||
+                  (m['published'] == true);
+              // endpoint target/ يعيد المنشور فقط، لكن نبقي الحماية الاحتياطية
+              if (!published) return null;
+              return {
+                '_id': m['_id']?.toString() ?? '',
+                'patientName': user?['name']?.toString() ?? 'مستخدم',
+                'rating': 5.0,
+                'comment': m['comment']?.toString() ?? '',
+                'date': m['createdAt']?.toString(),
+                'avatar': 'assets/icons/home/doctor.png',
+                'published': published,
+              };
+            })
+            .whereType<Map<String, dynamic>>()
+            .toList();
       }
     } catch (_) {
       // ignore network errors silently
@@ -213,8 +222,14 @@ class DoctorProfileController extends GetxController {
         opinions.value = data.map((item) {
           final Map<String, dynamic> m = item as Map<String, dynamic>;
           final user = (m['user'] as Map<String, dynamic>?);
-          final statusRaw = (m['stuats'] ?? m['status'] ?? '').toString().toLowerCase();
-          final bool published = statusRaw == 'puplish' || statusRaw == 'publish' || statusRaw == 'published' || (m['published'] == true);
+          final statusRaw = (m['stuats'] ?? m['status'] ?? '')
+              .toString()
+              .toLowerCase();
+          final bool published =
+              statusRaw == 'puplish' ||
+              statusRaw == 'publish' ||
+              statusRaw == 'published' ||
+              (m['published'] == true);
           return {
             '_id': m['_id']?.toString() ?? '',
             'patientName': user?['name']?.toString() ?? 'مستخدم',
@@ -500,12 +515,12 @@ class DoctorProfileController extends GetxController {
     if (id.isEmpty) return;
     final bool isPublished = (current['published'] as bool? ?? false);
     final String apiStatus = isPublished ? 'hidden' : 'puplish';
-    final res = await _opinionService.patchOpinionStatus(id: id, status: apiStatus);
+    final res = await _opinionService.patchOpinionStatus(
+      id: id,
+      status: apiStatus,
+    );
     if (res['ok'] == true) {
-      opinions[index] = {
-        ...current,
-        'published': !isPublished,
-      };
+      opinions[index] = {...current, 'published': !isPublished};
       opinions.refresh();
     }
   }
@@ -606,7 +621,9 @@ class DoctorProfileController extends GetxController {
           final num? p = obj['defaultPrice'] as num?;
           defaultPrice.value = (p != null) ? p.toDouble() : 0.0;
           currency.value = obj['currency']?.toString() ?? 'IQ';
-          print('[PRICING] parsed pricing -> price=${defaultPrice.value}, currency=${currency.value}');
+          print(
+            '[PRICING] parsed pricing -> price=${defaultPrice.value}, currency=${currency.value}',
+          );
         }
       }
     } catch (e) {
@@ -622,7 +639,9 @@ class DoctorProfileController extends GetxController {
     required double price,
     String curr = 'IQ',
   }) async {
-    print('[PRICING] saveOrUpdatePricing doctorId=$doctorId, price=$price, currency=$curr');
+    print(
+      '[PRICING] saveOrUpdatePricing doctorId=$doctorId, price=$price, currency=$curr',
+    );
     final res = await _pricingService.createOrUpdatePricing(
       doctorId: doctorId,
       defaultPrice: price,
@@ -648,15 +667,25 @@ class DoctorProfileController extends GetxController {
         final dynamic wrap = res['data'];
         Map<String, dynamic>? obj;
         if (wrap is Map<String, dynamic>) {
-          obj = (wrap['data'] is Map<String, dynamic>) ? (wrap['data'] as Map<String, dynamic>) : wrap;
+          obj = (wrap['data'] is Map<String, dynamic>)
+              ? (wrap['data'] as Map<String, dynamic>)
+              : wrap;
         }
-        final Map<String, dynamic> social = (obj?['socialMedia'] as Map<String, dynamic>?) ?? {};
+        final Map<String, dynamic> social =
+            (obj?['socialMedia'] as Map<String, dynamic>?) ?? {};
         instagram.value = social['instagram']?.toString() ?? '';
         whatsapp.value = social['whatsapp']?.toString() ?? '';
         facebook.value = social['facebook']?.toString() ?? '';
         // robust image parsing across possible keys
         String parsedImage = '';
-        for (final k in ['image','imageUrl','avatar','profileImage','photo','picture']) {
+        for (final k in [
+          'image',
+          'imageUrl',
+          'avatar',
+          'profileImage',
+          'photo',
+          'picture',
+        ]) {
           final v = obj?[k];
           if (v != null && v.toString().trim().isNotEmpty) {
             parsedImage = v.toString().trim();
@@ -675,7 +704,11 @@ class DoctorProfileController extends GetxController {
   Future<void> loadRatingsCount(String doctorId) async {
     if (doctorId.isEmpty) return;
     try {
-      final res = await _ratingsService.getDoctorRatings(doctorId, page: 1, limit: 1);
+      final res = await _ratingsService.getDoctorRatings(
+        doctorId,
+        page: 1,
+        limit: 1,
+      );
       if (res['ok'] == true) {
         final data = res['data'] as Map<String, dynamic>?;
         final num? total = data?['total'] as num?;
@@ -683,6 +716,49 @@ class DoctorProfileController extends GetxController {
       }
     } catch (_) {
       // ignore
+    }
+  }
+
+  /// تحديث عنوان الطبيب
+  Future<Map<String, dynamic>> updateDoctorAddress(String address) async {
+    try {
+      final user = _session.currentUser.value;
+      if (user == null) {
+        return {'ok': false, 'message': 'المستخدم غير مسجل'};
+      }
+
+      final res = await _userService.updateUserInfo(
+        name: user.name,
+        city: user.city,
+        phone: user.phone,
+        gender: user.gender,
+        age: user.age,
+        specializationId: user.specialization,
+        address: address,
+      );
+
+      if (res['ok'] == true) {
+        // تحديث العنوان في القائمة المحلية
+        if (addresses.isNotEmpty) {
+          addresses[0]['value'] = address;
+          addresses.refresh();
+        } else {
+          addresses.add({'value': address, 'isLink': false});
+        }
+
+        // تحديث المستخدم في الجلسة
+        final updatedUser = user.copyWith(address: address);
+        _session.currentUser.value = updatedUser;
+
+        print('[ADDRESS] Successfully updated address: $address');
+      } else {
+        print('[ADDRESS] API returned error: ${res['message']}');
+      }
+
+      return res;
+    } catch (e) {
+      print('[ADDRESS][ERR] Failed to update address: $e');
+      return {'ok': false, 'message': 'حدث خطأ أثناء تحديث العنوان'};
     }
   }
 }

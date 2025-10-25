@@ -13,6 +13,7 @@ class UserModel {
   final Map<String, String> socialMedia; // Social media links
   final String
   associatedDoctor; // For secretaries: ID of the doctor they work for
+  final String address; // User's address
 
   const UserModel({
     required this.id,
@@ -26,6 +27,7 @@ class UserModel {
     this.specialization = '',
     this.socialMedia = const <String, String>{},
     this.associatedDoctor = '',
+    this.address = '',
   });
 
   UserModel copyWith({
@@ -40,6 +42,7 @@ class UserModel {
     String? specialization,
     Map<String, String>? socialMedia,
     String? associatedDoctor,
+    String? address,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -53,6 +56,7 @@ class UserModel {
       specialization: specialization ?? this.specialization,
       socialMedia: socialMedia ?? this.socialMedia,
       associatedDoctor: associatedDoctor ?? this.associatedDoctor,
+      address: address ?? this.address,
     );
   }
 
@@ -68,6 +72,7 @@ class UserModel {
     'specialization': specialization,
     'socialMedia': socialMedia,
     'associatedDoctor': associatedDoctor,
+    'address': address,
   };
 
   static UserModel fromJson(Map<String, dynamic> json) {
@@ -121,6 +126,7 @@ class UserModel {
       specialization: specializationId,
       socialMedia: socialMediaMap,
       associatedDoctor: associatedDoctorValue.toString(),
+      address: (data['address'] ?? '').toString(),
     );
   }
 
