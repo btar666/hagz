@@ -7,6 +7,8 @@ import '../../widget/my_text.dart';
 import '../../widget/specialization_text.dart';
 import '../../controller/search_controller.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'hospital/hospital_details_page.dart';
+import '../../bindings/hospital_details_binding.dart';
 
 class SearchPage extends StatelessWidget {
   const SearchPage({super.key});
@@ -14,6 +16,12 @@ class SearchPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final SearchController c = Get.find<SearchController>();
+    final args = Get.arguments as Map?;
+    final String mode = (args != null
+        ? (args['mode']?.toString() ?? 'all')
+        : 'all');
+    // تهيئة وضع البحث وفق المصدر: أطباء/مستشفيات/مجمعات
+    c.initMode(mode);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
@@ -79,6 +87,86 @@ class SearchPage extends StatelessWidget {
             Expanded(
               child: Obx(() {
                 final items = c.results;
+
+                // حالة التحميل الأولي - عرض Skeletonizer فقط
+                if (c.isLoading.value && items.isEmpty) {
+                  return Skeletonizer(
+                    enabled: true,
+                    child: GridView.builder(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12.w,
+                        mainAxisSpacing: 12.h,
+                        childAspectRatio: 178 / 247,
+                      ),
+                      itemCount: 8,
+                      itemBuilder: (context, index) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16.r),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.shadow,
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              SizedBox(height: 8.h),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 8.w),
+                                child: AspectRatio(
+                                  aspectRatio: 1.0,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryLight,
+                                      borderRadius: BorderRadius.circular(16.r),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 8.h),
+                              MyText(
+                                'جاري التحميل...',
+                                fontSize: 15.sp,
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                              ),
+                              SizedBox(height: 6.h),
+                              MyText(
+                                'جاري التحميل...',
+                                fontSize: 12.45.sp,
+                                color: AppColors.textSecondary,
+                                textAlign: TextAlign.center,
+                              ),
+                              const Spacer(),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                }
+
+                // إذا لا توجد نتائج بعد البحث، أعرض رسالة واضحة
+                if (!c.isLoading.value &&
+                    items.isEmpty &&
+                    c.query.value.isNotEmpty) {
+                  return Center(
+                    child: MyText(
+                      'لا توجد نتائج مطابقة لبحثك',
+                      fontSize: 16.sp,
+                      color: AppColors.textSecondary,
+                      textAlign: TextAlign.center,
+                    ),
+                  );
+                }
+
+                // عرض البيانات الحقيقية فقط
                 return NotificationListener<ScrollNotification>(
                   onNotification: (n) {
                     if (n.metrics.pixels >= n.metrics.maxScrollExtent - 100 &&
@@ -87,30 +175,34 @@ class SearchPage extends StatelessWidget {
                     }
                     return false;
                   },
-                  child: Skeletonizer(
-                    enabled:
-                        c.isLoading.value && items.isEmpty ||
-                        c.isLoading.value && items.isNotEmpty,
-                    child: GridView.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12.w,
-                        mainAxisSpacing: 12.h,
-                        childAspectRatio: 178 / 247,
-                      ),
-                      itemCount: items.isEmpty
-                          ? 8 // أول تحميل
-                          : items.length +
-                                (c.isLoading.value ? 4 : 0), // تحميل المزيد
-                      itemBuilder: (context, index) {
-                        final bool showingReal =
-                            index < items.length && items.isNotEmpty;
-                        final item = showingReal
-                            ? items[index]
-                            : {'name': '—', 'specialization': ''};
-                        final name = (item['name'] ?? '').toString();
-                        final spec = (item['specialization'] ?? '').toString();
-                        return Container(
+                  child: GridView.builder(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12.w,
+                      mainAxisSpacing: 12.h,
+                      childAspectRatio: 178 / 247,
+                    ),
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+                      final name = (item['name'] ?? '').toString();
+                      final spec = (item['specialization'] ?? '').toString();
+                      final type = (item['type'] ?? '').toString();
+                      final image = (item['image'] ?? '').toString();
+                      final id = (item['_id'] ?? item['id'] ?? '').toString();
+                      final isHospital = type == 'مستشفى' || type == 'مجمع طبي';
+
+                      return GestureDetector(
+                        onTap: isHospital
+                            ? () {
+                                Get.to(
+                                  () => const HospitalDetailsPage(),
+                                  arguments: {'id': id},
+                                  binding: HospitalDetailsBinding(),
+                                );
+                              }
+                            : null,
+                        child: Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16.r),
@@ -137,10 +229,44 @@ class SearchPage extends StatelessWidget {
                                     ),
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(16.r),
-                                      child: Image.asset(
-                                        'assets/icons/home/doctor.png',
-                                        fit: BoxFit.cover,
-                                      ),
+                                      child: image.isNotEmpty
+                                          ? Image.network(
+                                              image,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                    // لا تستخدم صورة doctor.png أبداً
+                                                    if (isHospital) {
+                                                      return Image.asset(
+                                                        'assets/icons/home/hospital.png',
+                                                        fit: BoxFit.cover,
+                                                      );
+                                                    }
+                                                    return Container(
+                                                      color: Colors.white,
+                                                      child: const Center(
+                                                        child: Icon(
+                                                          Icons.person,
+                                                          color: Colors.grey,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                            )
+                                          : (isHospital
+                                                ? Image.asset(
+                                                    'assets/icons/home/hospital.png',
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                : Container(
+                                                    color: Colors.white,
+                                                    child: const Center(
+                                                      child: Icon(
+                                                        Icons.person,
+                                                        color: Colors.grey,
+                                                      ),
+                                                    ),
+                                                  )),
                                     ),
                                   ),
                                 ),
@@ -154,20 +280,32 @@ class SearchPage extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               SizedBox(height: 6.h),
-                              SpecializationText(
-                                specializationId: spec.isEmpty ? null : spec,
-                                fontSize: 12.45.sp,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary,
-                                textAlign: TextAlign.center,
-                                defaultText: '—',
-                              ),
+                              isHospital
+                                  ? MyText(
+                                      type == 'مجمع طبي'
+                                          ? 'مجمع طبي'
+                                          : 'مستشفى',
+                                      fontSize: 12.45.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textSecondary,
+                                      textAlign: TextAlign.center,
+                                    )
+                                  : SpecializationText(
+                                      specializationId: spec.isEmpty
+                                          ? null
+                                          : spec,
+                                      fontSize: 12.45.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textSecondary,
+                                      textAlign: TextAlign.center,
+                                      defaultText: '—',
+                                    ),
                               const Spacer(),
                             ],
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
                   ),
                 );
               }),

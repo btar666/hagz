@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:hagz/utils/app_colors.dart';
 import 'package:hagz/widget/my_text.dart';
 import '../../../controller/hospital_details_controller.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import '../../../widget/status_dialog.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import '../../../utils/app_colors.dart';
+import '../../../widget/animated_pressable.dart';
+import '../../../widget/specialization_text.dart';
+import '../doctors/doctor_profile_page.dart';
+import '../../../bindings/doctor_profile_binding.dart';
 
 class HospitalDetailsPage extends StatelessWidget {
   const HospitalDetailsPage({super.key});
@@ -14,6 +18,17 @@ class HospitalDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<HospitalDetailsController>();
+
+    // تحميل الأطباء عند فتح الصفحة
+    final args = Get.arguments;
+    final String? id = (args is Map && args['id'] != null)
+        ? args['id'].toString()
+        : null;
+    if (id != null &&
+        controller.doctors.isEmpty &&
+        !controller.isLoadingDoctors.value) {
+      controller.loadDoctors(id);
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
@@ -27,7 +42,8 @@ class HospitalDetailsPage extends StatelessWidget {
 
             // Main content section
             Obx(() {
-              if (controller.isLoading.value || controller.hospital.value == null) {
+              if (controller.isLoading.value ||
+                  controller.hospital.value == null) {
                 // Skeleton layout mimicking the card structure
                 return Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -68,15 +84,28 @@ class HospitalDetailsPage extends StatelessWidget {
                                     children: [
                                       Icon(Icons.location_on, size: 20.r),
                                       SizedBox(width: 8.w),
-                                      Expanded(child: MyText(' ', fontSize: 12.sp)),
+                                      Expanded(
+                                        child: MyText(' ', fontSize: 12.sp),
+                                      ),
                                     ],
                                   ),
                                   SizedBox(height: 12.h),
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Row(children: [Icon(Icons.phone, size: 18.r)]),
-                                      Row(children: [Icon(Icons.phone, size: 18.r), SizedBox(width: 5.w), MyText(' ', fontSize: 14.sp)]),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.phone, size: 18.r),
+                                        ],
+                                      ),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.phone, size: 18.r),
+                                          SizedBox(width: 5.w),
+                                          MyText(' ', fontSize: 14.sp),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -126,53 +155,68 @@ class HospitalDetailsPage extends StatelessWidget {
   }
 
   Widget _buildHeader() {
-    return Container(
-      height: 120.h,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(25),
-          bottomRight: Radius.circular(25),
-        ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w),
-          child: Row(
-            children: [
-              // Empty space to balance the back button
-              SizedBox(width: 50.w),
-              const Spacer(),
+    final controller = Get.find<HospitalDetailsController>();
 
-              // Title
-              MyText(
-                'تفاصيل المستشفى',
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.all(16.w),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Empty space to balance (no chat button for hospitals)
+            SizedBox(width: 48.w, height: 48.w),
+
+            // Title - dynamic based on hospital type with Skeletonizer
+            Obx(() {
+              final hospital = controller.hospital.value;
+              final isLoading = controller.isLoading.value;
+
+              if (isLoading || hospital == null) {
+                // عرض Skeleton أثناء التحميل
+                return Skeletonizer(
+                  enabled: true,
+                  child: MyText(
+                    'تفاصيل المستشفى',
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                    textAlign: TextAlign.center,
+                  ),
+                );
+              }
+
+              final type = hospital.type;
+              final title = type == 'مجمع طبي'
+                  ? 'تفاصيل المجمع الطبي'
+                  : 'تفاصيل المستشفى';
+
+              return MyText(
+                title,
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                color: AppColors.textPrimary,
                 textAlign: TextAlign.center,
-              ),
+              );
+            }),
 
-              const Spacer(),
-              // Back button
-              GestureDetector(
-                onTap: () => Get.back(),
-                child: Container(
-                  width: 50.w,
-                  height: 50.w,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF7FC8D6),
-                    borderRadius: BorderRadius.circular(15.r),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_forward_ios,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+            // Back button
+            GestureDetector(
+              onTap: () => Get.back(),
+              child: Container(
+                width: 48.w,
+                height: 48.w,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: const Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.white,
+                  size: 20,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -371,8 +415,6 @@ class HospitalDetailsPage extends StatelessWidget {
                 const Color(0xFF1877F2),
               ),
             ),
-            SizedBox(height: 12.h),
-            _buildSocialIconItem('assets/icons/home/link.png', Colors.grey),
           ],
         ),
       ),
@@ -446,38 +488,31 @@ class HospitalDetailsPage extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Padding(
-                padding: EdgeInsets.all(15.w),
-                child: Image.asset(
-                  'assets/icons/home/hospital.png',
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.local_hospital,
-                          size: 40.r,
-                          color: const Color(0xFF7FC8D6),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(15.r),
+                child: h.image.isNotEmpty
+                    ? Image.network(
+                        h.image,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Padding(
+                            padding: EdgeInsets.all(15.w),
+                            child: Image.asset(
+                              'assets/icons/home/hospital.png',
+                              fit: BoxFit.contain,
+                            ),
+                          );
+                        },
+                      )
+                    : Padding(
+                        padding: EdgeInsets.all(15.w),
+                        child: Image.asset(
+                          'assets/icons/home/hospital.png',
+                          fit: BoxFit.contain,
                         ),
-                        SizedBox(height: 5.h),
-                        MyText(
-                          'MEDICAL CARE',
-                          fontSize: 8.sp,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF7FC8D6),
-                          textAlign: TextAlign.center,
-                        ),
-                        MyText(
-                          'Medical Center',
-                          fontSize: 6.sp,
-                          color: const Color(0xFF7FC8D6),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    );
-                  },
-                ),
+                      ),
               ),
             ),
 
@@ -527,31 +562,22 @@ class HospitalDetailsPage extends StatelessWidget {
 
             SizedBox(height: 12.h),
 
-            // Phone numbers
+            // Phone number - copyable
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.phone, color: Colors.black54, size: 18.r),
-                    SizedBox(width: 5.w),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.phone,
-                      color: const Color(0xFF7FC8D6),
-                      size: 18.r,
-                    ),
-                    SizedBox(width: 5.w),
-                    MyText(
-                      h.phone.isEmpty ? '—' : h.phone,
+                Icon(Icons.phone, color: const Color(0xFF7FC8D6), size: 18.r),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: SelectableText(
+                    h.phone.isEmpty ? '—' : h.phone,
+                    style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFF7FC8D6),
+                      fontFamily: 'Expo Arabic',
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -612,109 +638,176 @@ class HospitalDetailsPage extends StatelessWidget {
   }
 
   Widget _buildDoctorsSection() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: Column(
-        children: [
-          // Section header
-          Row(
-            children: [
-              Icon(
-                Icons.medical_services,
-                color: const Color(0xFF7FC8D6),
-                size: 24.r,
-              ),
-              SizedBox(width: 10.w),
-              MyText(
-                'الكُل',
-                fontSize: 20.sp,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ],
-          ),
+    final controller = Get.find<HospitalDetailsController>();
 
-          SizedBox(height: 20.h),
+    return Obx(() {
+      final doctors = controller.doctors;
+      final isLoading = controller.isLoadingDoctors.value;
 
-          // Doctors grid - removed static data
-          Container(
-            padding: EdgeInsets.all(20.w),
-            child: MyText(
-              'لا توجد بيانات الأطباء حالياً',
-              fontSize: 14.sp,
-              color: Colors.grey[600],
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDoctorCard(String name, String specialty, String imagePath) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Doctor image
-          Container(
-            height: 180.h,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-              child: Image.asset(
-                imagePath,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey[200],
-                    child: Icon(
-                      Icons.person,
-                      size: 80.r,
-                      color: Colors.grey[400],
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-
-          // Doctor info
-          Padding(
-            padding: EdgeInsets.all(15.w),
-            child: Column(
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 20.w),
+        child: Column(
+          children: [
+            // Section header
+            Row(
               children: [
+                Icon(
+                  Icons.medical_services,
+                  color: const Color(0xFF7FC8D6),
+                  size: 24.r,
+                ),
+                SizedBox(width: 10.w),
                 MyText(
-                  name,
-                  fontSize: 16.sp,
+                  'الأطباء',
+                  fontSize: 20.sp,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 5.h),
-                MyText(
-                  specialty,
-                  fontSize: 12.sp,
-                  color: Colors.black54,
-                  textAlign: TextAlign.center,
                 ),
               ],
             ),
+
+            SizedBox(height: 20.h),
+
+            // Doctors grid
+            if (isLoading)
+              Container(
+                padding: EdgeInsets.all(20.w),
+                child: const Center(child: CircularProgressIndicator()),
+              )
+            else if (doctors.isEmpty)
+              Container(
+                padding: EdgeInsets.all(20.w),
+                child: MyText(
+                  'لا توجد بيانات الأطباء حالياً',
+                  fontSize: 14.sp,
+                  color: Colors.grey[600],
+                  textAlign: TextAlign.center,
+                ),
+              )
+            else
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12.w,
+                  mainAxisSpacing: 12.h,
+                  childAspectRatio: 0.75,
+                ),
+                itemCount: doctors.length,
+                itemBuilder: (context, index) {
+                  final doctor = doctors[index];
+                  return _buildDoctorCardFromData(doctor);
+                },
+              ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildDoctorCardFromData(Map<String, dynamic> doctor) {
+    final String id = (doctor['id'] ?? doctor['_id'] ?? '').toString();
+    final String name = (doctor['name'] ?? '').toString();
+
+    // Handle specialization: can be ID (String) or Object (Map)
+    String specialization = '';
+    final spec = doctor['specialization'];
+    if (spec != null) {
+      if (spec is String) {
+        specialization = spec;
+      } else if (spec is Map) {
+        specialization = (spec['_id'] ?? spec['id'] ?? '').toString();
+      }
+    }
+
+    final String image = (doctor['image'] ?? '').toString();
+    return AnimatedPressable(
+      onTap: () {
+        Get.to(
+          () => DoctorProfilePage(
+            doctorId: id,
+            doctorName: name,
+            specializationId: specialization.isEmpty ? '—' : specialization,
           ),
-        ],
+          binding: DoctorProfileBinding(),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadow,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(height: 8.h),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8.w),
+              child: AspectRatio(
+                aspectRatio: 1.0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16.r),
+                    child: Hero(
+                      tag: 'doctor-image-$id',
+                      child: image.isNotEmpty
+                          ? Image.network(
+                              image,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/icons/home/doctor.png',
+                                  fit: BoxFit.cover,
+                                );
+                              },
+                            )
+                          : Image.asset(
+                              'assets/icons/home/doctor.png',
+                              fit: BoxFit.cover,
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Hero(
+              tag: 'doctor-name-$id',
+              flightShuttleBuilder: (ctx, anim, dir, from, to) => to.widget,
+              child: MyText(
+                name,
+                fontSize: 15.sp,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            SizedBox(height: 6.h),
+            SpecializationText(
+              specializationId: specialization.isEmpty ? null : specialization,
+              fontSize: 12.45.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+              textAlign: TextAlign.center,
+              defaultText: '—',
+            ),
+            const Spacer(),
+          ],
+        ),
       ),
     );
   }

@@ -43,6 +43,29 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
   bool _loadingSpecializations = false;
   final SpecializationService _specializationService = SpecializationService();
 
+  // Cities dropdown
+  final List<String> _allowedCities = const [
+    'بغداد',
+    'البصرة',
+    'نينوى',
+    'أربيل',
+    'النجف',
+    'كربلاء',
+    'الأنبار',
+    'ديالى',
+    'صلاح الدين',
+    'واسط',
+    'ذي قار',
+    'بابل',
+    'كركوك',
+    'السليمانية',
+    'المثنى',
+    'القادسية',
+    'ميسان',
+    'دهوك',
+  ];
+  String? _selectedCity;
+
   // Social controllers
   final TextEditingController _instagramCtrl = TextEditingController(
     text: 'http://ABCDEFG',
@@ -166,7 +189,12 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
     if (user != null) {
       if (_namePersonalCtrl.text.isEmpty) _namePersonalCtrl.text = user.name;
       if (_phonePersonalCtrl.text.isEmpty) _phonePersonalCtrl.text = user.phone;
-      if (_cityPersonalCtrl.text.isEmpty) _cityPersonalCtrl.text = user.city;
+      if (_cityPersonalCtrl.text.isEmpty) {
+        _cityPersonalCtrl.text = user.city;
+      }
+      if (_selectedCity == null && user.city.isNotEmpty) {
+        _selectedCity = user.city;
+      }
       if (_agePersonalCtrl.text.isEmpty)
         _agePersonalCtrl.text = (user.age > 0 ? user.age : 18).toString();
       if (_selectedSpecializationId == null && user.specialization.isNotEmpty) {
@@ -892,11 +920,7 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
             trailingAsset: 'assets/icons/home/link.png',
           ),
           SizedBox(height: 12.h),
-          _plainRow(
-            _cityPersonalCtrl,
-            hint: 'المدينة',
-            trailingAsset: 'assets/icons/home/link.png',
-          ),
+          _cityDropdown(),
           SizedBox(height: 12.h),
           _specializationDropdown(),
           SizedBox(height: 16.h),
@@ -3103,6 +3127,51 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
           SizedBox(width: 8.w),
           const Icon(Icons.expand_more, color: AppColors.textSecondary),
         ],
+      ),
+    );
+  }
+
+  Widget _cityDropdown() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: DropdownButtonFormField<String>(
+        value: _selectedCity,
+        isExpanded: true,
+        decoration: InputDecoration(
+          hintText: 'اختر المحافظة',
+          hintStyle: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 16.sp,
+            fontFamily: 'Expo Arabic',
+          ),
+          border: InputBorder.none,
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20.r),
+            borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          ),
+          contentPadding: EdgeInsets.symmetric(vertical: 12.h),
+        ),
+        items: _allowedCities.map((city) {
+          return DropdownMenuItem<String>(
+            value: city,
+            child: Text(
+              city,
+              style: TextStyle(fontSize: 16.sp, fontFamily: 'Expo Arabic'),
+              textAlign: TextAlign.right,
+            ),
+          );
+        }).toList(),
+        onChanged: (value) {
+          setState(() {
+            _selectedCity = value;
+            _cityPersonalCtrl.text = value ?? '';
+          });
+        },
       ),
     );
   }

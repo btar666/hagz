@@ -37,7 +37,7 @@ class DoctorsFilterDialog extends StatelessWidget {
                   Expanded(
                     child: Center(
                       child: MyText(
-                        'تصفية حسب',
+                        'تصفية الأطباء',
                         fontSize: 22.sp,
                         fontWeight: FontWeight.w900,
                         color: AppColors.textPrimary,
@@ -47,17 +47,28 @@ class DoctorsFilterDialog extends StatelessWidget {
                   SizedBox(width: 48.w),
                 ],
               ),
-              SizedBox(height: 12.h),
+              SizedBox(height: 24.h),
 
-              // Filters row
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: _regionSelector(controller)),
-                  SizedBox(width: 16.w),
-                  Expanded(child: _alphaSelector(controller)),
-                ],
+              // Region selector
+              MyText(
+                'المحافظة',
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
               ),
+              SizedBox(height: 8.h),
+              _regionSelector(controller),
+              SizedBox(height: 20.h),
+
+              // Alphabetical order selector
+              MyText(
+                'الترتيب الأبجدي',
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+              SizedBox(height: 8.h),
+              _alphaSelector(controller),
               SizedBox(height: 20.h),
 
               // Apply button
@@ -93,117 +104,85 @@ class DoctorsFilterDialog extends StatelessWidget {
     );
   }
 
-  Widget _chipContainer({required Widget child}) {
-    return Container(
-      height: 84.h,
-      decoration: BoxDecoration(
-        color: const Color(0xFFEDEFF1),
-        borderRadius: BorderRadius.circular(32.r),
-        border: Border.all(color: const Color(0xFFB8C1CC), width: 1.6),
-      ),
-      alignment: Alignment.center,
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: child,
-    );
-  }
-
   Widget _regionSelector(DoctorsFilterController controller) {
     return Obx(
-      () => Stack(
-        clipBehavior: Clip.none,
-        children: [
-          _chipContainer(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: AppColors.textSecondary,
-                ),
-                MyText(
-                  controller.selectedRegion.value.isEmpty
-                      ? 'المنطقة'
-                      : controller.selectedRegion.value,
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textSecondary,
-                ),
-              ],
-            ),
+      () => Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(
+            color: controller.isRegionMenuOpen.value
+                ? AppColors.primary
+                : AppColors.divider,
+            width: controller.isRegionMenuOpen.value ? 1.5 : 1,
           ),
-          Positioned.fill(
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(onTap: controller.toggleRegionMenu),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: controller.selectedRegion.value,
+            isExpanded: true,
+            hint: MyText(
+              'اختر المحافظة',
+              fontSize: 16.sp,
+              color: AppColors.textSecondary,
             ),
+            icon: Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: AppColors.textSecondary,
+            ),
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+              fontFamily: 'Expo Arabic',
+            ),
+            items: controller.regions.map((region) {
+              return DropdownMenuItem<String>(
+                value: region,
+                child: Text(
+                  region.isEmpty ? 'الكل' : region,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(fontSize: 16.sp, fontFamily: 'Expo Arabic'),
+                ),
+              );
+            }).toList(),
+            onChanged: (value) {
+              if (value != null) {
+                controller.selectedRegion.value = value;
+              }
+            },
+            onTap: () {
+              controller.isRegionMenuOpen.value = true;
+            },
           ),
-          if (controller.isRegionMenuOpen.value)
-            Positioned(
-              top: 76.h,
-              left: 0,
-              right: 0,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: const Color(0xFF97A1AC)),
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                padding: EdgeInsets.symmetric(vertical: 8.h),
-                child: Column(
-                  children: controller.regions
-                      .map(
-                        (r) => InkWell(
-                          onTap: () => controller.pickRegion(r),
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16.w,
-                              vertical: 12.h,
-                            ),
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: MyText(
-                                r,
-                                fontSize: 16.sp,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _alphaSelector(DoctorsFilterController controller) {
     return Obx(
-      () => Stack(
-        children: [
-          _chipContainer(
-            child: Center(
-              child: MyText(
-                'الأبجدية (${controller.alphaOrder.value})',
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textSecondary,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
+      () => InkWell(
+        onTap: controller.toggleAlphaOrder,
+        borderRadius: BorderRadius.circular(20.r),
+        child: Container(
+          height: 60.h,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(color: AppColors.divider, width: 1),
           ),
-          Positioned.fill(
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(onTap: controller.toggleAlphaOrder),
-            ),
+          alignment: Alignment.center,
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          child: MyText(
+            controller.alphaOrder.value,
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+            textAlign: TextAlign.center,
           ),
-        ],
+        ),
       ),
     );
   }

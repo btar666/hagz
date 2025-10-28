@@ -48,7 +48,26 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
   String? _selectedSpecializationId;
   bool _loadingSpecializations = false;
 
-  final List<String> _cities = ['دهوك', 'أربيل', 'السليمانية', 'بغداد'];
+  final List<String> _cities = const [
+    'بغداد',
+    'البصرة',
+    'نينوى',
+    'أربيل',
+    'النجف',
+    'كربلاء',
+    'الأنبار',
+    'ديالى',
+    'صلاح الدين',
+    'واسط',
+    'ذي قار',
+    'بابل',
+    'كركوك',
+    'السليمانية',
+    'المثنى',
+    'القادسية',
+    'ميسان',
+    'دهوك',
+  ];
   final List<String> _ages = [for (int i = 10; i <= 80; i++) i.toString()];
 
   @override
@@ -78,9 +97,6 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
     _imageUrl = user.image;
 
     if (user.city.trim().isNotEmpty) {
-      if (!_cities.contains(user.city)) {
-        _cities.add(user.city);
-      }
       _city = user.city;
     }
     setState(() {});
@@ -128,10 +144,11 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
 
   Future<void> _fetchSpecializations() async {
     if (_session.currentUser.value?.userType != 'Doctor') return;
-    
+
     setState(() => _loadingSpecializations = true);
     try {
-      final specializations = await _specializationService.getSpecializationsList();
+      final specializations = await _specializationService
+          .getSpecializationsList();
       setState(() {
         _specializations = specializations;
         _loadingSpecializations = false;
@@ -183,11 +200,19 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: (_imageUrl == null || _imageUrl!.isEmpty)
-                            ? const Icon(Icons.person, size: 60, color: Colors.white)
+                            ? const Icon(
+                                Icons.person,
+                                size: 60,
+                                color: Colors.white,
+                              )
                             : Image.network(
                                 _imageUrl!,
                                 fit: BoxFit.cover,
-                                errorBuilder: (c, e, s) => const Icon(Icons.person, size: 60, color: Colors.white),
+                                errorBuilder: (c, e, s) => const Icon(
+                                  Icons.person,
+                                  size: 60,
+                                  color: Colors.white,
+                                ),
                               ),
                       ),
                       Positioned(
@@ -199,7 +224,13 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
                             color: AppColors.primary,
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(_uploadingImage ? Icons.hourglass_top : Icons.camera_alt, color: Colors.white, size: 18),
+                          child: Icon(
+                            _uploadingImage
+                                ? Icons.hourglass_top
+                                : Icons.camera_alt,
+                            color: Colors.white,
+                            size: 18,
+                          ),
                         ),
                       ),
                     ],
@@ -273,7 +304,7 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
                 SizedBox(height: 8.h),
                 _specializationDropdown(),
                 SizedBox(height: 16.h),
-                
+
                 // CV section (doctors only)
                 _label('السيرة الذاتية (CV)'),
                 SizedBox(height: 8.h),
@@ -409,7 +440,9 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
       child: DropdownButtonFormField<String>(
         value: _selectedSpecializationId,
         decoration: InputDecoration(
-          hintText: _loadingSpecializations ? 'جاري التحميل...' : 'اختر الاختصاص',
+          hintText: _loadingSpecializations
+              ? 'جاري التحميل...'
+              : 'اختر الاختصاص',
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(
             horizontal: 20.w,
@@ -427,11 +460,13 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
             ),
           );
         }).toList(),
-        onChanged: _loadingSpecializations ? null : (value) {
-          setState(() {
-            _selectedSpecializationId = value;
-          });
-        },
+        onChanged: _loadingSpecializations
+            ? null
+            : (value) {
+                setState(() {
+                  _selectedSpecializationId = value;
+                });
+              },
       ),
     );
   }
@@ -749,7 +784,9 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
         phone: phone,
         gender: gender,
         age: age,
-        specializationId: (_session.currentUser.value?.userType == 'Doctor') ? _selectedSpecializationId : null,
+        specializationId: (_session.currentUser.value?.userType == 'Doctor')
+            ? _selectedSpecializationId
+            : null,
         image: _imageUrl,
       );
       if (res['ok'] == true) {
@@ -809,7 +846,10 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
     try {
       setState(() => _uploadingImage = true);
       final ImagePicker picker = ImagePicker();
-      final XFile? picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+      final XFile? picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
       if (picked == null) {
         setState(() => _uploadingImage = false);
         return;

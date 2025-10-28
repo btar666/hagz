@@ -42,6 +42,29 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _loadingSpecializations = false;
   final SpecializationService _specializationService = SpecializationService();
 
+  // Cities dropdown
+  final List<String> _allowedCities = const [
+    'بغداد',
+    'البصرة',
+    'نينوى',
+    'أربيل',
+    'النجف',
+    'كربلاء',
+    'الأنبار',
+    'ديالى',
+    'صلاح الدين',
+    'واسط',
+    'ذي قار',
+    'بابل',
+    'كركوك',
+    'السليمانية',
+    'المثنى',
+    'القادسية',
+    'ميسان',
+    'دهوك',
+  ];
+  String? _selectedCity;
+
   @override
   void initState() {
     super.initState();
@@ -266,19 +289,56 @@ class _RegisterPageState extends State<RegisterPage> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           MyText(
-                            'المدينة',
+                            'المحافظة',
                             fontSize: 16.sp,
                             fontWeight: FontWeight.w800,
                             color: AppColors.textPrimary,
                             textAlign: TextAlign.right,
                           ),
                           SizedBox(height: 8.h),
-                          _roundedField(
-                            controller: _cityCtrl,
-                            hint: 'مثل: القاهرة',
-                            validator: (v) => (v == null || v.trim().isEmpty)
-                                ? 'هذا الحقل مطلوب !'
-                                : null,
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(24.r),
+                              border: Border.all(color: AppColors.divider),
+                            ),
+                            padding: EdgeInsets.symmetric(horizontal: 16.w),
+                            child: DropdownButtonFormField<String>(
+                              value: _selectedCity,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                              ),
+                              hint: MyText(
+                                'اختر المحافظة',
+                                fontSize: 14.sp,
+                                color: AppColors.textSecondary,
+                              ),
+                              items: _allowedCities
+                                  .map(
+                                    (c) => DropdownMenuItem<String>(
+                                      value: c,
+                                      child: Align(
+                                        alignment: Alignment.centerRight,
+                                        child: MyText(
+                                          c,
+                                          fontSize: 14.sp,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              validator: (v) => (v == null || v.isEmpty)
+                                  ? 'هذا الحقل مطلوب !'
+                                  : null,
+                              onChanged: (v) {
+                                setState(() {
+                                  _selectedCity = v;
+                                  _cityCtrl.text = v ?? '';
+                                });
+                              },
+                            ),
                           ),
                         ],
                       ),

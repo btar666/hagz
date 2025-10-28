@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:hagz/view/home/hospital/hospital_details_page.dart';
-import 'package:hagz/view/home/complex/complex_details_page.dart';
 import '../../controller/main_controller.dart';
 import '../../controller/home_controller.dart';
 import '../../controller/hospitals_controller.dart';
@@ -17,13 +16,13 @@ import '../../widget/my_text.dart';
 import '../../widget/specialization_text.dart';
 import '../../widget/animated_pressable.dart';
 import '../../widget/doctors_filter_dialog.dart';
+import '../../widget/hospitals_filter_dialog.dart';
 import '../chat/chats_page.dart';
 import 'doctors/top_rated_doctors_page.dart';
 import 'doctors/doctor_profile_page.dart';
 import '../../model/hospital_model.dart';
 import '../../bindings/chats_binding.dart';
 import '../../bindings/doctor_profile_binding.dart';
-import '../../bindings/complex_details_binding.dart';
 import '../../controller/session_controller.dart';
 
 class HomePage extends StatelessWidget {
@@ -95,10 +94,19 @@ class HomePage extends StatelessWidget {
                       child: SearchWidget(
                         hint: 'ابحث عن طبيب أو مستشفى...',
                         readOnly: true,
-                        onTap: () => Get.to(
-                          () => const SearchPage(),
-                          binding: SearchBinding(),
-                        ),
+                        onTap: () {
+                          final i = controller.homeTabIndex.value;
+                          final String mode = i == 0
+                              ? 'doctors'
+                              : i == 1
+                              ? 'hospitals'
+                              : 'complexes';
+                          Get.to(
+                            () => const SearchPage(),
+                            arguments: {'mode': mode},
+                            binding: SearchBinding(),
+                          );
+                        },
                       ),
                     ),
                     SizedBox(width: 16.w),
@@ -196,7 +204,14 @@ class HomePage extends StatelessWidget {
                             }),
 
                             // Tab buttons (الكل)
-                            _buildTabHeader(),
+                            Obx(() {
+                              final i = controller.homeTabIndex.value;
+                              if (i == 0) {
+                                return _buildTabHeader();
+                              } else {
+                                return _buildHospitalTabHeader();
+                              }
+                            }),
                             SizedBox(height: 20.h),
 
                             // Content tabs (scrolls with whole page)
@@ -243,7 +258,37 @@ class HomePage extends StatelessWidget {
           onTap: () async {
             final result = await Get.dialog(const DoctorsFilterDialog());
             if (result is Map) {
-              // TODO: apply filters to data source if needed
+              Get.find<HomeController>().applyFilters(
+                result['region'] as String,
+                result['alpha'] as String,
+              );
+            }
+          },
+          child: Icon(Icons.tune, color: AppColors.textSecondary, size: 24.sp),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHospitalTabHeader() {
+    return Row(
+      children: [
+        MyText(
+          'الكل',
+          fontSize: 18.sp,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
+          textAlign: TextAlign.start,
+        ),
+        const Spacer(),
+        GestureDetector(
+          onTap: () async {
+            final result = await Get.dialog(const HospitalsFilterDialog());
+            if (result is Map) {
+              Get.find<HospitalsController>().applyFilters(
+                result['city'] as String,
+                '',
+              );
             }
           },
           child: Icon(Icons.tune, color: AppColors.textSecondary, size: 24.sp),
@@ -257,6 +302,32 @@ class HomePage extends StatelessWidget {
       final items = home.doctors;
       final isLoading = home.isLoadingDoctors.value;
       final isLoadingMore = home.isLoadingMoreDoctors.value;
+
+      // إذا لا يوجد أطباء بعد انتهاء التحميل
+      if (!isLoading && items.isEmpty) {
+        return Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 40.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.person_off_outlined,
+                  size: 64.sp,
+                  color: AppColors.textSecondary,
+                ),
+                SizedBox(height: 16.h),
+                MyText(
+                  'لا يوجد أطباء',
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
+              ],
+            ),
+          ),
+        );
+      }
 
       return Skeletonizer(
         enabled: isLoading,
@@ -298,8 +369,36 @@ class HomePage extends StatelessWidget {
   Widget _buildHospitalsTab() {
     final HospitalsController hospitals = Get.find<HospitalsController>();
     return Obx(() {
-      final items = hospitals.hospitals;
+      // عرض المستشفيات فقط
+      final all = hospitals.hospitals;
+      final items = all.where((h) => h.type == 'مستشفى').toList();
       final isLoading = hospitals.isLoading.value;
+
+      // إذا لا يوجد مستشفيات بعد انتهاء التحميل
+      if (!isLoading && items.isEmpty) {
+        return Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 40.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.local_hospital_outlined,
+                  size: 64.sp,
+                  color: AppColors.textSecondary,
+                ),
+                SizedBox(height: 16.h),
+                MyText(
+                  'لا يوجد مستشفيات',
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
+              ],
+            ),
+          ),
+        );
+      }
 
       const placeholder = HospitalModel(
         id: '',
@@ -310,6 +409,7 @@ class HomePage extends StatelessWidget {
         facebook: '',
         instagram: '',
         whatsapp: '',
+        type: 'مستشفى',
       );
 
       return Skeletonizer(
@@ -322,7 +422,7 @@ class HomePage extends StatelessWidget {
             crossAxisCount: 2,
             crossAxisSpacing: 12.w,
             mainAxisSpacing: 12.h,
-            childAspectRatio: 178 / 209,
+            childAspectRatio: 178 / 230,
           ),
           itemCount: isLoading ? 6 : items.length,
           itemBuilder: (context, index) {
@@ -337,28 +437,91 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildMedicalCentersTab() {
-    // عرض المجمعات بقائمة منفصلة لكن بنفس تصميم المستشفيات وبنفس شبكة العرض
-    return GridView.builder(
-      padding: EdgeInsets.zero,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12.w,
-        mainAxisSpacing: 12.h,
-        childAspectRatio: 178 / 209,
-      ),
-      itemCount: _complexNames.length,
-      itemBuilder: (context, index) {
-        return _buildComplexCard(index);
-      },
-    );
+    final HospitalsController hospitals = Get.find<HospitalsController>();
+    return Obx(() {
+      // فلترة المجمعات فقط (type == "مجمع طبي")
+      final complexes = hospitals.hospitals
+          .where((h) => h.type == 'مجمع طبي')
+          .toList();
+      final isLoading = hospitals.isLoading.value;
+
+      // إذا لا يوجد مجمعات بعد انتهاء التحميل
+      if (!isLoading && complexes.isEmpty) {
+        return Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 40.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.business_outlined,
+                  size: 64.sp,
+                  color: AppColors.textSecondary,
+                ),
+                SizedBox(height: 16.h),
+                MyText(
+                  'لا يوجد مجمعات طبية',
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      const placeholder = HospitalModel(
+        id: '',
+        name: '',
+        image: '',
+        address: '',
+        phone: '',
+        facebook: '',
+        instagram: '',
+        whatsapp: '',
+        type: 'مجمع طبي',
+      );
+
+      return Skeletonizer(
+        enabled: isLoading,
+        child: GridView.builder(
+          padding: EdgeInsets.zero,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12.w,
+            mainAxisSpacing: 12.h,
+            childAspectRatio: 178 / 230,
+          ),
+          itemCount: isLoading ? 6 : complexes.length,
+          itemBuilder: (context, index) {
+            if (isLoading) {
+              return _buildComplexCardFromData(placeholder);
+            }
+            return _buildComplexCardFromData(complexes[index]);
+          },
+        ),
+      );
+    });
   }
 
   Widget _buildDoctorCardFromData(Map<String, dynamic> doctor) {
     final String id = (doctor['id'] ?? doctor['_id'] ?? '').toString();
     final String name = (doctor['name'] ?? '').toString();
-    final String specialization = (doctor['specialization'] ?? '').toString();
+
+    // Handle specialization: can be ID (String) or Object (Map)
+    String specialization = '';
+    final spec = doctor['specialization'];
+    if (spec != null) {
+      if (spec is String) {
+        specialization = spec;
+      } else if (spec is Map) {
+        specialization = (spec['_id'] ?? spec['id'] ?? '').toString();
+      }
+    }
+
     final String image = (doctor['image'] ?? '').toString();
     return AnimatedPressable(
       onTap: () {
@@ -450,20 +613,6 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // بيانات المجمعات (منفصلة عن المستشفيات)
-  final List<String> _complexNames = const [
-    'مجمع الشفاء الطبي',
-    'مجمع الرفاه الطبي',
-    'مجمع الحياة الطبي',
-    'مجمع النخيل الطبي',
-  ];
-  final List<String> _complexLocations = const [
-    'شارع الزهور قرب دوار الجامعة',
-    'المنطقة الطبية قرب المستشفى التعليمي',
-    'شارع المدينة مجاور مجمع الأطباء',
-    'الحي الراقي قرب حديقة النخيل',
-  ];
-
   // removed legacy _buildHospitalCard
 
   Widget _buildHospitalCardFromData(hospital) {
@@ -525,19 +674,24 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: 6.h),
-            Flexible(
-              child: MyText(
-                name,
-                fontFamily: 'Expo Arabic',
-                color: AppColors.textPrimary,
-                fontSize: 16.46.sp,
-                fontWeight: FontWeight.w700,
-                height: 1.0,
-                letterSpacing: 0,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
+            SizedBox(height: 8.h),
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 6.w),
+                  child: MyText(
+                    name,
+                    fontFamily: 'Expo Arabic',
+                    color: AppColors.textPrimary,
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w700,
+                    height: 1.3,
+                    letterSpacing: 0,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ),
             ),
             SizedBox(height: 8.h),
@@ -547,16 +701,19 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildComplexCard(int index) {
+  Widget _buildComplexCardFromData(complex) {
+    final String name = complex.name;
+    final String image = complex.image;
+    final String id = complex.id;
+    final String type = complex.type;
+
     return GestureDetector(
       onTap: () {
+        // صفحة تفاصيل المجمع (نفس صفحة المستشفى)
         Get.to(
-          () => ComplexDetailsPage(
-            complexName: _complexNames[index % _complexNames.length],
-            complexLocation:
-                _complexLocations[index % _complexLocations.length],
-          ),
-          binding: ComplexDetailsBinding(),
+          () => const HospitalDetailsPage(),
+          arguments: {'id': id, 'type': type},
+          binding: HospitalDetailsBinding(),
         );
       },
       child: Container(
@@ -586,41 +743,45 @@ class HomePage extends StatelessWidget {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16.r),
-                  child: Image.asset(
-                    'assets/icons/home/hospital.png',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryLight,
-                          borderRadius: BorderRadius.circular(16.r),
+                  child: image.isNotEmpty
+                      ? Image.network(
+                          image,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Center(
+                              child: Icon(
+                                Icons.apartment,
+                                color: AppColors.primary,
+                                size: 40,
+                              ),
+                            );
+                          },
+                        )
+                      : Image.asset(
+                          'assets/icons/home/hospital.png',
+                          fit: BoxFit.cover,
                         ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.apartment,
-                            color: AppColors.primary,
-                            size: 40,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
                 ),
               ),
             ),
-            SizedBox(height: 6.h),
-            Flexible(
-              child: MyText(
-                _complexNames[index % _complexNames.length],
-                fontFamily: 'Expo Arabic',
-                color: AppColors.textPrimary,
-                fontSize: 16.46.sp,
-                fontWeight: FontWeight.w700,
-                height: 1.0,
-                letterSpacing: 0,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
+            SizedBox(height: 8.h),
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 6.w),
+                  child: MyText(
+                    name,
+                    fontFamily: 'Expo Arabic',
+                    color: AppColors.textPrimary,
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w700,
+                    height: 1.3,
+                    letterSpacing: 0,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ),
             ),
             SizedBox(height: 8.h),
