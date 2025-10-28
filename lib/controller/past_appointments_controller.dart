@@ -90,7 +90,7 @@ class PastAppointmentsController extends GetxController {
               } else if (apiStatus.contains('مؤكد') ||
                   apiStatus.toLowerCase() == 'confirmed' ||
                   apiStatus == 'مؤكد') {
-                status = 'pending';
+                status = 'confirmed';
               }
 
               // عنوان السطر يعتمد على الدور
@@ -187,7 +187,13 @@ class PastAppointmentsController extends GetxController {
       Map<String, dynamic> res;
       // حدد الطرف الملغي إن لزم
       final role = _session.role.value;
-      final who = cancelledBy ?? (role == 'doctor' ? 'doctor' : role == 'secretary' ? 'secretary' : 'patient');
+      final who =
+          cancelledBy ??
+          (role == 'doctor'
+              ? 'doctor'
+              : role == 'secretary'
+              ? 'secretary'
+              : 'patient');
 
       if (newStatus == 'مؤكد') {
         // استخدم endpoint التأكيد

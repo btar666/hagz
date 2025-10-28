@@ -7,7 +7,6 @@ import '../../widget/my_text.dart';
 import '../../widget/specialization_text.dart';
 import '../../controller/doctor_profile_controller.dart';
 import '../../controller/session_controller.dart';
-import '../appointments/appointment_details_page.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../../service_layer/services/upload_service.dart';
@@ -1114,7 +1113,6 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
           _opinionsManageTile(),
           _pricingManageTile(),
           _availabilityManageTile(),
-          _sequenceManageTile(),
           _casesManageTile(),
           for (final title in remaining) _sectionTile(title),
         ],
@@ -2147,9 +2145,6 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
     return 'منذ ${diff.inDays ~/ 7} أسابيع';
   }
 
-  String _formatDate(DateTime dt) =>
-      '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
-
   Future<void> _changeProfileImage() async {
     await LoadingDialog.show(message: 'جاري رفع الصورة...');
     try {
@@ -2531,218 +2526,6 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
           ],
         ),
       ],
-    );
-  }
-
-  // Sequence manage tile
-  Widget _sequenceManageTile() {
-    final controller = Get.find<DoctorProfileController>();
-    return Obx(
-      () => Column(
-        children: [
-          InkWell(
-            onTap: controller.toggleSequenceExpansion,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: MyText(
-                      'تسلسل المواعيد',
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                      textAlign: TextAlign.right,
-                    ),
-                  ),
-                  SizedBox(width: 8.w),
-                  AnimatedRotation(
-                    turns: controller.isSequenceExpanded.value ? 0.5 : 0.0,
-                    duration: const Duration(milliseconds: 200),
-                    child: const Icon(
-                      Icons.expand_more,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 250),
-            crossFadeState: controller.isSequenceExpanded.value
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            firstChild: const SizedBox.shrink(),
-            secondChild: Padding(
-              padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
-              child: _sequenceContent(controller),
-            ),
-          ),
-          Divider(color: AppColors.divider, height: 1),
-        ],
-      ),
-    );
-  }
-
-  Widget _sequenceContent(DoctorProfileController controller) {
-    Color statusColor(String status) {
-      switch (status) {
-        case 'completed':
-          return const Color(0xFF2ECC71);
-        case 'pending':
-          return const Color(0xFFFFA000);
-        case 'cancelled':
-          return const Color(0xFFFF3B30);
-        default:
-          return AppColors.textSecondary;
-      }
-    }
-
-    String statusLabel(String s) {
-      switch (s) {
-        case 'completed':
-          return 'مكتمل';
-        case 'pending':
-          return 'قيد الانتظار';
-        case 'cancelled':
-          return 'ملغي';
-        default:
-          return s;
-      }
-    }
-
-    Widget dot({Color color = AppColors.textSecondary}) => Container(
-      width: 8,
-      height: 8,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    );
-
-    return Obx(
-      () => Column(
-        children: [
-          for (int i = 0; i < controller.sequenceAppointments.length; i++) ...[
-            _sequenceItem(
-              patient: controller.sequenceAppointments[i]['patient'] as String,
-              order: controller.sequenceAppointments[i]['order'] as int,
-              time: controller.sequenceAppointments[i]['time'] as String,
-              status: controller.sequenceAppointments[i]['status'] as String,
-              statusColor: statusColor,
-              statusLabel: statusLabel,
-              dot: dot,
-              onTap: () {
-                final s =
-                    controller.sequenceAppointments[i]['status'] as String;
-                Color sColor = statusColor(s);
-                String sText = statusLabel(s);
-                Get.to(
-                  () => AppointmentDetailsPage(
-                    details: {
-                      'patient': controller.sequenceAppointments[i]['patient'],
-                      'order': controller.sequenceAppointments[i]['order'],
-                      'time': controller.sequenceAppointments[i]['time'],
-                      'statusText': sText,
-                      'statusColor': sColor,
-                      'age': 22,
-                      'gender': 'أنثى',
-                      'phone': '0770 000 0000',
-                      'date': _formatDate(DateTime.now()),
-                      'price': '10,000 د.ع',
-                    },
-                  ),
-                );
-              },
-            ),
-            if (i != controller.sequenceAppointments.length - 1)
-              Divider(color: AppColors.divider, height: 1),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _sequenceItem({
-    required String patient,
-    required int order,
-    required String time,
-    required String status,
-    required Color Function(String) statusColor,
-    required String Function(String) statusLabel,
-    required Widget Function({Color color}) dot,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 14.h),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Row flipped: content on اليسار (Left), arrow on اليمين (Right), بدون صورة
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Main content (left)
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      MyText(
-                        patient,
-                        fontSize: 22.sp,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimary,
-                        textAlign: TextAlign.left,
-                      ),
-                      SizedBox(height: 8.h),
-                      // order • time • status
-                      Directionality(
-                        textDirection: TextDirection.rtl,
-                        child: Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 8.w,
-                          runSpacing: 6.h,
-                          children: [
-                            MyText(
-                              'التسلسل : $order',
-                              fontSize: 18.sp,
-                              color: AppColors.textSecondary,
-                            ),
-                            dot(
-                              color: AppColors.textSecondary.withValues(
-                                alpha: 0.6,
-                              ),
-                            ),
-                            MyText(
-                              time,
-                              fontSize: 18.sp,
-                              color: AppColors.textSecondary,
-                            ),
-                            dot(
-                              color: AppColors.textSecondary.withValues(
-                                alpha: 0.6,
-                              ),
-                            ),
-                            MyText(
-                              statusLabel(status),
-                              fontSize: 20.sp,
-                              fontWeight: FontWeight.w900,
-                              color: statusColor(status),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 8.w),
-                // Right arrow
-                const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 

@@ -534,88 +534,100 @@ class DoctorProfilePage extends StatelessWidget {
   }
 
   Widget _buildBioContent(DoctorProfileController controller) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Obx(
-          () => MyText(
-            controller.cvDescription.value.isNotEmpty
-                ? controller.cvDescription.value
-                : controller.doctorBio.value,
+    return Obx(() {
+      final hasCv = controller.cvDescription.value.isNotEmpty;
+      final hasBio = controller.doctorBio.value.isNotEmpty;
+
+      if (!hasCv && !hasBio) {
+        return Center(
+          child: MyText(
+            'لا يوجد سيرة ذاتية',
+            fontSize: 14.sp,
+            color: AppColors.textSecondary,
+            textAlign: TextAlign.center,
+          ),
+        );
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          MyText(
+            hasCv ? controller.cvDescription.value : controller.doctorBio.value,
             fontSize: 14.sp,
             color: AppColors.textSecondary,
             height: 1.5,
             textAlign: TextAlign.right,
           ),
-        ),
-        SizedBox(height: 16.h),
-        MyText(
-          'الشهادات:',
-          fontSize: 16.sp,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
-          textAlign: TextAlign.right,
-        ),
-        SizedBox(height: 8.h),
-        Obx(() {
-          final images = controller.cvCertificates.isNotEmpty
-              ? controller.cvCertificates
-              : <String>[]; // لا نعرض عينات ثابتة
-          if (images.isEmpty) {
-            return Container(
-              height: 150.h,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-              child: const Center(
-                child: Icon(Icons.image, size: 40, color: Colors.grey),
-              ),
-            );
-          }
-          return Directionality(
-            textDirection: TextDirection.rtl,
-            child: SizedBox(
-              height: 120.h,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                physics: images.length > 2
-                    ? const BouncingScrollPhysics()
-                    : const NeverScrollableScrollPhysics(),
-                itemBuilder: (_, i) {
-                  final url = images[i];
-                  return GestureDetector(
-                    onTap: () => _openImage(url),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12.r),
-                      child: Image(
-                        image: _imageProvider(url),
-                        height: 120.h,
-                        width: 160.w,
-                        fit: BoxFit.cover,
-                        errorBuilder: (c, e, s) => Container(
+          SizedBox(height: 16.h),
+          MyText(
+            'الشهادات:',
+            fontSize: 16.sp,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+            textAlign: TextAlign.right,
+          ),
+          SizedBox(height: 8.h),
+          Obx(() {
+            final images = controller.cvCertificates.isNotEmpty
+                ? controller.cvCertificates
+                : <String>[]; // لا نعرض عينات ثابتة
+            if (images.isEmpty) {
+              return Container(
+                height: 150.h,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: const Center(
+                  child: Icon(Icons.image, size: 40, color: Colors.grey),
+                ),
+              );
+            }
+            return Directionality(
+              textDirection: TextDirection.rtl,
+              child: SizedBox(
+                height: 120.h,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  physics: images.length > 2
+                      ? const BouncingScrollPhysics()
+                      : const NeverScrollableScrollPhysics(),
+                  itemBuilder: (_, i) {
+                    final url = images[i];
+                    return GestureDetector(
+                      onTap: () => _openImage(url),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12.r),
+                        child: Image(
+                          image: _imageProvider(url),
                           height: 120.h,
                           width: 160.w,
-                          color: Colors.grey[200],
-                          child: const Icon(
-                            Icons.broken_image,
-                            color: Colors.grey,
+                          fit: BoxFit.cover,
+                          errorBuilder: (c, e, s) => Container(
+                            height: 120.h,
+                            width: 160.w,
+                            color: Colors.grey[200],
+                            child: const Icon(
+                              Icons.broken_image,
+                              color: Colors.grey,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                },
-                separatorBuilder: (_, __) => SizedBox(width: 10.w),
-                itemCount: images.length,
+                    );
+                  },
+                  separatorBuilder: (_, __) => SizedBox(width: 10.w),
+                  itemCount: images.length,
+                ),
               ),
-            ),
-          );
-        }),
-        // Read-only in doctor details page (no actions)
-      ],
-    );
+            );
+          }),
+          // Read-only in doctor details page (no actions)
+        ],
+      );
+    });
   }
 
   Widget _buildAddressContent(DoctorProfileController controller) {
