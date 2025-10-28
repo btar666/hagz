@@ -4,6 +4,9 @@ import 'package:get/get.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
+import '../../widget/back_button_widget.dart';
+import 'delegate_register_page.dart';
+import '../../bindings/delegate_register_binding.dart';
 
 class DelegateTermsPage extends StatelessWidget {
   const DelegateTermsPage({super.key});
@@ -19,24 +22,9 @@ class DelegateTermsPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(height: 16.h),
-              Align(
+              const Align(
                 alignment: Alignment.centerLeft,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12.r),
-                  onTap: () => Get.back(),
-                  child: Container(
-                    width: 48.h,
-                    height: 48.h,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back_ios_new,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+                child: BackButtonWidget(),
               ),
               SizedBox(height: 24.h),
               Container(
@@ -60,12 +48,9 @@ class DelegateTermsPage extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    // تم إزالة صفحة تسجيل المندوب
-                    Get.snackbar(
-                      'معلومة',
-                      'تم إزالة تسجيل المندوبين',
-                      backgroundColor: AppColors.primary,
-                      colorText: Colors.white,
+                    Get.to(
+                      () => const DelegateRegisterPage(),
+                      binding: DelegateRegisterBinding(),
                     );
                   },
                   style: ElevatedButton.styleFrom(

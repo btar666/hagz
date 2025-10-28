@@ -1,8 +1,9 @@
 import 'package:get/get.dart';
+import '../controller/delegate_register_controller.dart';
 
 class DelegateRegisterBinding extends Bindings {
   @override
   void dependencies() {
-    // يمكن إضافة DelegateRegisterController هنا عند إنشائه
+    Get.put<DelegateRegisterController>(DelegateRegisterController());
   }
 }

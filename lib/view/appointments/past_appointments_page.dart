@@ -7,6 +7,7 @@ import '../../controller/past_appointments_controller.dart';
 import '../appointments/appointment_details_page.dart';
 import '../../controller/session_controller.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import '../../widget/back_button_widget.dart';
 
 class PastAppointmentsPage extends StatelessWidget {
   const PastAppointmentsPage({super.key});
@@ -56,21 +57,7 @@ class PastAppointmentsPage extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                 child: Row(
                   children: [
-                    Container(
-                      width: 48.h,
-                      height: 48.h,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      child: IconButton(
-                        onPressed: () => Get.back(),
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
+                    SizedBox(width: 48.w),
                     Expanded(
                       child: Center(
                         child: Text(
@@ -83,7 +70,7 @@ class PastAppointmentsPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(width: 48.h),
+                    const BackButtonWidget(),
                   ],
                 ),
               ),

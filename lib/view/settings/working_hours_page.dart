@@ -9,6 +9,7 @@ import '../../widget/loading_dialog.dart';
 import '../../widget/status_dialog.dart';
 import '../../widget/confirm_dialogs.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import '../../widget/back_button_widget.dart';
 
 class WorkingHoursPage extends StatelessWidget {
   WorkingHoursPage({super.key});
@@ -19,137 +20,184 @@ class WorkingHoursPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        elevation: 0,
-        title: MyText(
-          'إدارة أوقات العمل',
-          fontSize: 20.sp,
-          fontWeight: FontWeight.w900,
-          color: Colors.white,
-        ),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Get.back(),
-        ),
-      ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return SingleChildScrollView(
-            padding: EdgeInsets.all(16.w),
-            child: Skeletonizer(
-              enabled: true,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+              child: Row(
                 children: [
-                  _buildInfoCard(),
-                  SizedBox(height: 16.h),
-                  ...List.generate(
-                    4,
-                    (i) => Container(
-                      margin: EdgeInsets.only(bottom: 12.h),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16.r),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: ListTile(
-                        leading: CircleAvatar(radius: 20.r, backgroundColor: Colors.grey[200]),
-                        title: MyText(' ', fontSize: 16.sp, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
-                        subtitle: MyText(' ', fontSize: 14.sp, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-                        trailing: Switch(value: true, onChanged: (_) {}),
+                  SizedBox(width: 48.w),
+                  Expanded(
+                    child: Center(
+                      child: MyText(
+                        'إدارة أوقات العمل',
+                        fontSize: 22.sp,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.delete_outline), label: MyText('حذف الكل', fontSize: 16.sp)),
-                      ),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.save, color: Colors.white), label: MyText('حفظ', fontSize: 16.sp, color: Colors.white)),
-                      ),
-                    ],
-                  ),
+                  const BackButtonWidget(),
                 ],
               ),
             ),
-          );
-        }
-
-        return SingleChildScrollView(
-          padding: EdgeInsets.all(16.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // معلومات توضيحية
-              _buildInfoCard(),
-              SizedBox(height: 16.h),
-
-              // قائمة الأيام
-              ...List.generate(7, (index) => _buildDayCard(index)),
-
-              SizedBox(height: 20.h),
-
-              // أزرار الحفظ والحذف
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _onDeleteAll,
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFFF3B30)),
-                        foregroundColor: const Color(0xFFFF3B30),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16.r),
-                        ),
-                        padding: EdgeInsets.symmetric(vertical: 14.h),
-                      ),
-                      icon: const Icon(Icons.delete_outline),
-                      label: MyText(
-                        'حذف الكل',
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFFFF3B30),
+            // Body
+            Expanded(
+              child: Obx(() {
+                if (controller.isLoading.value) {
+                  return SingleChildScrollView(
+                    padding: EdgeInsets.all(16.w),
+                    child: Skeletonizer(
+                      enabled: true,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildInfoCard(),
+                          SizedBox(height: 16.h),
+                          ...List.generate(
+                            4,
+                            (i) => Container(
+                              margin: EdgeInsets.only(bottom: 12.h),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16.r),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  radius: 20.r,
+                                  backgroundColor: Colors.grey[200],
+                                ),
+                                title: MyText(
+                                  ' ',
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textPrimary,
+                                ),
+                                subtitle: MyText(
+                                  ' ',
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textSecondary,
+                                ),
+                                trailing: Switch(
+                                  value: true,
+                                  onChanged: (_) {},
+                                ),
+                              ),
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () {},
+                                  icon: const Icon(Icons.delete_outline),
+                                  label: MyText('حذف الكل', fontSize: 16.sp),
+                                ),
+                              ),
+                              SizedBox(width: 12.w),
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () {},
+                                  icon: const Icon(
+                                    Icons.save,
+                                    color: Colors.white,
+                                  ),
+                                  label: MyText(
+                                    'حفظ',
+                                    fontSize: 16.sp,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _onSave,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16.r),
-                        ),
-                        padding: EdgeInsets.symmetric(vertical: 14.h),
-                        elevation: 0,
+                  );
+                }
+
+                return SingleChildScrollView(
+                  padding: EdgeInsets.all(16.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // معلومات توضيحية
+                      _buildInfoCard(),
+                      SizedBox(height: 16.h),
+
+                      // قائمة الأيام
+                      ...List.generate(7, (index) => _buildDayCard(index)),
+
+                      SizedBox(height: 20.h),
+
+                      // أزرار الحفظ والحذف
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _onDeleteAll,
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(
+                                  color: Color(0xFFFF3B30),
+                                ),
+                                foregroundColor: const Color(0xFFFF3B30),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16.r),
+                                ),
+                                padding: EdgeInsets.symmetric(vertical: 14.h),
+                              ),
+                              icon: const Icon(Icons.delete_outline),
+                              label: MyText(
+                                'حذف الكل',
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFFFF3B30),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 12.w),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: _onSave,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16.r),
+                                ),
+                                padding: EdgeInsets.symmetric(vertical: 14.h),
+                                elevation: 0,
+                              ),
+                              icon: const Icon(Icons.save, color: Colors.white),
+                              label: MyText(
+                                'حفظ',
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      icon: const Icon(Icons.save, color: Colors.white),
-                      label: MyText(
-                        'حفظ',
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
-                    ),
+                      SizedBox(height: 20.h),
+                    ],
                   ),
-                ],
-              ),
-              SizedBox(height: 20.h),
-            ],
-          ),
-        );
-      }),
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

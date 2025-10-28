@@ -6,6 +6,7 @@ import '../../utils/app_colors.dart';
 import '../../controller/session_controller.dart';
 import '../../service_layer/services/appointments_service.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import '../../widget/back_button_widget.dart';
 
 class AppointmentSequencePage extends StatelessWidget {
   const AppointmentSequencePage({super.key});
@@ -48,21 +49,7 @@ class AppointmentSequencePage extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                 child: Row(
                   children: [
-                    Container(
-                      width: 48.h,
-                      height: 48.h,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      child: IconButton(
-                        onPressed: () => Get.back(),
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
+                    SizedBox(width: 48.w),
                     Expanded(
                       child: Center(
                         child: Text(
@@ -75,7 +62,7 @@ class AppointmentSequencePage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(width: 48.h),
+                    const BackButtonWidget(),
                   ],
                 ),
               ),

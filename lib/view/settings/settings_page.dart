@@ -324,7 +324,11 @@ class SettingsPage extends StatelessWidget {
             ),
 
             // Arrow
-            Icon(Icons.arrow_back_ios, color: AppColors.textLight, size: 16.sp),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: AppColors.textLight,
+              size: 16.sp,
+            ),
           ],
         ),
       ),

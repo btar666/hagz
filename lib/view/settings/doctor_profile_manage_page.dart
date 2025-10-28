@@ -18,6 +18,7 @@ import '../../widget/status_dialog.dart';
 import '../../widget/confirm_dialogs.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../widget/back_button_widget.dart';
 
 class DoctorProfileManagePage extends StatefulWidget {
   const DoctorProfileManagePage({super.key});
@@ -223,21 +224,7 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
             children: [
               Row(
                 children: [
-                  Container(
-                    width: 48.h,
-                    height: 48.h,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: IconButton(
-                      onPressed: () => Get.back(),
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+                  SizedBox(width: 48.h),
                   Expanded(
                     child: Center(
                       child: MyText(
@@ -248,7 +235,7 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
                       ),
                     ),
                   ),
-                  SizedBox(width: 48.h),
+                  const BackButtonWidget(),
                 ],
               ),
               SizedBox(height: 16.h),
@@ -781,9 +768,7 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.textLight),
       ),
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
       child: TextField(
         controller: controller,
         textAlign: TextAlign.center,
@@ -794,7 +779,22 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
             color: AppColors.textLight,
             fontSize: 14.sp,
           ),
-          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 12.w,
+            vertical: 16.h,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: AppColors.textLight, width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: AppColors.primary, width: 1),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: AppColors.textLight, width: 1),
+          ),
           suffixIcon: (trailingAsset != null && trailingAsset.isNotEmpty)
               ? Padding(
                   padding: EdgeInsets.all(4.w),
@@ -914,11 +914,7 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
             ],
           ),
           SizedBox(height: 12.h),
-          _plainRow(
-            _agePersonalCtrl,
-            hint: 'العمر',
-            trailingAsset: 'assets/icons/home/link.png',
-          ),
+          _plainRow(_agePersonalCtrl, hint: 'العمر'),
           SizedBox(height: 12.h),
           _cityDropdown(),
           SizedBox(height: 12.h),
@@ -3133,11 +3129,9 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
 
   Widget _cityDropdown() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: AppColors.divider),
+        borderRadius: BorderRadius.circular(16.r),
       ),
       child: DropdownButtonFormField<String>(
         value: _selectedCity,
@@ -3149,12 +3143,22 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
             fontSize: 16.sp,
             fontFamily: 'Expo Arabic',
           ),
-          border: InputBorder.none,
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20.r),
-            borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 16.w,
+            vertical: 16.h,
           ),
-          contentPadding: EdgeInsets.symmetric(vertical: 12.h),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: AppColors.textLight, width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: AppColors.primary, width: 1),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: AppColors.textLight, width: 1),
+          ),
         ),
         items: _allowedCities.map((city) {
           return DropdownMenuItem<String>(
@@ -3180,11 +3184,9 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
     return Column(
       children: [
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20.r),
-            border: Border.all(color: AppColors.divider),
+            borderRadius: BorderRadius.circular(16.r),
           ),
           child: DropdownButtonFormField<String>(
             value: _selectedSpecializationId,
@@ -3199,8 +3201,22 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
                 fontSize: 16.sp,
                 fontFamily: 'Expo Arabic',
               ),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 12.h),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16.w,
+                vertical: 16.h,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16.r),
+                borderSide: BorderSide(color: AppColors.textLight, width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16.r),
+                borderSide: BorderSide(color: AppColors.primary, width: 1),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16.r),
+                borderSide: BorderSide(color: AppColors.textLight, width: 1),
+              ),
             ),
             isExpanded: true,
             items: _specializations.map((spec) {

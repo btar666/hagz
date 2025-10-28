@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
+import '../../widget/back_button_widget.dart';
 import 'login_page.dart';
 import '../main_page.dart';
 import '../../controller/auth_controller.dart';
@@ -117,23 +118,9 @@ class _RegisterPageState extends State<RegisterPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SizedBox(height: 24.h),
-                Align(
+                const Align(
                   alignment: Alignment.centerLeft,
-                  child: GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Container(
-                      width: 48.h,
-                      height: 48.h,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back_ios_new,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+                  child: BackButtonWidget(),
                 ),
                 SizedBox(height: 24.h),
                 GestureDetector(
@@ -299,15 +286,51 @@ class _RegisterPageState extends State<RegisterPage> {
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(24.r),
-                              border: Border.all(color: AppColors.divider),
+                              borderRadius: BorderRadius.circular(16.r),
                             ),
-                            padding: EdgeInsets.symmetric(horizontal: 16.w),
                             child: DropdownButtonFormField<String>(
                               value: _selectedCity,
                               isExpanded: true,
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
+                              decoration: InputDecoration(
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16.w,
+                                  vertical: 16.h,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16.r),
+                                  borderSide: BorderSide(
+                                    color: AppColors.textLight,
+                                    width: 1,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16.r),
+                                  borderSide: BorderSide(
+                                    color: AppColors.primary,
+                                    width: 1,
+                                  ),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16.r),
+                                  borderSide: BorderSide(
+                                    color: Colors.red,
+                                    width: 1,
+                                  ),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16.r),
+                                  borderSide: BorderSide(
+                                    color: Colors.red,
+                                    width: 1,
+                                  ),
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16.r),
+                                  borderSide: BorderSide(
+                                    color: AppColors.textLight,
+                                    width: 1,
+                                  ),
+                                ),
                               ),
                               hint: MyText(
                                 'اختر المحافظة',
@@ -581,17 +604,9 @@ class _RegisterPageState extends State<RegisterPage> {
     return Column(
       children: [
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 12.w),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20.r),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.shadow,
-                blurRadius: 10.r,
-                offset: const Offset(0, 3),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(16.r),
           ),
           child: DropdownButtonFormField<String>(
             value: _selectedSpecializationId,
@@ -606,8 +621,30 @@ class _RegisterPageState extends State<RegisterPage> {
                 fontSize: 18.sp,
                 fontFamily: 'Expo Arabic',
               ),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 18.h),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16.w,
+                vertical: 16.h,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16.r),
+                borderSide: BorderSide(color: AppColors.textLight, width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16.r),
+                borderSide: BorderSide(color: AppColors.primary, width: 1),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16.r),
+                borderSide: BorderSide(color: Colors.red, width: 1),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16.r),
+                borderSide: BorderSide(color: Colors.red, width: 1),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16.r),
+                borderSide: BorderSide(color: AppColors.textLight, width: 1),
+              ),
             ),
             isExpanded: true,
             items: _specializations.map((spec) {
@@ -684,17 +721,9 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
         SizedBox(height: 8.h),
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 12.w),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20.r),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.shadow,
-                blurRadius: 10.r,
-                offset: const Offset(0, 3),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(16.r),
           ),
           child: DropdownButtonFormField<String>(
             value: null,
@@ -702,7 +731,24 @@ class _RegisterPageState extends State<RegisterPage> {
                 .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                 .toList(),
             onChanged: onChanged,
-            decoration: const InputDecoration(border: InputBorder.none),
+            decoration: InputDecoration(
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16.w,
+                vertical: 16.h,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16.r),
+                borderSide: BorderSide(color: AppColors.textLight, width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16.r),
+                borderSide: BorderSide(color: AppColors.primary, width: 1),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16.r),
+                borderSide: BorderSide(color: AppColors.textLight, width: 1),
+              ),
+            ),
             icon: const Icon(Icons.keyboard_arrow_down_rounded),
             style: TextStyle(
               fontFamily: 'Expo Arabic',

@@ -16,6 +16,7 @@ import '../../chat/chat_details_page.dart';
 import '../../../bindings/chats_binding.dart';
 import '../../../utils/constants.dart';
 import '../../../widget/specialization_text.dart';
+import '../../../widget/back_button_widget.dart';
 
 class DoctorProfilePage extends StatelessWidget {
   final String doctorId;
@@ -83,26 +84,50 @@ class DoctorProfilePage extends StatelessWidget {
   }
 
   Widget _buildHeader() {
+    final session = Get.find<SessionController>();
+    final isOwnProfile = session.currentUser.value?.id == doctorId;
+
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.all(16.w),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // Chat button
-            Container(
-              width: 48.w,
-              height: 48.w,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(20.r),
-              ),
-              child: const Icon(
-                Icons.chat_bubble_outline,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
+            // Chat button (only show if not own profile)
+            isOwnProfile
+                ? SizedBox(width: 48.w, height: 48.w)
+                : GestureDetector(
+                    onTap: () => Get.to(
+                      () => ChatDetailsPage(
+                        title: doctorName,
+                        receiverId: doctorId,
+                      ),
+                      binding: ChatsBinding(),
+                    ),
+                    child: Container(
+                      width: 48.w,
+                      height: 48.w,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      child: Center(
+                        child: Image.asset(
+                          'assets/icons/home/Message Icon.png',
+                          width: 22,
+                          height: 22,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.chat_bubble_outline,
+                              color: Colors.white,
+                              size: 20,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
 
             // Title
             MyText(
@@ -114,22 +139,7 @@ class DoctorProfilePage extends StatelessWidget {
             ),
 
             // Back button
-            GestureDetector(
-              onTap: () => Get.back(),
-              child: Container(
-                width: 48.w,
-                height: 48.w,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                child: const Icon(
-                  Icons.arrow_forward_ios,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-            ),
+            const BackButtonWidget(),
           ],
         ),
       ),
@@ -231,67 +241,21 @@ class DoctorProfilePage extends StatelessWidget {
   }
 
   Widget _buildDoctorInfo() {
-    final session = Get.find<SessionController>();
-    final currentUserId = session.currentUser.value?.id ?? '';
-    final isOwnProfile = currentUserId.isNotEmpty && currentUserId == doctorId;
-
     return Column(
       children: [
-        // Name + message button (only show message button if not own profile)
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (!isOwnProfile) SizedBox(width: 40.w + 60.w + 30.w),
-            Expanded(
-              child: Center(
-                child: Hero(
-                  tag: 'doctor-name-$doctorId',
-                  flightShuttleBuilder: (ctx, anim, dir, from, to) => to.widget,
-                  child: MyText(
-                    doctorName,
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
+        // Name (centered)
+        Center(
+          child: Hero(
+            tag: 'doctor-name-$doctorId',
+            flightShuttleBuilder: (ctx, anim, dir, from, to) => to.widget,
+            child: MyText(
+              doctorName,
+              fontSize: 24.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+              textAlign: TextAlign.center,
             ),
-            if (!isOwnProfile) ...[
-              SizedBox(width: 60.w),
-              GestureDetector(
-                onTap: () => Get.to(
-                  () =>
-                      ChatDetailsPage(title: doctorName, receiverId: doctorId),
-                  binding: ChatsBinding(),
-                ),
-                child: Container(
-                  width: 40.w,
-                  height: 40.w,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Center(
-                    child: Image.asset(
-                      'assets/icons/home/Message Icon.png',
-                      width: 20,
-                      height: 20,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(
-                          Icons.chat_bubble_outline,
-                          color: Colors.white,
-                          size: 18,
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 30.w),
-            ],
-          ],
+          ),
         ),
         SizedBox(height: 8.h),
         SpecializationText(

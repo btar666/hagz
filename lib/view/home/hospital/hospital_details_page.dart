@@ -11,6 +11,7 @@ import '../../../widget/animated_pressable.dart';
 import '../../../widget/specialization_text.dart';
 import '../doctors/doctor_profile_page.dart';
 import '../../../bindings/doctor_profile_binding.dart';
+import '../../../widget/back_button_widget.dart';
 
 class HospitalDetailsPage extends StatelessWidget {
   const HospitalDetailsPage({super.key});
@@ -200,22 +201,7 @@ class HospitalDetailsPage extends StatelessWidget {
             }),
 
             // Back button
-            GestureDetector(
-              onTap: () => Get.back(),
-              child: Container(
-                width: 48.w,
-                height: 48.w,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                child: const Icon(
-                  Icons.arrow_forward_ios,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-            ),
+            const BackButtonWidget(),
           ],
         ),
       ),
