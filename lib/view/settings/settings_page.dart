@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
 // import '../auth/login_page.dart';
 import '../../controller/session_controller.dart';
+import '../../controller/doctor_profile_manage_controller.dart';
 import 'doctor_profile_manage_page.dart';
 import 'working_hours_page.dart';
 import 'holidays_page.dart';
@@ -55,7 +56,7 @@ class SettingsPage extends StatelessWidget {
                   Get.to(
                     () => const DoctorProfileManagePage(),
                     binding: BindingsBuilder(() {
-                      // يمكن إضافة controller هنا إذا لزم الأمر
+                      Get.put(DoctorProfileManageController());
                     }),
                   );
                 },
