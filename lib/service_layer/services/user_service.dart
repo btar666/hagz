@@ -62,6 +62,41 @@ class UserService {
     return res;
   }
 
+  Future<Map<String, dynamic>> filterDoctors({
+    String? query,
+    String? city,
+    String? sortBy,
+    String? order,
+    int page = 1,
+    int limit = 10,
+  }) async {
+    final params = <String, String>{
+      'page': page.toString(),
+      'limit': limit.toString(),
+    };
+
+    if (query != null && query.trim().isNotEmpty) {
+      params['query'] = query.trim();
+    }
+    if (city != null && city.trim().isNotEmpty) {
+      params['city'] = city.trim();
+    }
+    if (sortBy != null && sortBy.trim().isNotEmpty) {
+      params['sortBy'] = sortBy.trim();
+    }
+    if (order != null && order.trim().isNotEmpty) {
+      params['order'] = order.trim();
+    }
+
+    final uri = Uri.parse(
+      ApiConstants.filterDoctors,
+    ).replace(queryParameters: params);
+    print('🔍 FILTER DOCTORS URL: ${uri.toString()}');
+    final res = await _api.get(uri.toString());
+    print('🔍 FILTER DOCTORS RESPONSE: $res');
+    return res;
+  }
+
   Future<Map<String, dynamic>> getUserById(String userId) async {
     final url = '${ApiConstants.baseUrl}/api/users/$userId';
     final res = await _api.get(url);

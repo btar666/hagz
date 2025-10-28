@@ -50,26 +50,18 @@ class DoctorProfileController extends GetxController {
   }
 
   // Sample doctor data - you can replace this with API calls
-  var doctorName = 'د. أحمد محمد'.obs;
-  var doctorSpecialty = 'طبيب أطفال'.obs;
-  var doctorRating = 4.8.obs;
-  var doctorExperience = '15 سنة خبرة'.obs;
-  var doctorBio =
-      'طبيب أطفال متخصص مع خبرة واسعة في علاج الأطفال والرضع. حاصل على شهادات متقدمة في طب الأطفال من جامعات مرموقة.'
-          .obs;
-  var doctorAddress = 'شارع الملك فهد، الرياض، المملكة العربية السعودية'.obs;
-  var doctorPhone = '+966501234567'.obs;
+  var doctorName = ''.obs;
+  var doctorSpecialty = ''.obs;
+  var doctorRating = 0.0.obs;
+  var doctorExperience = ''.obs;
+  var doctorBio = ''.obs;
+  var doctorAddress = ''.obs;
+  var doctorPhone = ''.obs;
   // Certificates images (paths or URLs)
   var certificateImages = <String>[].obs;
   // Paths can be absolute files or asset paths
   // Addresses: each item has value and isLink (website)
-  var addresses = <Map<String, dynamic>>[
-    {'value': 'مركز العيون التخصصي , دهوك', 'isLink': false},
-    {
-      'value': '',
-      'isLink': true, // رابط موقع
-    },
-  ].obs;
+  var addresses = <Map<String, dynamic>>[].obs;
 
   // Opinions from API
   var opinions = <Map<String, dynamic>>[].obs;
@@ -107,18 +99,7 @@ class DoctorProfileController extends GetxController {
   var ratingsCount = 0.obs;
 
   // Sample treated cases
-  var treatedCases = <Map<String, String>>[
-    {
-      'title': 'علاج الربو عند الأطفال',
-      'description': 'برنامج شامل لعلاج ومتابعة حالات الربو',
-      'image': 'assets/images/asthma_treatment.jpg',
-    },
-    {
-      'title': 'التطعيمات الأساسية',
-      'description': 'جدول التطعيمات المعتمد من وزارة الصحة',
-      'image': 'assets/images/vaccination.jpg',
-    },
-  ].obs;
+  var treatedCases = <Map<String, String>>[].obs;
 
   // Availability calendar state
   var selectedMonth = DateTime.now().obs; // always first day semantics in view
@@ -126,7 +107,7 @@ class DoctorProfileController extends GetxController {
   var dayStatuses = <int, String>{}.obs;
 
   // Treated cases (legacy single-case editors)
-  var treatedCaseName = 'جفاف و حساسية'.obs;
+  var treatedCaseName = ''.obs;
   var treatedCaseImages = <String>[].obs;
 
   // New: Managed cases list (each with name + one image) + form state
@@ -136,34 +117,10 @@ class DoctorProfileController extends GetxController {
   var newCaseImage = ''.obs;
 
   // Appointments sequence (order queue)
-  var sequenceAppointments = <Map<String, dynamic>>[
-    {
-      'order': 1,
-      'patient': 'اسم المريض',
-      'time': '6:40 صباحاً',
-      'status': 'completed',
-    },
-    {
-      'order': 2,
-      'patient': 'اسم المريض',
-      'time': '6:40 صباحاً',
-      'status': 'pending',
-    },
-    {
-      'order': 4,
-      'patient': 'اسم المريض',
-      'time': '6:40 صباحاً',
-      'status': 'cancelled',
-    },
-  ].obs;
+  var sequenceAppointments = <Map<String, dynamic>>[].obs;
 
   // Insurance companies
-  var acceptedInsurance = <String>[
-    'التأمين الطبي الشامل',
-    'بوبا العربية',
-    'الشركة السعودية للتأمين التعاوني',
-    'شركة الراجحي للتأمين',
-  ].obs;
+  var acceptedInsurance = <String>[].obs;
 
   @override
   void onInit() {

@@ -7,6 +7,7 @@ class HospitalModel {
   final String facebook;
   final String instagram;
   final String whatsapp;
+  final String type; // مستشفى أو مجمع
 
   const HospitalModel({
     required this.id,
@@ -17,6 +18,7 @@ class HospitalModel {
     required this.facebook,
     required this.instagram,
     required this.whatsapp,
+    required this.type,
   });
 
   factory HospitalModel.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class HospitalModel {
       facebook: (json['facebook'] ?? '').toString(),
       instagram: (json['instagram'] ?? '').toString(),
       whatsapp: (json['whatsapp'] ?? '').toString(),
+      type: (json['type'] ?? '').toString(),
     );
   }
 }

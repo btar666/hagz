@@ -7,185 +7,41 @@ import '../../widget/my_text.dart';
 import '../../widget/specialization_text.dart';
 import '../../controller/doctor_profile_controller.dart';
 import '../../controller/session_controller.dart';
-import '../appointments/appointment_details_page.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../../service_layer/services/upload_service.dart';
-import '../../service_layer/services/user_service.dart';
-import '../../service_layer/services/specialization_service.dart';
-import '../../model/specialization_model.dart';
 import '../../widget/loading_dialog.dart';
 import '../../widget/status_dialog.dart';
 import '../../widget/confirm_dialogs.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../widget/back_button_widget.dart';
+import '../../controller/doctor_profile_manage_controller.dart';
 
-class DoctorProfileManagePage extends StatefulWidget {
+class DoctorProfileManagePage extends StatelessWidget {
   const DoctorProfileManagePage({super.key});
 
   @override
-  State<DoctorProfileManagePage> createState() =>
-      _DoctorProfileManagePageState();
-}
-
-class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
-  static bool _prefillCalled = false;
-
-  // Personal info controllers
-  final TextEditingController _namePersonalCtrl = TextEditingController();
-  final TextEditingController _phonePersonalCtrl = TextEditingController();
-  final TextEditingController _cityPersonalCtrl = TextEditingController();
-  final TextEditingController _agePersonalCtrl = TextEditingController();
-  final RxInt _genderPersonalIndex = 0.obs;
-
-  // Specialization state
-  List<SpecializationModel> _specializations = [];
-  String? _selectedSpecializationId;
-  bool _loadingSpecializations = false;
-  final SpecializationService _specializationService = SpecializationService();
-
-  // Social controllers
-  final TextEditingController _instagramCtrl = TextEditingController(
-    text: 'http://ABCDEFG',
-  );
-  final TextEditingController _whatsappCtrl = TextEditingController(
-    text: 'http://ABCDEFG',
-  );
-  final TextEditingController _facebookCtrl = TextEditingController();
-
-  void _loadExistingSocialMediaData(SessionController session) {
-    final user = session.currentUser.value;
-    if (user != null && user.socialMedia.isNotEmpty) {
-      final social = user.socialMedia;
-      _instagramCtrl.text = social['instagram'] ?? 'http://ABCDEFG';
-      _whatsappCtrl.text = social['whatsapp'] ?? 'http://ABCDEFG';
-      _facebookCtrl.text = social['facebook'] ?? '';
-    }
-  }
-
-  Future<void> _prefillSocialFromApi(String userId) async {
-    try {
-      final userService = Get.put(UserService());
-      final res = await userService.getUserById(userId);
-      if (res['ok'] == true) {
-        final dynamic wrap = res['data'];
-        Map<String, dynamic>? obj;
-        if (wrap is Map<String, dynamic>) {
-          obj = (wrap['data'] is Map<String, dynamic>)
-              ? (wrap['data'] as Map<String, dynamic>)
-              : wrap;
-        }
-        final Map<String, dynamic> social =
-            (obj?['socialMedia'] as Map<String, dynamic>?) ?? {};
-        final String? ig = social['instagram']?.toString();
-        final String? wa = social['whatsapp']?.toString();
-        final String? fb = social['facebook']?.toString();
-        if (ig != null && ig.isNotEmpty) _instagramCtrl.text = ig;
-        if (wa != null && wa.isNotEmpty) _whatsappCtrl.text = wa;
-        if (fb != null && fb.isNotEmpty) _facebookCtrl.text = fb;
-      }
-    } catch (_) {
-      // ignore
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchSpecializations();
-    _fetchLatestUserInfo();
-  }
-
-  Future<void> _fetchLatestUserInfo() async {
-    try {
-      final userService = Get.put(UserService());
-      print('📥 Fetching latest user info for profile page...');
-      final res = await userService.getUserInfo();
-      print('📥 User info response: ${res['ok']}');
-      if (res['ok'] == true) {
-        print('✅ User info updated successfully - image should now be visible');
-        // Session will be updated automatically by getUserInfo()
-      }
-    } catch (e) {
-      print('❌ Error fetching user info: $e');
-    }
-  }
-
-  @override
-  void dispose() {
-    _namePersonalCtrl.dispose();
-    _phonePersonalCtrl.dispose();
-    _cityPersonalCtrl.dispose();
-    _agePersonalCtrl.dispose();
-    _instagramCtrl.dispose();
-    _whatsappCtrl.dispose();
-    _facebookCtrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _fetchSpecializations() async {
-    final session = Get.find<SessionController>();
-    if (session.currentUser.value?.userType != 'Doctor') return;
-
-    setState(() => _loadingSpecializations = true);
-    try {
-      final specializations = await _specializationService
-          .getSpecializationsList();
-      if (mounted) {
-        setState(() {
-          _specializations = specializations;
-          _loadingSpecializations = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _loadingSpecializations = false);
-      }
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final manageController = Get.find<DoctorProfileManageController>();
     final DoctorProfileController controller = Get.put(
       DoctorProfileController(),
     );
+
     // Prefill CV from server if exists
     controller.fetchMyCvIfAny();
+
     // تحميل سعر الحجز الحالي
     final session = Get.find<SessionController>();
     final String? userId = session.currentUser.value?.id;
     if (userId != null && userId.isNotEmpty) {
       controller.loadDoctorPricing(userId);
       controller.loadRatingsCount(userId);
-    }
 
-    // Load existing social media data from user profile
-    _loadExistingSocialMediaData(session);
-
-    // Prefill personal info from session
-    final user = session.currentUser.value;
-    if (user != null) {
-      if (_namePersonalCtrl.text.isEmpty) _namePersonalCtrl.text = user.name;
-      if (_phonePersonalCtrl.text.isEmpty) _phonePersonalCtrl.text = user.phone;
-      if (_cityPersonalCtrl.text.isEmpty) _cityPersonalCtrl.text = user.city;
-      if (_agePersonalCtrl.text.isEmpty)
-        _agePersonalCtrl.text = (user.age > 0 ? user.age : 18).toString();
-      if (_selectedSpecializationId == null && user.specialization.isNotEmpty) {
-        _selectedSpecializationId = user.specialization;
+      // Prefill social media from API
+      if (!manageController.prefillCalled.value) {
+        manageController.prefillSocialFromApi(userId);
       }
-      final g = user.gender.trim();
-      if (g == 'ذكر' || g.toLowerCase() == 'male') {
-        _genderPersonalIndex.value = 0;
-      } else if (g == 'انثى' || g == 'أنثى' || g.toLowerCase() == 'female') {
-        _genderPersonalIndex.value = 1;
-      }
-    }
-
-    if (!_prefillCalled && userId != null && userId.isNotEmpty) {
-      _prefillCalled = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _prefillSocialFromApi(userId);
-      });
     }
 
     return Scaffold(
@@ -196,21 +52,7 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
             children: [
               Row(
                 children: [
-                  Container(
-                    width: 48.h,
-                    height: 48.h,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: IconButton(
-                      onPressed: () => Get.back(),
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+                  SizedBox(width: 48.h),
                   Expanded(
                     child: Center(
                       child: MyText(
@@ -221,7 +63,7 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
                       ),
                     ),
                   ),
-                  SizedBox(width: 48.h),
+                  const BackButtonWidget(),
                 ],
               ),
               SizedBox(height: 16.h),
@@ -372,7 +214,8 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
                     top: 12.h,
                     right: 12.w,
                     child: InkWell(
-                      onTap: _changeProfileImage,
+                      onTap: () => Get.find<DoctorProfileManageController>()
+                          .uploadProfileImage(),
                       child: Container(
                         padding: EdgeInsets.all(8.w),
                         decoration: BoxDecoration(
@@ -451,31 +294,38 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
         SizedBox(height: 20.h),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _socialIconImage(
-                'assets/icons/home/instgram.png',
-                const Color(0xFFE4405F),
-                onTap: () => _openUrlIfAny(
-                  _instagramCtrl.text,
-                  fallbackHost: 'instagram.com',
-                ),
-              ),
-              _socialIconImage(
-                'assets/icons/home/watsapp.png',
-                const Color(0xFF25D366),
-                onTap: () => _openWhatsapp(_whatsappCtrl.text),
-              ),
-              _socialIconImage(
-                'assets/icons/home/facebook.png',
-                const Color(0xFF1877F2),
-                onTap: () => _openUrlIfAny(
-                  _facebookCtrl.text,
-                  fallbackHost: 'facebook.com',
-                ),
-              ),
-            ],
+          child: Builder(
+            builder: (context) {
+              final manageController =
+                  Get.find<DoctorProfileManageController>();
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _socialIconImage(
+                    'assets/icons/home/instgram.png',
+                    const Color(0xFFE4405F),
+                    onTap: () => _openUrlIfAny(
+                      manageController.instagramCtrl.text,
+                      fallbackHost: 'instagram.com',
+                    ),
+                  ),
+                  _socialIconImage(
+                    'assets/icons/home/watsapp.png',
+                    const Color(0xFF25D366),
+                    onTap: () =>
+                        _openWhatsapp(manageController.whatsappCtrl.text),
+                  ),
+                  _socialIconImage(
+                    'assets/icons/home/facebook.png',
+                    const Color(0xFF1877F2),
+                    onTap: () => _openUrlIfAny(
+                      manageController.facebookCtrl.text,
+                      fallbackHost: 'facebook.com',
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ],
@@ -569,6 +419,7 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
   }
 
   Widget _buildSocialEditCard(DoctorProfileController controller) {
+    final manageController = Get.find<DoctorProfileManageController>();
     return Container(
       margin: EdgeInsets.only(top: 8.h),
       padding: EdgeInsets.all(12.w),
@@ -580,19 +431,19 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
       child: Column(
         children: [
           _editableRow(
-            _instagramCtrl,
+            manageController.instagramCtrl,
             hint: 'http://ABCDEFG',
             trailingAsset: 'assets/icons/home/instgram.png',
           ),
           SizedBox(height: 12.h),
           _editableRow(
-            _whatsappCtrl,
+            manageController.whatsappCtrl,
             hint: 'http://ABCDEFG',
             trailingAsset: 'assets/icons/home/watsapp.png',
           ),
           SizedBox(height: 12.h),
           _plainRow(
-            _facebookCtrl,
+            manageController.facebookCtrl,
             hint: 'ضع رابط حسابك على فيسبوك',
             trailingAsset: 'assets/icons/home/facebook.png',
           ),
@@ -622,54 +473,8 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () async {
-                    final session = Get.find<SessionController>();
-                    final String? token = session.token.value;
-                    if (token == null || token.isEmpty) {
-                      Get.snackbar(
-                        'غير مسجل',
-                        'يرجى تسجيل الدخول أولاً',
-                        backgroundColor: const Color(0xFFFF3B30),
-                        colorText: Colors.white,
-                      );
-                      return;
-                    }
-
-                    await LoadingDialog.show(message: 'جاري الحفظ...');
-                    try {
-                      final userService = Get.put(UserService());
-                      final res = await userService.updateSocialMedia(
-                        instagram: _instagramCtrl.text.trim(),
-                        whatsapp: _whatsappCtrl.text.trim(),
-                        facebook: _facebookCtrl.text.trim(),
-                      );
-                      LoadingDialog.hide();
-                      if (res['ok'] == true) {
-                        controller.toggleEditingSocial();
-                        await showStatusDialog(
-                          title: 'تم الحفظ',
-                          message: 'تم تحديث وسائل التواصل بنجاح',
-                          color: AppColors.primary,
-                          icon: Icons.check_circle_outline,
-                        );
-                      } else {
-                        await showStatusDialog(
-                          title: 'فشل الحفظ',
-                          message:
-                              res['data']?['message']?.toString() ??
-                              'تعذر تحديث البيانات',
-                          color: const Color(0xFFFF3B30),
-                          icon: Icons.error_outline,
-                        );
-                      }
-                    } catch (e) {
-                      LoadingDialog.hide();
-                      await showStatusDialog(
-                        title: 'خطأ',
-                        message: 'حدث خطأ غير متوقع: $e',
-                        color: const Color(0xFFFF3B30),
-                        icon: Icons.error_outline,
-                      );
-                    }
+                    await manageController.updateSocialMedia();
+                    controller.toggleEditingSocial();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.secondary,
@@ -754,9 +559,7 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.textLight),
       ),
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
       child: TextField(
         controller: controller,
         textAlign: TextAlign.center,
@@ -767,7 +570,22 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
             color: AppColors.textLight,
             fontSize: 14.sp,
           ),
-          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 12.w,
+            vertical: 16.h,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: AppColors.textLight, width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: AppColors.primary, width: 1),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: AppColors.textLight, width: 1),
+          ),
           suffixIcon: (trailingAsset != null && trailingAsset.isNotEmpty)
               ? Padding(
                   padding: EdgeInsets.all(4.w),
@@ -810,6 +628,7 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
   }
 
   Widget _buildPersonalEditCard(DoctorProfileController controller) {
+    final manageController = Get.find<DoctorProfileManageController>();
     return Container(
       margin: EdgeInsets.only(top: 8.h),
       padding: EdgeInsets.all(12.w),
@@ -820,10 +639,10 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
       ),
       child: Column(
         children: [
-          _plainRow(_namePersonalCtrl, hint: 'الاسم الكامل'),
+          _plainRow(manageController.namePersonalCtrl, hint: 'الاسم الكامل'),
           SizedBox(height: 12.h),
           _plainRow(
-            _phonePersonalCtrl,
+            manageController.phonePersonalCtrl,
             hint: 'رقم الهاتف',
             trailingAsset: 'assets/icons/home/phone.png',
           ),
@@ -833,9 +652,10 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
             children: [
               Expanded(
                 child: Obx(() {
-                  final sel = _genderPersonalIndex.value == 0;
+                  final sel = manageController.genderPersonalIndex.value == 0;
                   return OutlinedButton(
-                    onPressed: () => _genderPersonalIndex.value = 0,
+                    onPressed: () =>
+                        manageController.genderPersonalIndex.value = 0,
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
                         color: sel ? AppColors.primary : AppColors.divider,
@@ -860,9 +680,10 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
               SizedBox(width: 10.w),
               Expanded(
                 child: Obx(() {
-                  final sel = _genderPersonalIndex.value == 1;
+                  final sel = manageController.genderPersonalIndex.value == 1;
                   return OutlinedButton(
-                    onPressed: () => _genderPersonalIndex.value = 1,
+                    onPressed: () =>
+                        manageController.genderPersonalIndex.value = 1,
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
                         color: sel ? AppColors.primary : AppColors.divider,
@@ -887,17 +708,9 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
             ],
           ),
           SizedBox(height: 12.h),
-          _plainRow(
-            _agePersonalCtrl,
-            hint: 'العمر',
-            trailingAsset: 'assets/icons/home/link.png',
-          ),
+          _plainRow(manageController.agePersonalCtrl, hint: 'العمر'),
           SizedBox(height: 12.h),
-          _plainRow(
-            _cityPersonalCtrl,
-            hint: 'المدينة',
-            trailingAsset: 'assets/icons/home/link.png',
-          ),
+          _cityDropdown(),
           SizedBox(height: 12.h),
           _specializationDropdown(),
           SizedBox(height: 16.h),
@@ -926,155 +739,8 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () async {
-                    final name = _namePersonalCtrl.text.trim();
-                    final phone = _phonePersonalCtrl.text.trim();
-                    final city = _cityPersonalCtrl.text.trim();
-                    final ageText = _agePersonalCtrl.text.trim();
-                    if (name.isEmpty ||
-                        phone.isEmpty ||
-                        city.isEmpty ||
-                        ageText.isEmpty) {
-                      Get.snackbar(
-                        'خطأ',
-                        'يرجى تعبئة الحقول المطلوبة',
-                        backgroundColor: const Color(0xFFFF3B30),
-                        colorText: Colors.white,
-                      );
-                      return;
-                    }
-                    final age = int.tryParse(ageText) ?? 0;
-                    final gender = _genderPersonalIndex.value == 0
-                        ? 'ذكر'
-                        : 'انثى';
-                    await LoadingDialog.show(message: 'جاري الحفظ...');
-                    try {
-                      print('🔄 Updating user info...');
-                      print('📝 Name: $name');
-                      print('📞 Phone: $phone');
-                      print('🏙️ City: $city');
-                      print('👤 Gender: $gender');
-                      print('🎂 Age: $age');
-                      print('🏥 Specialization ID: $_selectedSpecializationId');
-
-                      final userService = Get.put(UserService());
-                      final res = await userService.updateUserInfo(
-                        name: name,
-                        city: city,
-                        phone: phone,
-                        gender: gender,
-                        age: age,
-                        specializationId: _selectedSpecializationId,
-                      );
-
-                      print('📥 UPDATE USER INFO RESPONSE:');
-                      print('Response: $res');
-                      print('res[ok]: ${res['ok']}');
-                      print('res[data]: ${res['data']}');
-
-                      LoadingDialog.hide();
-                      if (res['ok'] == true) {
-                        print('✅ Update successful!');
-                        controller.toggleEditingPersonal();
-
-                        // Update session model with data from server
-                        final session = Get.find<SessionController>();
-                        final current = session.currentUser.value;
-                        print(
-                          '👤 Current user before update: ${current?.toJson()}',
-                        );
-
-                        // Extract user data from server response
-                        final responseData = res['data'];
-                        final userData =
-                            (responseData is Map &&
-                                responseData['data'] != null)
-                            ? responseData['data'] as Map<String, dynamic>
-                            : null;
-
-                        print('📦 Server returned user data: $userData');
-
-                        if (current != null && userData != null) {
-                          final serverSpecialization =
-                              userData['specialization']?.toString();
-
-                          // Check if server accepted the specialization update
-                          if (_selectedSpecializationId != null &&
-                              serverSpecialization != null &&
-                              _selectedSpecializationId !=
-                                  serverSpecialization) {
-                            print(
-                              '⚠️ WARNING: Specialization NOT updated by server!',
-                            );
-                            print('   Sent: $_selectedSpecializationId');
-                            print('   Received: $serverSpecialization');
-                          }
-
-                          // Update with data from server response
-                          final updatedUser = current.copyWith(
-                            name: userData['name']?.toString() ?? name,
-                            phone:
-                                phone, // Phone not in response, use our value
-                            gender: userData['gender']?.toString() ?? gender,
-                            age: userData['age'] as int? ?? age,
-                            city: userData['city']?.toString() ?? city,
-                            specialization:
-                                serverSpecialization ?? current.specialization,
-                            image:
-                                userData['image']?.toString() ?? current.image,
-                          );
-                          print(
-                            '👤 Updated user from server: ${updatedUser.toJson()}',
-                          );
-                          session.setCurrentUser(updatedUser);
-
-                          // Update the selected specialization to match server
-                          setState(() {
-                            _selectedSpecializationId = serverSpecialization;
-                          });
-                        } else if (current != null) {
-                          // Fallback: use our sent data
-                          final updatedUser = current.copyWith(
-                            name: name,
-                            phone: phone,
-                            gender: gender,
-                            age: age,
-                            city: city,
-                            specialization:
-                                _selectedSpecializationId ??
-                                current.specialization,
-                          );
-                          print(
-                            '👤 Updated user (fallback): ${updatedUser.toJson()}',
-                          );
-                          session.setCurrentUser(updatedUser);
-                        }
-                        await showStatusDialog(
-                          title: 'تم الحفظ',
-                          message: 'تم تحديث المعلومات الشخصية بنجاح',
-                          color: AppColors.primary,
-                          icon: Icons.check_circle_outline,
-                        );
-                      } else {
-                        print('❌ Update failed!');
-                        print('Error message: ${res['data']?['message']}');
-                        await showStatusDialog(
-                          title: 'فشل الحفظ',
-                          message:
-                              res['data']?['message']?.toString() ??
-                              'تعذر تحديث البيانات',
-                          color: const Color(0xFFFF3B30),
-                          icon: Icons.error_outline,
-                        );
-                      }
-                    } catch (e) {
-                      LoadingDialog.hide();
-                      await showStatusDialog(
-                        title: 'خطأ',
-                        message: 'حدث خطأ غير متوقع: $e',
-                        color: const Color(0xFFFF3B30),
-                        icon: Icons.error_outline,
-                      );
-                    }
+                    await manageController.updatePersonalInfo();
+                    controller.toggleEditingPersonal();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
@@ -1114,7 +780,6 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
           _opinionsManageTile(),
           _pricingManageTile(),
           _availabilityManageTile(),
-          _sequenceManageTile(),
           _casesManageTile(),
           for (final title in remaining) _sectionTile(title),
         ],
@@ -2147,81 +1812,6 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
     return 'منذ ${diff.inDays ~/ 7} أسابيع';
   }
 
-  String _formatDate(DateTime dt) =>
-      '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')}';
-
-  Future<void> _changeProfileImage() async {
-    await LoadingDialog.show(message: 'جاري رفع الصورة...');
-    try {
-      final picker = ImagePicker();
-      final x = await picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 85,
-      );
-      if (x == null) {
-        LoadingDialog.hide();
-        return;
-      }
-      final upload = UploadService();
-      final res = await upload.uploadImage(File(x.path));
-      if (res['ok'] == true) {
-        final url = (res['data']?['data']?['url']?.toString() ?? '');
-        if (url.isNotEmpty) {
-          final service = Get.put(UserService());
-          final update = await service.updateProfileImage(url);
-          LoadingDialog.hide();
-          if (update['ok'] == true) {
-            final session = Get.find<SessionController>();
-            final current = session.currentUser.value;
-            if (current != null) {
-              session.setCurrentUser(current.copyWith(image: url));
-            }
-            await showStatusDialog(
-              title: 'تم التحديث',
-              message: 'تم تحديث صورتك الشخصية',
-              color: AppColors.primary,
-              icon: Icons.check_circle_outline,
-            );
-          } else {
-            await showStatusDialog(
-              title: 'فشل التحديث',
-              message:
-                  update['data']?['message']?.toString() ?? 'تعذر تحديث الصورة',
-              color: const Color(0xFFFF3B30),
-              icon: Icons.error_outline,
-            );
-          }
-        } else {
-          LoadingDialog.hide();
-          await showStatusDialog(
-            title: 'فشل الرفع',
-            message: 'تعذر الحصول على الرابط من الخادم',
-            color: const Color(0xFFFF3B30),
-            icon: Icons.error_outline,
-          );
-        }
-      } else {
-        LoadingDialog.hide();
-        await showStatusDialog(
-          title: 'فشل الرفع',
-          message: res['message']?.toString().isNotEmpty == true
-              ? res['message'] as String
-              : 'يرجى المحاولة لاحقاً',
-          color: const Color(0xFFFF3B30),
-          icon: Icons.error_outline,
-        );
-      }
-    } catch (_) {
-      LoadingDialog.hide();
-      await showStatusDialog(
-        title: 'خطأ',
-        message: 'حدث خطأ أثناء رفع الصورة',
-        color: const Color(0xFFFF3B30),
-        icon: Icons.error_outline,
-      );
-    }
-  }
-
   ImageProvider _imageProvider(String path) {
     final p = path.trim();
     // Network URL
@@ -2531,218 +2121,6 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
           ],
         ),
       ],
-    );
-  }
-
-  // Sequence manage tile
-  Widget _sequenceManageTile() {
-    final controller = Get.find<DoctorProfileController>();
-    return Obx(
-      () => Column(
-        children: [
-          InkWell(
-            onTap: controller.toggleSequenceExpansion,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: MyText(
-                      'تسلسل المواعيد',
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                      textAlign: TextAlign.right,
-                    ),
-                  ),
-                  SizedBox(width: 8.w),
-                  AnimatedRotation(
-                    turns: controller.isSequenceExpanded.value ? 0.5 : 0.0,
-                    duration: const Duration(milliseconds: 200),
-                    child: const Icon(
-                      Icons.expand_more,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 250),
-            crossFadeState: controller.isSequenceExpanded.value
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            firstChild: const SizedBox.shrink(),
-            secondChild: Padding(
-              padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
-              child: _sequenceContent(controller),
-            ),
-          ),
-          Divider(color: AppColors.divider, height: 1),
-        ],
-      ),
-    );
-  }
-
-  Widget _sequenceContent(DoctorProfileController controller) {
-    Color statusColor(String status) {
-      switch (status) {
-        case 'completed':
-          return const Color(0xFF2ECC71);
-        case 'pending':
-          return const Color(0xFFFFA000);
-        case 'cancelled':
-          return const Color(0xFFFF3B30);
-        default:
-          return AppColors.textSecondary;
-      }
-    }
-
-    String statusLabel(String s) {
-      switch (s) {
-        case 'completed':
-          return 'مكتمل';
-        case 'pending':
-          return 'قيد الانتظار';
-        case 'cancelled':
-          return 'ملغي';
-        default:
-          return s;
-      }
-    }
-
-    Widget dot({Color color = AppColors.textSecondary}) => Container(
-      width: 8,
-      height: 8,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    );
-
-    return Obx(
-      () => Column(
-        children: [
-          for (int i = 0; i < controller.sequenceAppointments.length; i++) ...[
-            _sequenceItem(
-              patient: controller.sequenceAppointments[i]['patient'] as String,
-              order: controller.sequenceAppointments[i]['order'] as int,
-              time: controller.sequenceAppointments[i]['time'] as String,
-              status: controller.sequenceAppointments[i]['status'] as String,
-              statusColor: statusColor,
-              statusLabel: statusLabel,
-              dot: dot,
-              onTap: () {
-                final s =
-                    controller.sequenceAppointments[i]['status'] as String;
-                Color sColor = statusColor(s);
-                String sText = statusLabel(s);
-                Get.to(
-                  () => AppointmentDetailsPage(
-                    details: {
-                      'patient': controller.sequenceAppointments[i]['patient'],
-                      'order': controller.sequenceAppointments[i]['order'],
-                      'time': controller.sequenceAppointments[i]['time'],
-                      'statusText': sText,
-                      'statusColor': sColor,
-                      'age': 22,
-                      'gender': 'أنثى',
-                      'phone': '0770 000 0000',
-                      'date': _formatDate(DateTime.now()),
-                      'price': '10,000 د.ع',
-                    },
-                  ),
-                );
-              },
-            ),
-            if (i != controller.sequenceAppointments.length - 1)
-              Divider(color: AppColors.divider, height: 1),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _sequenceItem({
-    required String patient,
-    required int order,
-    required String time,
-    required String status,
-    required Color Function(String) statusColor,
-    required String Function(String) statusLabel,
-    required Widget Function({Color color}) dot,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 14.h),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Row flipped: content on اليسار (Left), arrow on اليمين (Right), بدون صورة
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Main content (left)
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      MyText(
-                        patient,
-                        fontSize: 22.sp,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimary,
-                        textAlign: TextAlign.left,
-                      ),
-                      SizedBox(height: 8.h),
-                      // order • time • status
-                      Directionality(
-                        textDirection: TextDirection.rtl,
-                        child: Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 8.w,
-                          runSpacing: 6.h,
-                          children: [
-                            MyText(
-                              'التسلسل : $order',
-                              fontSize: 18.sp,
-                              color: AppColors.textSecondary,
-                            ),
-                            dot(
-                              color: AppColors.textSecondary.withValues(
-                                alpha: 0.6,
-                              ),
-                            ),
-                            MyText(
-                              time,
-                              fontSize: 18.sp,
-                              color: AppColors.textSecondary,
-                            ),
-                            dot(
-                              color: AppColors.textSecondary.withValues(
-                                alpha: 0.6,
-                              ),
-                            ),
-                            MyText(
-                              statusLabel(status),
-                              fontSize: 20.sp,
-                              fontWeight: FontWeight.w900,
-                              color: statusColor(status),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(width: 8.w),
-                // Right arrow
-                const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -3324,79 +2702,166 @@ class _DoctorProfileManagePageState extends State<DoctorProfileManagePage> {
     );
   }
 
+  Widget _cityDropdown() {
+    final manageController = Get.find<DoctorProfileManageController>();
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+      ),
+      child: Obx(
+        () => DropdownButtonFormField<String>(
+          value: manageController.selectedCity.value,
+          isExpanded: true,
+          decoration: InputDecoration(
+            hintText: 'اختر المحافظة',
+            hintStyle: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 16.sp,
+              fontFamily: 'Expo Arabic',
+            ),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 16.w,
+              vertical: 16.h,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16.r),
+              borderSide: BorderSide(color: AppColors.textLight, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16.r),
+              borderSide: BorderSide(color: AppColors.primary, width: 1),
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16.r),
+              borderSide: BorderSide(color: AppColors.textLight, width: 1),
+            ),
+          ),
+          items: manageController.allowedCities.map((city) {
+            return DropdownMenuItem<String>(
+              value: city,
+              child: Text(
+                city,
+                style: TextStyle(fontSize: 16.sp, fontFamily: 'Expo Arabic'),
+                textAlign: TextAlign.right,
+              ),
+            );
+          }).toList(),
+          onChanged: (value) {
+            manageController.selectedCity.value = value;
+            manageController.cityPersonalCtrl.text = value ?? '';
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _specializationDropdown() {
+    final manageController = Get.find<DoctorProfileManageController>();
     return Column(
       children: [
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20.r),
-            border: Border.all(color: AppColors.divider),
+            borderRadius: BorderRadius.circular(16.r),
           ),
-          child: DropdownButtonFormField<String>(
-            value: _selectedSpecializationId,
-            decoration: InputDecoration(
-              hintText: _loadingSpecializations
-                  ? 'جاري التحميل...'
-                  : _specializations.isEmpty
-                  ? 'لا توجد اختصاصات'
-                  : 'اختر الاختصاص',
-              hintStyle: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 16.sp,
-                fontFamily: 'Expo Arabic',
-              ),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 12.h),
-            ),
-            isExpanded: true,
-            items: _specializations.map((spec) {
-              return DropdownMenuItem<String>(
-                value: spec.id,
-                child: Text(
-                  spec.name,
-                  style: TextStyle(fontSize: 16.sp, fontFamily: 'Expo Arabic'),
-                  textAlign: TextAlign.right,
+          child: Obx(
+            () => DropdownButtonFormField<String>(
+              value: manageController.selectedSpecializationId.value,
+              decoration: InputDecoration(
+                hintText: manageController.loadingSpecializations.value
+                    ? 'جاري التحميل...'
+                    : manageController.specializations.isEmpty
+                    ? 'لا توجد اختصاصات'
+                    : 'اختر الاختصاص',
+                hintStyle: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 16.sp,
+                  fontFamily: 'Expo Arabic',
                 ),
-              );
-            }).toList(),
-            onChanged: _loadingSpecializations || _specializations.isEmpty
-                ? null
-                : (value) {
-                    setState(() {
-                      _selectedSpecializationId = value;
-                    });
-                  },
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 16.w,
+                  vertical: 16.h,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16.r),
+                  borderSide: BorderSide(color: AppColors.textLight, width: 1),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16.r),
+                  borderSide: BorderSide(color: AppColors.primary, width: 1),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16.r),
+                  borderSide: BorderSide(color: AppColors.textLight, width: 1),
+                ),
+              ),
+              isExpanded: true,
+              items: manageController.specializations.map((spec) {
+                return DropdownMenuItem<String>(
+                  value: spec.id,
+                  child: Text(
+                    spec.name,
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontFamily: 'Expo Arabic',
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                );
+              }).toList(),
+              onChanged:
+                  manageController.loadingSpecializations.value ||
+                      manageController.specializations.isEmpty
+                  ? null
+                  : (value) {
+                      manageController.selectedSpecializationId.value = value;
+                    },
+            ),
           ),
         ),
-        if (_specializations.isEmpty && !_loadingSpecializations) ...[
-          SizedBox(height: 8.h),
-          InkWell(
-            onTap: _fetchSpecializations,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8.r),
-                border: Border.all(color: AppColors.primary, width: 1),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.refresh, color: AppColors.primary, size: 16.sp),
-                  SizedBox(width: 4.w),
-                  MyText(
-                    'إعادة المحاولة',
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
+        Obx(() {
+          if (manageController.specializations.isEmpty &&
+              !manageController.loadingSpecializations.value) {
+            return Column(
+              children: [
+                SizedBox(height: 8.h),
+                InkWell(
+                  onTap: () => manageController.fetchSpecializations(),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 8.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8.r),
+                      border: Border.all(color: AppColors.primary, width: 1),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.refresh,
+                          color: AppColors.primary,
+                          size: 16.sp,
+                        ),
+                        SizedBox(width: 4.w),
+                        MyText(
+                          'إعادة المحاولة',
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
-          ),
-        ],
+                ),
+              ],
+            );
+          }
+          return const SizedBox.shrink();
+        }),
       ],
     );
   }

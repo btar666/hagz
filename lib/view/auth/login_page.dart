@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
+import '../../widget/back_button_widget.dart';
 import 'register_page.dart';
 import '../../controller/session_controller.dart';
 import '../../controller/auth_controller.dart';
@@ -26,23 +27,9 @@ class LoginPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SizedBox(height: 24.h),
-              Align(
+              const Align(
                 alignment: Alignment.centerLeft,
-                child: GestureDetector(
-                  onTap: () => Get.back(),
-                  child: Container(
-                    width: 48.h,
-                    height: 48.h,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back_ios_new,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+                child: BackButtonWidget(),
               ),
               SizedBox(height: 24.h),
               Container(
@@ -193,48 +180,56 @@ class LoginPage extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 20.h),
-              Center(
-                child: GestureDetector(
-                  onTap: () {
-                    final SessionController session =
-                        Get.find<SessionController>();
-                    if (session.role.value == 'delegate') {
-                      Get.to(
-                        () => const DelegateTermsPage(),
-                        binding: DelegateTermsBinding(),
-                      );
-                    } else {
-                      Get.to(
-                        () => const RegisterPage(),
-                        binding: RegisterBinding(),
-                      );
-                    }
-                  },
-                  child: RichText(
-                    text: TextSpan(
-                      style: TextStyle(
-                        fontFamily: 'Expo Arabic',
-                        fontSize: 16.sp,
+              // إخفاء "إنشاء الحساب" للسكرتير
+              Builder(
+                builder: (context) {
+                  final SessionController session =
+                      Get.find<SessionController>();
+                  if (session.role.value == 'secretary') {
+                    return const SizedBox.shrink();
+                  }
+                  return Center(
+                    child: GestureDetector(
+                      onTap: () {
+                        if (session.role.value == 'delegate') {
+                          Get.to(
+                            () => const DelegateTermsPage(),
+                            binding: DelegateTermsBinding(),
+                          );
+                        } else {
+                          Get.to(
+                            () => const RegisterPage(),
+                            binding: RegisterBinding(),
+                          );
+                        }
+                      },
+                      child: RichText(
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontFamily: 'Expo Arabic',
+                            fontSize: 16.sp,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: 'ليس لديك حساب؟ ',
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            TextSpan(
+                              text: 'أنشئ حسابك الآن',
+                              style: TextStyle(
+                                color: AppColors.secondary,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      children: [
-                        TextSpan(
-                          text: 'ليس لديك حساب؟ ',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        TextSpan(
-                          text: 'أنشئ حسابك الآن',
-                          style: TextStyle(
-                            color: AppColors.secondary,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
               SizedBox(height: 20.h),
             ],

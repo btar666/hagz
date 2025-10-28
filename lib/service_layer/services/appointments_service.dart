@@ -253,5 +253,16 @@ class AppointmentsService {
     print('🗑️ DELETE APPOINTMENT RESPONSE: $result');
     return result;
   }
-}
 
+  /// جلب رقم الموعد الحالي للطبيب
+  Future<Map<String, dynamic>> getCurrentAppointmentNumber({
+    required String doctorId,
+  }) async {
+    final url =
+        '${ApiConstants.doctorsWorkingHours}/$doctorId/current-appointment-number';
+    print('🔢 GET CURRENT APPOINTMENT NUMBER URL: $url');
+    final result = await _api.get(url);
+    print('🔢 GET CURRENT APPOINTMENT NUMBER RESPONSE: $result');
+    return result;
+  }
+}

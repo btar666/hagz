@@ -4,11 +4,13 @@ import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
 // import '../auth/login_page.dart';
 import '../../controller/session_controller.dart';
+import '../../controller/doctor_profile_manage_controller.dart';
 import 'doctor_profile_manage_page.dart';
 import 'working_hours_page.dart';
 import 'holidays_page.dart';
 import 'secretary_accounts_page.dart';
 import '../appointments/past_appointments_page.dart';
+import '../appointments/appointment_sequence_page.dart';
 import 'user_profile_edit_page.dart';
 import 'change_password_page.dart';
 import '../../bindings/change_password_binding.dart';
@@ -54,7 +56,7 @@ class SettingsPage extends StatelessWidget {
                   Get.to(
                     () => const DoctorProfileManagePage(),
                     binding: BindingsBuilder(() {
-                      // يمكن إضافة controller هنا إذا لزم الأمر
+                      Get.put(DoctorProfileManageController());
                     }),
                   );
                 },
@@ -99,6 +101,15 @@ class SettingsPage extends StatelessWidget {
                       // يمكن إضافة SecretaryAccountsController هنا إذا لزم الأمر
                     }),
                   );
+                },
+              ),
+              SizedBox(height: 16.h),
+              _buildSettingsItem(
+                icon: Icons.format_list_numbered_rounded,
+                title: 'تسلسل المواعيد',
+                color: AppColors.primary,
+                onTap: () {
+                  Get.to(() => const AppointmentSequencePage());
                 },
               ),
               SizedBox(height: 16.h),
@@ -314,7 +325,11 @@ class SettingsPage extends StatelessWidget {
             ),
 
             // Arrow
-            Icon(Icons.arrow_back_ios, color: AppColors.textLight, size: 16.sp),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: AppColors.textLight,
+              size: 16.sp,
+            ),
           ],
         ),
       ),

@@ -10,6 +10,7 @@ import '../../widget/loading_dialog.dart';
 import '../../widget/status_dialog.dart';
 import '../../widget/confirm_dialogs.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import '../../widget/back_button_widget.dart';
 
 class HolidaysPage extends StatelessWidget {
   HolidaysPage({super.key});
@@ -20,126 +21,156 @@ class HolidaysPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        elevation: 0,
-        title: MyText(
-          'إدارة العطل',
-          fontSize: 20.sp,
-          fontWeight: FontWeight.w900,
-          color: Colors.white,
-        ),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Get.back(),
-        ),
-      ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          // Skeleton while loading holidays
-          return SingleChildScrollView(
-            padding: EdgeInsets.all(16.w),
-            child: Skeletonizer(
-              enabled: true,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+              child: Row(
                 children: [
-                  _buildInfoCard(),
-                  SizedBox(height: 16.h),
-                  ElevatedButton.icon(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-                      padding: EdgeInsets.symmetric(vertical: 14.h),
-                      elevation: 0,
+                  SizedBox(width: 48.w),
+                  Expanded(
+                    child: Center(
+                      child: MyText(
+                        'إدارة العطل',
+                        fontSize: 22.sp,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                    icon: const Icon(Icons.add, color: Colors.white),
-                    label: MyText('إضافة عطلة جديدة', fontSize: 16.sp, fontWeight: FontWeight.w900, color: Colors.white),
                   ),
-                  SizedBox(height: 20.h),
-                  MyText('جميع العطل', fontSize: 18.sp, fontWeight: FontWeight.w900, color: AppColors.textPrimary, textAlign: TextAlign.right),
-                  SizedBox(height: 12.h),
-                  ...List.generate(3, (_) => _buildHolidayCard({
-                        'date': '',
-                        'reason': '',
-                        'isRecurring': false,
-                        'isFullDay': true,
-                        '_id': '',
-                      })),
+                  const BackButtonWidget(),
                 ],
               ),
             ),
-          );
-        }
+            // Body
+            Expanded(
+              child: Obx(() {
+                if (controller.isLoading.value) {
+                  // Skeleton while loading holidays
+                  return SingleChildScrollView(
+                    padding: EdgeInsets.all(16.w),
+                    child: Skeletonizer(
+                      enabled: true,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildInfoCard(),
+                          SizedBox(height: 16.h),
+                          ElevatedButton.icon(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16.r),
+                              ),
+                              padding: EdgeInsets.symmetric(vertical: 14.h),
+                              elevation: 0,
+                            ),
+                            icon: const Icon(Icons.add, color: Colors.white),
+                            label: MyText(
+                              'إضافة عطلة جديدة',
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 20.h),
+                          MyText(
+                            'جميع العطل',
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.textPrimary,
+                            textAlign: TextAlign.right,
+                          ),
+                          SizedBox(height: 12.h),
+                          ...List.generate(
+                            3,
+                            (_) => _buildHolidayCard({
+                              'date': '',
+                              'reason': '',
+                              'isRecurring': false,
+                              'isFullDay': true,
+                              '_id': '',
+                            }),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
 
-        return SingleChildScrollView(
-          padding: EdgeInsets.all(16.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // معلومات توضيحية
-              _buildInfoCard(),
-              SizedBox(height: 16.h),
+                return SingleChildScrollView(
+                  padding: EdgeInsets.all(16.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // معلومات توضيحية
+                      _buildInfoCard(),
+                      SizedBox(height: 16.h),
 
-              // زر إضافة عطلة
-              ElevatedButton.icon(
-                onPressed: () => _showAddHolidayDialog(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16.r),
+                      // زر إضافة عطلة
+                      ElevatedButton.icon(
+                        onPressed: () => _showAddHolidayDialog(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16.r),
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 14.h),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.add, color: Colors.white),
+                        label: MyText(
+                          'إضافة عطلة جديدة',
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: 20.h),
+
+                      // العطل القادمة
+                      if (controller.upcomingHolidays.isNotEmpty) ...[
+                        MyText(
+                          'العطل القادمة',
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary,
+                          textAlign: TextAlign.right,
+                        ),
+                        SizedBox(height: 12.h),
+                        ...controller.upcomingHolidays.map(
+                          (holiday) => _buildHolidayCard(holiday),
+                        ),
+                        SizedBox(height: 20.h),
+                      ],
+
+                      // جميع العطل
+                      MyText(
+                        'جميع العطل',
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textPrimary,
+                        textAlign: TextAlign.right,
+                      ),
+                      SizedBox(height: 12.h),
+
+                      if (controller.holidays.isEmpty)
+                        _buildEmptyState()
+                      else
+                        ...controller.holidays.map(
+                          (holiday) => _buildHolidayCard(holiday),
+                        ),
+                    ],
                   ),
-                  padding: EdgeInsets.symmetric(vertical: 14.h),
-                  elevation: 0,
-                ),
-                icon: const Icon(Icons.add, color: Colors.white),
-                label: MyText(
-                  'إضافة عطلة جديدة',
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                ),
-              ),
-              SizedBox(height: 20.h),
-
-              // العطل القادمة
-              if (controller.upcomingHolidays.isNotEmpty) ...[
-                MyText(
-                  'العطل القادمة',
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.textPrimary,
-                  textAlign: TextAlign.right,
-                ),
-                SizedBox(height: 12.h),
-                ...controller.upcomingHolidays.map(
-                  (holiday) => _buildHolidayCard(holiday),
-                ),
-                SizedBox(height: 20.h),
-              ],
-
-              // جميع العطل
-              MyText(
-                'جميع العطل',
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w900,
-                color: AppColors.textPrimary,
-                textAlign: TextAlign.right,
-              ),
-              SizedBox(height: 12.h),
-
-              if (controller.holidays.isEmpty)
-                _buildEmptyState()
-              else
-                ...controller.holidays.map(
-                  (holiday) => _buildHolidayCard(holiday),
-                ),
-            ],
-          ),
-        );
-      }),
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

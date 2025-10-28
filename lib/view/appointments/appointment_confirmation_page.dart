@@ -109,12 +109,15 @@ class _AppointmentConfirmationPageState
   bool _isLoadingPrice = true;
   int _queueNumber = 1; // تسلسل الموعد
   bool _isLoadingQueue = true;
+  int? _currentAppointmentNumber; // الموعد الحالي
+  bool _isLoadingCurrentAppointment = true;
 
   @override
   void initState() {
     super.initState();
     _loadPricing();
     _loadQueueNumber();
+    _loadCurrentAppointmentNumber();
   }
 
   Future<void> _loadPricing() async {
@@ -168,10 +171,16 @@ class _AppointmentConfirmationPageState
       // طباعة البيانات المجلوبة للتشخيص
       print('[QUEUE] Doctor appointments data: $appointments');
 
-      // العثور على أعلى تسلسل في مواعيد الطبيب في ذلك اليوم
+      // العثور على أعلى تسلسل في المواعيد المؤكدة فقط في ذلك اليوم
       int maxQueueNumber = 0;
       for (final appointment in appointments) {
         print('[QUEUE] Checking doctor appointment: $appointment');
+
+        // فلترة المواعيد المؤكدة فقط
+        final status = appointment['status'] as String?;
+        if (status != 'مؤكد' && status != 'confirmed') {
+          continue; // تخطي المواعيد التي ليست مؤكدة
+        }
 
         // البحث عن تسلسل الموعد في البيانات
         final queueNumber =
@@ -190,7 +199,7 @@ class _AppointmentConfirmationPageState
         }
       }
 
-      // تسلسل الموعد الجديد = أعلى تسلسل في مواعيد الطبيب + 1
+      // تسلسل الموعد الجديد = أعلى تسلسل في المواعيد المؤكدة + 1
       _queueNumber = maxQueueNumber + 1;
 
       print(
@@ -204,6 +213,52 @@ class _AppointmentConfirmationPageState
       _queueNumber = 1; // القيمة الافتراضية
     } finally {
       if (mounted) setState(() => _isLoadingQueue = false);
+    }
+  }
+
+  Future<void> _loadCurrentAppointmentNumber() async {
+    try {
+      final service = AppointmentsService();
+      final res = await service.getCurrentAppointmentNumber(
+        doctorId: widget.doctorId,
+      );
+
+      print('[CURRENT APPOINTMENT] Full response: $res');
+
+      if (res['ok'] == true) {
+        final dynamic responseData = res['data'];
+        if (responseData is Map<String, dynamic>) {
+          final dynamic innerData = responseData['data'];
+
+          print('[CURRENT APPOINTMENT] Inner data: $innerData');
+
+          if (innerData is Map<String, dynamic>) {
+            final num? currentNum =
+                innerData['currentAppointmentNumber'] as num?;
+
+            print('[CURRENT APPOINTMENT] Current number: $currentNum');
+
+            // الموعد الحالي + 1
+            if (mounted) {
+              setState(() {
+                _currentAppointmentNumber = (currentNum?.toInt() ?? 0) + 1;
+              });
+            }
+
+            print(
+              '[CURRENT APPOINTMENT] Updated value (current + 1): $_currentAppointmentNumber',
+            );
+          }
+        }
+      }
+    } catch (e) {
+      print('[CURRENT APPOINTMENT] Failed to load: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingCurrentAppointment = false;
+        });
+      }
     }
   }
 
@@ -468,20 +523,55 @@ class _AppointmentConfirmationPageState
       ),
       child: Column(
         children: [
-          MyText(
-            _isLoadingQueue ? '...' : '$_queueNumber',
-            fontSize: 47.sp,
-            fontWeight: FontWeight.w900,
-            color: Colors.black87,
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 10.h),
-          MyText(
-            'تسلسل الموعد',
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-            textAlign: TextAlign.center,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    MyText(
+                      _isLoadingQueue ? '...' : '$_queueNumber',
+                      fontSize: 47.sp,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.black87,
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 10.h),
+                    MyText(
+                      'تسلسل الموعد',
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+              Container(width: 1, height: 60, color: Colors.grey[300]),
+              Expanded(
+                child: Column(
+                  children: [
+                    MyText(
+                      _isLoadingCurrentAppointment
+                          ? '...'
+                          : (_currentAppointmentNumber?.toString() ?? '-'),
+                      fontSize: 47.sp,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF7FC8D6),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 10.h),
+                    MyText(
+                      'الموعد الحالي',
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF7FC8D6),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
