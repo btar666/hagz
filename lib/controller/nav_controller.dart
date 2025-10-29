@@ -19,7 +19,11 @@ class NavItem {
   final String label;
   final String iconAsset;
   final Widget Function() builder;
-  NavItem({required this.label, required this.iconAsset, required this.builder});
+  NavItem({
+    required this.label,
+    required this.iconAsset,
+    required this.builder,
+  });
 }
 
 class NavController extends GetxController {

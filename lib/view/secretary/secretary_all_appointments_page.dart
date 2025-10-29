@@ -315,17 +315,15 @@ class _SecretaryAllAppointmentsPageState
       case 'مكتمل':
       case 'completed':
         return const Color(0xFF2ECC71);
-      case 'قادم':
-        return const Color(0xFF18A2AE);
-      case 'قيد الانتظار':
-      case 'pending':
-        return const Color(0xFFFFA000);
       case 'ملغي':
       case 'cancelled':
         return const Color(0xFFFF5B5E);
       case 'مؤكد':
       case 'confirmed':
         return const Color(0xFF18A2AE);
+      case 'لم يحضر':
+      case 'no-show':
+        return const Color(0xFFE91E63);
       default:
         return AppColors.textSecondary;
     }
@@ -387,7 +385,18 @@ class _SecretaryAllAppointmentsPageState
     return InkWell(
       onTap: () {
         if (appointment != null) {
+          print(
+            '🟣 ========== Opening Appointment Details (All Appointments) ==========',
+          );
+          print('🟣 Full appointment data: $appointment');
+          print('🟣 appointmentId from map: ${appointment['appointmentId']}');
+
           final price = '${appointment['amount'] ?? 0} د.ع';
+          final appointmentId = appointment['appointmentId'] as String?;
+
+          print('🟣 appointmentId to pass: $appointmentId');
+          print('🟣 =========================================================');
+
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => AppointmentDetailsPage(
@@ -400,6 +409,7 @@ class _SecretaryAllAppointmentsPageState
                 price: price,
                 paymentStatus: 'تم الدفع',
                 seq: int.tryParse(seq.split(' ').first) ?? 1,
+                appointmentId: appointmentId,
               ),
             ),
           );
@@ -522,13 +532,17 @@ class _SecretaryAllAppointmentsPageState
   String _getStatusText(String status) {
     switch (status) {
       case 'completed':
+      case 'مكتمل':
         return 'مكتمل';
-      case 'pending':
-        return 'قيد الانتظار';
       case 'cancelled':
+      case 'ملغي':
         return 'ملغي';
       case 'confirmed':
+      case 'مؤكد':
         return 'مؤكد';
+      case 'no-show':
+      case 'لم يحضر':
+        return 'لم يحضر';
       default:
         return status;
     }

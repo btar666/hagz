@@ -1,52 +1,153 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import '../../controller/delegate_statistics_controller.dart';
+import 'package:intl/intl.dart';
 
 class DelegateStatisticsPage extends StatelessWidget {
   const DelegateStatisticsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.put(DelegateStatisticsController());
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(16.w),
-          child: Column(
-            children: [
-              Align(
-                alignment: Alignment.centerRight,
-                child: MyText(
-                  'الاحصائيات',
-                  fontSize: 26.sp,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              SizedBox(height: 12.h),
+        child: RefreshIndicator(
+          onRefresh: controller.refresh,
+          color: AppColors.primary,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(16.w),
+            child: Obx(() {
+              if (controller.isLoading.value) {
+                return Skeletonizer(
+                  enabled: true,
+                  child: Column(
+                    children: [
+                      _scoreCard(controller),
+                      SizedBox(height: 16.h),
+                      _donutSection(title: 'يومياً', dateText: '...', data: []),
+                      SizedBox(height: 12.h),
+                      _donutSection(
+                        title: 'اسبوعياً',
+                        dateText: '...',
+                        data: [],
+                      ),
+                      SizedBox(height: 12.h),
+                      _donutSection(title: 'شهرياً', dateText: '...', data: []),
+                      SizedBox(height: 12.h),
+                      _barSection(title: 'سنوياً', dateText: '...', data: []),
+                    ],
+                  ),
+                );
+              }
 
-              _scoreCard(),
+              final now = DateTime.now();
+              return Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: MyText(
+                      'الاحصائيات',
+                      fontSize: 26.sp,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
 
-              SizedBox(height: 16.h),
-              _donutSection(title: 'يومياً', dateText: '2026 , 6 , 2'),
-              SizedBox(height: 12.h),
-              _donutSection(title: 'اسبوعياً', dateText: '2025 , 8'),
-              SizedBox(height: 12.h),
-              _donutSection(title: 'شهرياً', dateText: '2025 , 8'),
-              SizedBox(height: 12.h),
-              _barSection(title: 'سنوياً', dateText: '2026'),
-            ],
+                  _scoreCard(controller),
+
+                  SizedBox(height: 16.h),
+                  _donutSection(
+                    title: 'يومياً',
+                    dateText: DateFormat('yyyy , M , d').format(now),
+                    data: _extractDonutData(controller.stats['daily']),
+                  ),
+                  SizedBox(height: 12.h),
+                  _donutSection(
+                    title: 'اسبوعياً',
+                    dateText: DateFormat('yyyy , M').format(now),
+                    data: _extractDonutData(controller.stats['weekly']),
+                  ),
+                  SizedBox(height: 12.h),
+                  _donutSection(
+                    title: 'شهرياً',
+                    dateText: DateFormat('yyyy , M').format(now),
+                    data: _extractDonutData(controller.stats['monthly']),
+                  ),
+                  SizedBox(height: 12.h),
+                  _barSection(
+                    title: 'سنوياً',
+                    dateText: DateFormat('yyyy').format(now),
+                    data: _extractBarData(controller.stats['yearly']),
+                  ),
+                ],
+              );
+            }),
           ),
         ),
       ),
     );
   }
+
+  List<_DonutData> _extractDonutData(Map<String, dynamic>? periodData) {
+    if (periodData == null) {
+      return const [
+        _DonutData('مشترك', 0, Color(0xFF69C9D0)),
+        _DonutData('غير مشترك', 0, Color(0xFFF64535)),
+        _DonutData('اشتراك بعد رفض', 0, Color(0xFFFFE02E)),
+        _DonutData('اشتراك ملغي', 0, Color(0xFF616E7C)),
+      ];
+    }
+
+    return [
+      _DonutData(
+        'مشترك',
+        periodData['subscribed'] as int? ?? 0,
+        const Color(0xFF69C9D0),
+      ),
+      _DonutData(
+        'غير مشترك',
+        periodData['notSubscribed'] as int? ?? 0,
+        const Color(0xFFF64535),
+      ),
+      _DonutData(
+        'اشتراك بعد رفض',
+        periodData['subscribedAfterRejection'] as int? ?? 0,
+        const Color(0xFFFFE02E),
+      ),
+      _DonutData(
+        'اشتراك ملغي',
+        periodData['cancelledSubscription'] as int? ?? 0,
+        const Color(0xFF616E7C),
+      ),
+    ];
+  }
+
+  List<_BarData> _extractBarData(Map<String, dynamic>? periodData) {
+    // للرسم البياني السنوي، يمكن تقسيم البيانات على 12 شهر
+    // حالياً نستخدم نفس البيانات لكل شهر كمثال
+    if (periodData == null) {
+      return List.generate(12, (i) => _BarData('${12 - i}', 0));
+    }
+
+    final subscribed = periodData['subscribed'] as int? ?? 0;
+
+    return List.generate(12, (i) {
+      // توزيع القيم على الأشهر بشكل متساوٍ كمثال
+      return _BarData('${12 - i}', (i * 7 + 10) % (subscribed + 1));
+    });
+  }
 }
 
-Widget _scoreCard() {
+Widget _scoreCard(DelegateStatisticsController controller) {
   return Container(
     width: double.infinity,
     padding: EdgeInsets.all(16.w),
@@ -68,11 +169,13 @@ Widget _scoreCard() {
         Row(
           children: [
             Expanded(
-              child: MyText(
-                'النقاط الحالية : 200 نقطة',
-                fontSize: 22.sp,
-                fontWeight: FontWeight.w900,
-                color: AppColors.textPrimary,
+              child: Obx(
+                () => MyText(
+                  'النقاط الحالية : ${controller.currentPoints.value} نقطة',
+                  fontSize: 22.sp,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
             const Icon(Icons.auto_awesome, color: AppColors.primary),
@@ -81,16 +184,34 @@ Widget _scoreCard() {
         SizedBox(height: 18.h),
 
         // Stars row
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _starItem(state: _StarState.empty, label: '0'),
-            _starItem(state: _StarState.empty, label: '0'),
-            _starItem(state: _StarState.half, label: 'متبقي 20'),
-            _starItem(state: _StarState.full, label: 'مكتمل'),
-            _starItem(state: _StarState.full, label: 'مكتمل'),
-          ],
-        ),
+        Obx(() {
+          final points = controller.currentPoints.value;
+          // كل نجمة = 50 نقطة
+          final fullStars = (points / 50).floor();
+          final remainder = points % 50;
+          final halfStarIndex = remainder > 0 ? fullStars : -1;
+
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(5, (index) {
+              _StarState state;
+              String label;
+
+              if (index < fullStars) {
+                state = _StarState.full;
+                label = 'مكتمل';
+              } else if (index == halfStarIndex) {
+                state = _StarState.half;
+                label = 'متبقي ${50 - remainder}';
+              } else {
+                state = _StarState.empty;
+                label = '0';
+              }
+
+              return _starItem(state: state, label: label);
+            }),
+          );
+        }),
 
         SizedBox(height: 18.h),
 
@@ -222,13 +343,12 @@ Widget _statCard({
   );
 }
 
-Widget _donutSection({required String title, required String dateText}) {
-  final List<_DonutData> data = const [
-    _DonutData('مشترك', 26, Color(0xFF69C9D0)),
-    _DonutData('غير مشترك', 6, Color(0xFFF64535)),
-    _DonutData('اشتراك بعد رفض', 22, Color(0xFFFFE02E)),
-    _DonutData('اشتراك ملغي', 10, Color(0xFF616E7C)),
-  ];
+Widget _donutSection({
+  required String title,
+  required String dateText,
+  required List<_DonutData> data,
+}) {
+  final total = data.fold<int>(0, (sum, item) => sum + (item.value as int));
   return _statCard(
     title: title,
     dateText: dateText,
@@ -254,7 +374,7 @@ Widget _donutSection({required String title, required String dateText}) {
             ),
             alignment: Alignment.center,
             child: MyText(
-              '64\nزيارة',
+              '$total\nزيارة',
               fontSize: 18.sp,
               fontWeight: FontWeight.w900,
               color: AppColors.textPrimary,
@@ -267,11 +387,13 @@ Widget _donutSection({required String title, required String dateText}) {
   );
 }
 
-Widget _barSection({required String title, required String dateText}) {
-  final List<_BarData> completed = List.generate(
-    12,
-    (i) => _BarData('${12 - i}', (i * 7 + 10) % 90 + 5),
-  );
+Widget _barSection({
+  required String title,
+  required String dateText,
+  required List<_BarData> data,
+}) {
+  // تقسيم البيانات إلى مشترك وغير مشترك (مثال)
+  final List<_BarData> completed = data;
   final List<_BarData> cancelled = List.generate(
     12,
     (i) => _BarData('${12 - i}', (i * 3 + 4) % 25),

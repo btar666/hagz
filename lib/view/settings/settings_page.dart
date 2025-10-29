@@ -17,6 +17,7 @@ import '../../bindings/change_password_binding.dart';
 import '../onboarding/user_type_selection_page.dart';
 import '../../widget/confirm_dialogs.dart';
 import '../secretary/secretary_profile_edit_page.dart';
+import '../delegate/delegate_profile_edit_page.dart';
 import '../../widget/animated_pressable.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -28,6 +29,7 @@ class SettingsPage extends StatelessWidget {
     final bool isDoctor = session.role.value == 'doctor';
     final bool isUser = session.role.value == 'user';
     final bool isSecretary = session.role.value == 'secretary';
+    final bool isDelegate = session.role.value == 'delegate';
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
       appBar: AppBar(
@@ -182,6 +184,35 @@ class SettingsPage extends StatelessWidget {
                     () => const SecretaryProfileEditPage(),
                     binding: BindingsBuilder(() {
                       // يمكن إضافة SecretaryProfileEditController هنا إذا لزم الأمر
+                    }),
+                  );
+                },
+              ),
+              SizedBox(height: 16.h),
+              _buildSettingsItem(
+                icon: Icons.lock,
+                title: 'تغيير كلمة السر',
+                color: AppColors.secondary,
+                onTap: () {
+                  Get.to(
+                    () => const ChangePasswordPage(),
+                    binding: ChangePasswordBinding(),
+                  );
+                },
+              ),
+              SizedBox(height: 16.h),
+            ],
+
+            if (isDelegate) ...[
+              _buildSettingsItem(
+                icon: Icons.person,
+                title: 'تعديل الملف الشخصي',
+                color: AppColors.secondary,
+                onTap: () {
+                  Get.to(
+                    () => const DelegateProfileEditPage(),
+                    binding: BindingsBuilder(() {
+                      // يمكن إضافة DelegateProfileEditController هنا إذا لزم الأمر
                     }),
                   );
                 },

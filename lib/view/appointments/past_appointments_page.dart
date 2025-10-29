@@ -16,10 +16,12 @@ class PastAppointmentsPage extends StatelessWidget {
     switch (s) {
       case 'completed':
         return const Color(0xFF2ECC71);
-      case 'pending':
-        return const Color(0xFFFFA000);
       case 'cancelled':
         return const Color(0xFFFF3B30);
+      case 'confirmed':
+        return const Color(0xFF18A2AE);
+      case 'no-show':
+        return const Color(0xFFE91E63);
       default:
         return AppColors.textSecondary;
     }
@@ -28,13 +30,17 @@ class PastAppointmentsPage extends StatelessWidget {
   String statusLabel(String s) {
     switch (s) {
       case 'completed':
+      case 'مكتمل':
         return 'مكتمل';
-      case 'pending':
-        return 'قيد الانتظار';
       case 'cancelled':
+      case 'ملغي':
         return 'ملغي';
       case 'confirmed':
+      case 'مؤكد':
         return 'مؤكد';
+      case 'لم يحضر':
+      case 'no-show':
+        return 'لم يحضر';
       default:
         return s;
     }

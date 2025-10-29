@@ -10,25 +10,18 @@ import 'appointment_details_page.dart';
 import '../appointments/patient_registration_page.dart';
 import '../../controller/session_controller.dart';
 import '../../controller/secretary_appointments_controller.dart';
+import '../../service_layer/services/user_service.dart';
+import '../../controller/secretary_home_controller.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
-class SecretaryHomePage extends StatefulWidget {
+class SecretaryHomePage extends StatelessWidget {
   const SecretaryHomePage({super.key});
 
   @override
-  State<SecretaryHomePage> createState() => _SecretaryHomePageState();
-}
-
-class _SecretaryHomePageState extends State<SecretaryHomePage> {
-  bool _openNotifications = false;
-  final List<String> _activeStatuses = [];
-  final SessionController _sessionController = Get.find<SessionController>();
-  final SecretaryAppointmentsController _appointmentsController = Get.put(
-    SecretaryAppointmentsController(),
-  );
-
-  @override
   Widget build(BuildContext context) {
+    final homeController = Get.put(SecretaryHomeController());
+    final sessionController = Get.find<SessionController>();
+    final appointmentsController = Get.put(SecretaryAppointmentsController());
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
       body: SafeArea(
@@ -41,15 +34,36 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   GestureDetector(
-                    onTap: () {
-                      final user = _sessionController.currentUser.value;
+                    onTap: () async {
+                      final user = sessionController.currentUser.value;
 
                       if (user?.associatedDoctor.isNotEmpty == true) {
+                        // Fetch doctor to get specialization id
+                        String specializationId = '';
+                        try {
+                          final res = await UserService().getUserById(
+                            user!.associatedDoctor,
+                          );
+                          final data = res['data'];
+                          final inner = (data is Map<String, dynamic>)
+                              ? (data['data'] ?? data)
+                              : null;
+                          if (inner is Map<String, dynamic>) {
+                            final spec = inner['specialization'];
+                            if (spec is String) {
+                              specializationId = spec;
+                            } else if (spec is Map<String, dynamic>) {
+                              specializationId =
+                                  (spec['_id']?.toString() ?? '');
+                            }
+                          }
+                        } catch (_) {}
+
                         Get.to(
                           () => PatientRegistrationPage(
                             doctorId: user!.associatedDoctor,
                             doctorName: user.name,
-                            doctorSpecialty: 'طبيب', // يمكن تحسين هذا لاحقاً
+                            doctorSpecialty: specializationId,
                           ),
                         );
                       } else {
@@ -98,43 +112,96 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
               ),
               SizedBox(height: 16.h),
 
-              // Sequence Card
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 36.h),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.shadow,
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    MyText(
-                      '22',
-                      fontSize: 72.sp,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.textPrimary,
-                    ),
-                    SizedBox(height: 8.h),
-                    MyText(
-                      'تسلسل الموعد',
-                      fontSize: 22.sp,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
-                  ],
-                ),
-              ),
+              // Sequence Card with Current Number
+              Obx(() {
+                final currentNumber =
+                    appointmentsController.currentAppointmentNumber.value;
+                final todayAppointments = _filteredAppointments(
+                  appointmentsController,
+                  homeController,
+                );
+
+                // العدد الإجمالي لمواعيد اليوم (كما كان سابقاً)
+                final int nextSequence = todayAppointments.isNotEmpty
+                    ? todayAppointments.length
+                    : 0;
+
+                return Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(
+                    vertical: 28.h,
+                    horizontal: 16.w,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.shadow,
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // Current Appointment Number
+                      Expanded(
+                        child: Column(
+                          children: [
+                            MyText(
+                              currentNumber?.toString() ?? '-',
+                              fontSize: 56.sp,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF7CC7D0),
+                            ),
+                            SizedBox(height: 4.h),
+                            MyText(
+                              'الموعد الحالي',
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF7CC7D0),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Divider
+                      Container(
+                        height: 80.h,
+                        width: 2.w,
+                        color: AppColors.divider,
+                      ),
+
+                      // Next Appointment Sequence
+                      Expanded(
+                        child: Column(
+                          children: [
+                            MyText(
+                              nextSequence.toString(),
+                              fontSize: 56.sp,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.textPrimary,
+                            ),
+                            SizedBox(height: 4.h),
+                            MyText(
+                              'عدد المواعيد',
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textSecondary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
               SizedBox(height: 16.h),
 
               // Daily notifications expandable
-              _buildDailyNotifications(),
+              _buildDailyNotifications(homeController),
 
               SizedBox(height: 16.h),
 
@@ -153,7 +220,8 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
                           ),
                         ),
                         TextSpan(
-                          text: '(${_filteredAppointments().length} مواعيد)',
+                          text:
+                              '(${_filteredAppointments(appointmentsController, homeController).length} مواعيد)',
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.w700,
@@ -171,11 +239,7 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
                         builder: (_) => const AppointmentStatusFilterDialog(),
                       );
                       if (picked != null) {
-                        setState(() {
-                          _activeStatuses
-                            ..clear()
-                            ..addAll(picked);
-                        });
+                        homeController.setActiveStatuses(picked);
                       }
                     },
                     child: const Icon(
@@ -187,27 +251,31 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
               ),
               SizedBox(height: 8.h),
 
-              if (_activeStatuses.isNotEmpty)
-                Align(
+              Obx(() {
+                if (homeController.activeStatuses.isEmpty)
+                  return const SizedBox.shrink();
+                return Align(
                   alignment: Alignment.centerRight,
                   child: Wrap(
                     spacing: 8.w,
                     runSpacing: 6.h,
-                    children: _activeStatuses
+                    children: homeController.activeStatuses
                         .map(
                           (s) => _filterTag(_statusDisplay(s), () {
-                            setState(() {
-                              _activeStatuses.remove(s);
-                            });
+                            homeController.activeStatuses.remove(s);
                           }),
                         )
                         .toList(),
                   ),
-                ),
+                );
+              }),
 
               Obx(() {
-                final isLoading = _appointmentsController.isLoading.value;
-                final appointments = _filteredAppointments();
+                final isLoading = appointmentsController.isLoading.value;
+                final appointments = _filteredAppointments(
+                  appointmentsController,
+                  homeController,
+                );
 
                 if (isLoading) {
                   return Skeletonizer(
@@ -216,6 +284,7 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
                       children: List.generate(
                         3,
                         (index) => _appointmentItem(
+                          context: context,
                           name: 'اسم المريض',
                           status: 'مكتمل',
                           time: '6:00 صباحاً',
@@ -247,6 +316,7 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
                       .entries
                       .map(
                         (e) => _appointmentItem(
+                          context: context,
                           name: e.value['title'] ?? 'مريض',
                           status: _getStatusText(e.value['status']),
                           time: e.value['time'] ?? '',
@@ -266,7 +336,7 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
     );
   }
 
-  Widget _buildDailyNotifications() {
+  Widget _buildDailyNotifications(SecretaryHomeController homeCtrl) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -282,8 +352,7 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
       child: Column(
         children: [
           InkWell(
-            onTap: () =>
-                setState(() => _openNotifications = !_openNotifications),
+            onTap: () => homeCtrl.toggleNotifications(),
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
               child: Row(
@@ -302,44 +371,55 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
                     color: const Color(0xFFFF5B5E),
                   ),
                   SizedBox(width: 10.w),
-                  Icon(
-                    _openNotifications ? Icons.expand_less : Icons.expand_more,
-                    color: AppColors.textSecondary,
+                  Obx(
+                    () => Icon(
+                      homeCtrl.openNotifications.value
+                          ? Icons.expand_less
+                          : Icons.expand_more,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-          if (_openNotifications) const Divider(height: 1),
-          if (_openNotifications)
-            Padding(
-              padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 16.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  _notifRow(
-                    time: 'منذ 10 دقائق',
-                    title: 'تم حجز موعد جديد !',
-                    body: 'اضغط للحصول على المعلومات .',
-                    isAlert: true,
-                  ),
-                  Divider(color: AppColors.divider, height: 24.h),
-                  _notifRow(
-                    time: 'منذ 10 دقائق',
-                    title: 'تم حجز موعد جديد !',
-                    body: 'اضغط للحصول على المعلومات .',
-                    isAlert: true,
-                  ),
-                  Divider(color: AppColors.divider, height: 24.h),
-                  _notifRow(
-                    time: 'منذ 10 دقائق',
-                    title: 'تحديث جديد ينتظرك !',
-                    body: 'تم اضافة ميزات جديدة , حدث التطبيق و استمتع .',
-                    isAlert: false,
-                  ),
-                ],
-              ),
-            ),
+          Obx(
+            () => homeCtrl.openNotifications.value
+                ? const Divider(height: 1)
+                : const SizedBox.shrink(),
+          ),
+          Obx(
+            () => homeCtrl.openNotifications.value
+                ? Padding(
+                    padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 16.h),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        _notifRow(
+                          time: 'منذ 10 دقائق',
+                          title: 'تم حجز موعد جديد !',
+                          body: 'اضغط للحصول على المعلومات .',
+                          isAlert: true,
+                        ),
+                        Divider(color: AppColors.divider, height: 24.h),
+                        _notifRow(
+                          time: 'منذ 10 دقائق',
+                          title: 'تم حجز موعد جديد !',
+                          body: 'اضغط للحصول على المعلومات .',
+                          isAlert: true,
+                        ),
+                        Divider(color: AppColors.divider, height: 24.h),
+                        _notifRow(
+                          time: 'منذ 10 دقائق',
+                          title: 'تحديث جديد ينتظرك !',
+                          body: 'تم اضافة ميزات جديدة , حدث التطبيق و استمتع .',
+                          isAlert: false,
+                        ),
+                      ],
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
         ],
       ),
     );
@@ -396,8 +476,11 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
     );
   }
 
-  List<Map<String, dynamic>> _filteredAppointments() {
-    final appointments = _appointmentsController.appointments;
+  List<Map<String, dynamic>> _filteredAppointments(
+    SecretaryAppointmentsController appointmentsCtrl,
+    SecretaryHomeController homeCtrl,
+  ) {
+    final appointments = appointmentsCtrl.appointments;
 
     // فلترة المواعيد لليوم الحالي فقط
     final today = DateTime.now();
@@ -409,11 +492,12 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
     }).toList();
 
     // تطبيق فلتر الحالة إذا كان موجود
-    if (_activeStatuses.isEmpty) return todayAppointments;
+    if (homeCtrl.activeStatuses.isEmpty) return todayAppointments;
     return todayAppointments
         .where(
-          (a) =>
-              _activeStatuses.contains(_getStatusText(a['status'] as String)),
+          (a) => homeCtrl.activeStatuses.contains(
+            _getStatusText(a['status'] as String),
+          ),
         )
         .toList();
   }
@@ -421,13 +505,17 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
   String _getStatusText(String status) {
     switch (status) {
       case 'completed':
+      case 'مكتمل':
         return 'مكتمل';
-      case 'pending':
-        return 'قيد الانتظار';
       case 'cancelled':
+      case 'ملغي':
         return 'ملغي';
       case 'confirmed':
+      case 'مؤكد':
         return 'مؤكد';
+      case 'no-show':
+      case 'لم يحضر':
+        return 'لم يحضر';
       default:
         return status;
     }
@@ -467,12 +555,12 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
     switch (status) {
       case 'مكتمل':
         return 'المواعيد المكتملة';
-      case 'قادم':
-        return 'المواعيد القادمة';
-      case 'قيد الانتظار':
-        return 'المواعيد قيد الانتظار';
+      case 'مؤكد':
+        return 'المواعيد المؤكدة';
       case 'ملغي':
         return 'المواعيد الملغية';
+      case 'لم يحضر':
+        return 'المواعيد (لم يحضر)';
       default:
         return status;
     }
@@ -482,18 +570,19 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
     switch (status) {
       case 'مكتمل':
         return const Color(0xFF2ECC71);
-      case 'قادم':
+      case 'مؤكد':
         return const Color(0xFF18A2AE);
-      case 'قيد الانتظار':
-        return const Color(0xFFFFA000);
       case 'ملغي':
         return const Color(0xFFFF5B5E);
+      case 'لم يحضر':
+        return const Color(0xFFE91E63);
       default:
         return AppColors.textSecondary;
     }
   }
 
   Widget _appointmentItem({
+    required BuildContext context,
     required String name,
     required String status,
     required String time,
@@ -504,9 +593,17 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
     return InkWell(
       onTap: () {
         if (appointment != null) {
+          print('🟢 ========== Opening Appointment Details ==========');
+          print('🟢 Full appointment data: $appointment');
+          print('🟢 appointmentId from map: ${appointment['appointmentId']}');
+
           final date = appointment['date'] as DateTime;
           final formattedDate = '${date.year} / ${date.month} / ${date.day}';
           final price = '${appointment['amount'] ?? 0} د.ع';
+          final appointmentId = appointment['appointmentId'] as String?;
+
+          print('🟢 appointmentId to pass: $appointmentId');
+          print('🟢 ========================================');
 
           Navigator.of(context).push(
             MaterialPageRoute(
@@ -520,6 +617,7 @@ class _SecretaryHomePageState extends State<SecretaryHomePage> {
                 price: price,
                 paymentStatus: 'تم الدفع',
                 seq: seq,
+                appointmentId: appointmentId,
               ),
             ),
           );

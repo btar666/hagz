@@ -33,28 +33,91 @@ class HospitalDetailsPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Header
-            _buildHeader(),
+      appBar: _buildAppBar(),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              SizedBox(height: 20.h),
 
-            SizedBox(height: 20.h),
-
-            // Main content section
-            Obx(() {
-              if (controller.isLoading.value ||
-                  controller.hospital.value == null) {
-                // Skeleton layout mimicking the card structure
-                return Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.w),
-                  child: Skeletonizer(
-                    enabled: true,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Container(
+              // Main content section
+              Obx(() {
+                if (controller.isLoading.value ||
+                    controller.hospital.value == null) {
+                  // Skeleton layout mimicking the card structure
+                  return Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20.w),
+                    child: Skeletonizer(
+                      enabled: true,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20.r),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.all(20.w),
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      width: 120.w,
+                                      height: 120.w,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(
+                                          15.r,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(height: 20.h),
+                                    MyText(' ', fontSize: 18.sp),
+                                    SizedBox(height: 12.h),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.location_on, size: 20.r),
+                                        SizedBox(width: 8.w),
+                                        Expanded(
+                                          child: MyText(' ', fontSize: 12.sp),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 12.h),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(Icons.phone, size: 18.r),
+                                          ],
+                                        ),
+                                        Row(
+                                          children: [
+                                            Icon(Icons.phone, size: 18.r),
+                                            SizedBox(width: 5.w),
+                                            MyText(' ', fontSize: 14.sp),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 20.w),
+                          Container(
+                            width: 70.w,
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(20.r),
@@ -66,145 +129,84 @@ class HospitalDetailsPage extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            child: Padding(
-                              padding: EdgeInsets.all(20.w),
-                              child: Column(
-                                children: [
-                                  Container(
-                                    width: 120.w,
-                                    height: 120.w,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(15.r),
-                                    ),
-                                  ),
-                                  SizedBox(height: 20.h),
-                                  MyText(' ', fontSize: 18.sp),
-                                  SizedBox(height: 12.h),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.location_on, size: 20.r),
-                                      SizedBox(width: 8.w),
-                                      Expanded(
-                                        child: MyText(' ', fontSize: 12.sp),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 12.h),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Icon(Icons.phone, size: 18.r),
-                                        ],
-                                      ),
-                                      Row(
-                                        children: [
-                                          Icon(Icons.phone, size: 18.r),
-                                          SizedBox(width: 5.w),
-                                          MyText(' ', fontSize: 14.sp),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
+                            height: 220.h,
                           ),
-                        ),
-                        SizedBox(width: 20.w),
-                        Container(
-                          width: 70.w,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20.r),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          height: 220.h,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              }
-              return _buildMainContent(controller);
-            }),
+                  );
+                }
+                return _buildMainContent(controller);
+              }),
 
-            SizedBox(height: 20.h),
+              SizedBox(height: 20.h),
 
-            // Ride request section
-            _buildRideRequestSection(controller),
+              // Ride request section
+              _buildRideRequestSection(controller),
 
-            SizedBox(height: 30.h),
+              SizedBox(height: 30.h),
 
-            // Doctors grid section
-            _buildDoctorsSection(),
+              // Doctors grid section
+              _buildDoctorsSection(),
 
-            SizedBox(height: 30.h),
-          ],
+              SizedBox(height: 30.h),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  PreferredSizeWidget _buildAppBar() {
     final controller = Get.find<HospitalDetailsController>();
 
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Empty space to balance (no chat button for hospitals)
-            SizedBox(width: 48.w, height: 48.w),
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      automaticallyImplyLeading: false,
+      title: Obx(() {
+        final hospital = controller.hospital.value;
+        final isLoading = controller.isLoading.value;
 
-            // Title - dynamic based on hospital type with Skeletonizer
-            Obx(() {
-              final hospital = controller.hospital.value;
-              final isLoading = controller.isLoading.value;
+        if (isLoading || hospital == null) {
+          // عرض Skeleton أثناء التحميل
+          return Skeletonizer(
+            enabled: true,
+            child: MyText(
+              'تفاصيل المستشفى',
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+              textAlign: TextAlign.center,
+            ),
+          );
+        }
 
-              if (isLoading || hospital == null) {
-                // عرض Skeleton أثناء التحميل
-                return Skeletonizer(
-                  enabled: true,
-                  child: MyText(
-                    'تفاصيل المستشفى',
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                    textAlign: TextAlign.center,
-                  ),
-                );
-              }
+        final type = hospital.type;
+        final title = type == 'مجمع طبي'
+            ? 'تفاصيل المجمع الطبي'
+            : 'تفاصيل المستشفى';
 
-              final type = hospital.type;
-              final title = type == 'مجمع طبي'
-                  ? 'تفاصيل المجمع الطبي'
-                  : 'تفاصيل المستشفى';
-
-              return MyText(
-                title,
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-                textAlign: TextAlign.center,
-              );
-            }),
-
-            // Back button
-            const BackButtonWidget(),
-          ],
+        return MyText(
+          title,
+          fontSize: 18.sp,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
+          textAlign: TextAlign.center,
+        );
+      }),
+      centerTitle: true,
+      leading: const SizedBox.shrink(),
+      actions: [
+        // Back button on the left (in RTL, we use Directionality to force left position)
+        Padding(
+          padding: EdgeInsets.only(right: 16.w, left: 16.w),
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: const BackButtonWidget(),
+          ),
         ),
-      ),
+      ],
     );
   }
 

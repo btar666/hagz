@@ -14,12 +14,7 @@ class AppointmentStatusSetDialog extends StatefulWidget {
 
 class _AppointmentStatusSetDialogState
     extends State<AppointmentStatusSetDialog> {
-  final List<String> _statuses = const [
-    'قيد الانتظار',
-    'مكتمل',
-    'ملغي',
-    'قادم',
-  ];
+  final List<String> _statuses = const ['مؤكد', 'مكتمل', 'ملغي', 'لم يحضر'];
   String? _selected;
 
   @override

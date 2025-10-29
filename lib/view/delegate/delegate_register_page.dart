@@ -26,7 +26,7 @@ class DelegateRegisterPage extends StatelessWidget {
               children: [
                 SizedBox(height: 16.h),
                 const Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: Alignment.centerRight,
                   child: BackButtonWidget(),
                 ),
                 SizedBox(height: 24.h),
@@ -349,23 +349,16 @@ class DelegateRegisterPage extends StatelessWidget {
           child: Obx(
             () => DropdownButtonFormField<String>(
               value: c.selectedAge.value,
-              items: ages
-                  .map(
-                    (e) => DropdownMenuItem(
-                      value: e,
-                      child: Text(
-                        e,
-                        style: TextStyle(
-                          fontFamily: 'Expo Arabic',
-                          fontSize: 16.sp,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) => c.selectedAge.value = v,
+              isExpanded: true,
+              menuMaxHeight: 400.h,
+              dropdownColor: Colors.white,
               decoration: InputDecoration(
+                hintText: 'اختر العمر',
+                hintStyle: TextStyle(
+                  color: AppColors.textLight,
+                  fontSize: 18.sp,
+                  fontFamily: 'Expo Arabic',
+                ),
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: 16.w,
                   vertical: 16.h,
@@ -378,17 +371,105 @@ class DelegateRegisterPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16.r),
                   borderSide: BorderSide(color: AppColors.primary, width: 1),
                 ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16.r),
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16.r),
+                  borderSide: BorderSide(color: Colors.red, width: 1),
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16.r),
                   borderSide: BorderSide(color: AppColors.textLight, width: 1),
                 ),
               ),
-              icon: const Icon(Icons.keyboard_arrow_down_rounded),
-              hint: MyText(
-                'اختر',
-                fontSize: 14.sp,
+              icon: Icon(
+                Icons.keyboard_arrow_down_rounded,
                 color: AppColors.textSecondary,
+                size: 24.r,
               ),
+              style: TextStyle(
+                fontFamily: 'Expo Arabic',
+                fontSize: 18.sp,
+                color: AppColors.textPrimary,
+              ),
+              selectedItemBuilder: (BuildContext context) {
+                return ages.map((String age) {
+                  return Align(
+                    alignment: Alignment.center,
+                    child: MyText(
+                      age,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  );
+                }).toList();
+              },
+              items: ages.map((String age) {
+                final isSelected = c.selectedAge.value == age;
+                return DropdownMenuItem<String>(
+                  value: age,
+                  child: SizedBox(
+                    height: 52.h,
+                    child: Container(
+                      margin: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 2.h,
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.primary.withOpacity(0.1)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: isSelected
+                            ? Border.all(color: AppColors.primary, width: 1.5)
+                            : Border.all(
+                                color: AppColors.textLight.withOpacity(0.2),
+                                width: 1,
+                              ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: MyText(
+                              age,
+                              fontSize: 18.sp,
+                              fontWeight: isSelected
+                                  ? FontWeight.w900
+                                  : FontWeight.w600,
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.textPrimary,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          if (isSelected)
+                            Container(
+                              width: 24.w,
+                              height: 24.w,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 16.r,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+              onChanged: (v) => c.selectedAge.value = v,
+              validator: (value) =>
+                  (value == null || value.isEmpty) ? 'هذا الحقل مطلوب !' : null,
             ),
           ),
         ),

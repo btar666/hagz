@@ -55,10 +55,12 @@ class MainPage extends StatelessWidget {
         index = pages.length - 1;
       }
       return Scaffold(
-        body: Obx(() => Skeletonizer(
-              enabled: controller.isNavLoading.value,
-              child: IndexedStack(index: index, children: pages),
-            )),
+        body: Obx(
+          () => Skeletonizer(
+            enabled: controller.isNavLoading.value,
+            child: IndexedStack(index: index, children: pages),
+          ),
+        ),
         bottomNavigationBar: const BottomNavigationWidget(),
       );
     });

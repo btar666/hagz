@@ -290,6 +290,7 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
                       value: _age,
                       items: _ages,
                       onChanged: (v) => setState(() => _age = v ?? _age),
+                      hintText: 'اختر العمر',
                     ),
                   ),
                 ],
@@ -744,7 +745,10 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
     required String value,
     required List<String> items,
     required ValueChanged<String?> onChanged,
+    String? hintText,
   }) {
+    final isAgeDropdown =
+        items.length > 50; // Assume age dropdown has many items
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -761,11 +765,111 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
       child: DropdownButtonFormField<String>(
         value: value,
         isExpanded: true,
-        decoration: const InputDecoration(border: InputBorder.none),
-        icon: const Icon(Icons.keyboard_arrow_down_rounded),
-        items: items
-            .map((e) => DropdownMenuItem<String>(value: e, child: Text(e)))
-            .toList(),
+        menuMaxHeight: isAgeDropdown ? 400.h : null,
+        dropdownColor: Colors.white,
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          hintText: hintText,
+          hintStyle: TextStyle(
+            fontFamily: 'Expo Arabic',
+            fontSize: 16.sp,
+            color: AppColors.textLight,
+          ),
+          contentPadding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
+        ),
+        icon: Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: AppColors.textSecondary,
+          size: 24.r,
+        ),
+        style: TextStyle(
+          fontFamily: 'Expo Arabic',
+          fontSize: 18.sp,
+          color: AppColors.textPrimary,
+        ),
+        selectedItemBuilder: isAgeDropdown
+            ? (BuildContext context) {
+                return items.map((String item) {
+                  return Align(
+                    alignment: Alignment.center,
+                    child: MyText(
+                      item,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  );
+                }).toList();
+              }
+            : null,
+        items: items.map((String item) {
+          final isSelected = value == item;
+          return DropdownMenuItem<String>(
+            value: item,
+            child: isAgeDropdown
+                ? SizedBox(
+                    height: 52.h,
+                    child: Container(
+                      margin: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 2.h,
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.primary.withOpacity(0.1)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: isSelected
+                            ? Border.all(color: AppColors.primary, width: 1.5)
+                            : Border.all(
+                                color: AppColors.textLight.withOpacity(0.2),
+                                width: 1,
+                              ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: MyText(
+                              item,
+                              fontSize: 18.sp,
+                              fontWeight: isSelected
+                                  ? FontWeight.w900
+                                  : FontWeight.w600,
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.textPrimary,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          if (isSelected)
+                            Container(
+                              width: 24.w,
+                              height: 24.w,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 16.r,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  )
+                : MyText(
+                    item,
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                    textAlign: TextAlign.center,
+                  ),
+          );
+        }).toList(),
         onChanged: onChanged,
       ),
     );

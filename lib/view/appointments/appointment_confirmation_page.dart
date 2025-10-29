@@ -194,8 +194,16 @@ class _AppointmentConfirmationPageState
 
         print('[QUEUE] Found doctor appointment queue number: $queueNumber');
 
-        if (queueNumber is int && queueNumber > maxQueueNumber) {
-          maxQueueNumber = queueNumber;
+        // تحويل إلى int إذا كان String
+        int seqInt = 0;
+        if (queueNumber is int) {
+          seqInt = queueNumber;
+        } else if (queueNumber is String) {
+          seqInt = int.tryParse(queueNumber) ?? 0;
+        }
+
+        if (seqInt > maxQueueNumber) {
+          maxQueueNumber = seqInt;
         }
       }
 

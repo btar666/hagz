@@ -51,11 +51,20 @@ class PastAppointmentsController extends GetxController {
         final String? e = endDate.value != null
             ? DateFormat('yyyy-MM-dd').format(endDate.value!)
             : null;
-        res = await _service.getDoctorAppointments(
-          doctorId: userId,
-          startDate: s,
-          endDate: e,
-        );
+
+        // إذا كان التاريخ واحد فقط (اليوم فقط)، استخدم getDoctorAppointmentsByDate
+        if (s != null && e != null && s == e) {
+          res = await _service.getDoctorAppointmentsByDate(
+            doctorId: userId,
+            date: s,
+          );
+        } else {
+          res = await _service.getDoctorAppointments(
+            doctorId: userId,
+            startDate: s,
+            endDate: e,
+          );
+        }
       } else {
         // للمستخدم (المريض): جلب مواعيده
         res = await _service.getPatientAppointments(patientId: userId);
@@ -63,97 +72,118 @@ class PastAppointmentsController extends GetxController {
 
       if (res['ok'] == true) {
         final responseData = res['data'];
-        if (responseData != null && responseData['data'] != null) {
-          final data = responseData['data'];
-          if (data is List) {
-            appointments.value = data.map((item) {
-              // تحويل التاريخ
-              final dateStr = item['appointmentDate']?.toString() ?? '';
-              DateTime appointmentDate = DateTime.now();
-              try {
-                if (dateStr.isNotEmpty) {
-                  appointmentDate = DateTime.parse(dateStr);
-                }
-              } catch (e) {
-                print('Error parsing date: $e');
-              }
+        List<dynamic> dataList = [];
 
-              // تحويل الحالة إلى قيم داخلية موحدة
-              String status = 'pending';
-              final apiStatus = item['status']?.toString() ?? '';
-              if (apiStatus.contains('مكتمل') ||
-                  apiStatus.toLowerCase() == 'completed') {
-                status = 'completed';
-              } else if (apiStatus.contains('ملغي') ||
-                  apiStatus.toLowerCase() == 'cancelled') {
-                status = 'cancelled';
-              } else if (apiStatus.contains('مؤكد') ||
-                  apiStatus.toLowerCase() == 'confirmed' ||
-                  apiStatus == 'مؤكد') {
-                status = 'confirmed';
-              }
-
-              // عنوان السطر يعتمد على الدور
-              String title = '';
-              String? patientName;
-              String? patientPhone;
-              int? patientAge;
-
-              if (role == 'doctor') {
-                // الطبيب يرى اسم ورقم المريض مباشرة من الحقول الجديدة
-                patientName = item['patientName']?.toString();
-                patientPhone = item['patientPhone']?.toString();
-                patientAge = item['patientAge'] as int?;
-                title = patientName ?? 'مريض غير معروف';
-              } else {
-                // المستخدم/المريض يرى معلوماته الشخصية من الحقول الجديدة
-                patientName = item['patientName']?.toString();
-                patientPhone = item['patientPhone']?.toString();
-                patientAge = item['patientAge'] as int?;
-                title = patientName ?? 'مريض غير معروف';
-              }
-
-              // استخراج رقم تسلسل الموعد من الـ API
-              int? appointmentSequence;
-              final seq = item['appointmentSequence'];
-              if (seq is int) {
-                appointmentSequence = seq;
-              } else if (seq is String) {
-                final parsed = int.tryParse(seq);
-                if (parsed != null) appointmentSequence = parsed;
-              }
-
-              // استخراج doctorId من العنصر الخام
-              String doctorId = '';
-              final rawDoctor = item['doctor'];
-              if (rawDoctor is Map<String, dynamic>) {
-                doctorId = rawDoctor['_id']?.toString() ?? '';
-              } else if (rawDoctor != null) {
-                doctorId = rawDoctor.toString();
-              }
-
-              final result = {
-                'title': title,
-                'date': appointmentDate,
-                'time': item['appointmentTime']?.toString() ?? '',
-                'status': status,
-                'amount': item['amount'] ?? 0,
-                'notes': item['patientNotes']?.toString() ?? '',
-                '_id': item['_id']?.toString() ?? '',
-                // معلومات للملاحظة/التفاصيل
-                'patientName': patientName,
-                'patientPhone': patientPhone,
-                'patientAge': patientAge,
-                'appointmentSequence': appointmentSequence,
-                'doctorId': doctorId,
-              };
-
-              return result;
-            }).toList();
-
-            // إبقاء الماضي فقط حينما يلزم (إن رغبت): يمكن لاحقاً فلترتها حسب التاريخ/الحالة
+        // معالجة الاستجابة من getDoctorAppointmentsByDate (تاريخ واحد)
+        if (responseData != null) {
+          // إذا كان هناك data.data (متداخل)
+          if (responseData['data'] != null) {
+            final data = responseData['data'];
+            if (data is List) {
+              dataList = data;
+            }
+          } else if (responseData is List) {
+            // إذا كانت الاستجابة list مباشرة
+            dataList = responseData;
           }
         }
+
+        if (dataList.isNotEmpty) {
+          appointments.value = dataList.map((item) {
+            // تحويل التاريخ
+            final dateStr = item['appointmentDate']?.toString() ?? '';
+            DateTime appointmentDate = DateTime.now();
+            try {
+              if (dateStr.isNotEmpty) {
+                appointmentDate = DateTime.parse(dateStr);
+              }
+            } catch (e) {
+              print('Error parsing date: $e');
+            }
+
+            // تحويل الحالة إلى قيم داخلية موحدة
+            String status = 'confirmed'; // القيمة الافتراضية مؤكد
+            final apiStatus = item['status']?.toString() ?? '';
+            if (apiStatus.contains('مكتمل') ||
+                apiStatus.toLowerCase() == 'completed') {
+              status = 'completed';
+            } else if (apiStatus.contains('ملغي') ||
+                apiStatus.toLowerCase() == 'cancelled') {
+              status = 'cancelled';
+            } else if (apiStatus.contains('مؤكد') ||
+                apiStatus.toLowerCase() == 'confirmed' ||
+                apiStatus == 'مؤكد') {
+              status = 'confirmed';
+            } else if (apiStatus.contains('لم يحضر') ||
+                apiStatus.toLowerCase() == 'no-show' ||
+                apiStatus == 'لم يحضر') {
+              status = 'no-show';
+            }
+
+            // عنوان السطر يعتمد على الدور
+            String title = '';
+            String? patientName;
+            String? patientPhone;
+            int? patientAge;
+
+            if (role == 'doctor') {
+              // الطبيب يرى اسم ورقم المريض مباشرة من الحقول الجديدة
+              patientName = item['patientName']?.toString();
+              patientPhone = item['patientPhone']?.toString();
+              patientAge = item['patientAge'] as int?;
+              title = patientName ?? 'مريض غير معروف';
+            } else {
+              // المستخدم/المريض يرى معلوماته الشخصية من الحقول الجديدة
+              patientName = item['patientName']?.toString();
+              patientPhone = item['patientPhone']?.toString();
+              patientAge = item['patientAge'] as int?;
+              title = patientName ?? 'مريض غير معروف';
+            }
+
+            // استخراج رقم تسلسل الموعد من الـ API
+            int? appointmentSequence;
+            final seq = item['appointmentSequence'];
+            if (seq is int) {
+              appointmentSequence = seq;
+            } else if (seq is String) {
+              final parsed = int.tryParse(seq);
+              if (parsed != null) appointmentSequence = parsed;
+            }
+
+            // استخراج doctorId من العنصر الخام
+            String doctorId = '';
+            final rawDoctor = item['doctor'];
+            if (rawDoctor is Map<String, dynamic>) {
+              doctorId = rawDoctor['_id']?.toString() ?? '';
+            } else if (rawDoctor != null) {
+              doctorId = rawDoctor.toString();
+            }
+
+            final result = {
+              'title': title,
+              'date': appointmentDate,
+              'time': item['appointmentTime']?.toString() ?? '',
+              'status': status,
+              'amount': item['amount'] ?? 0,
+              'notes': item['patientNotes']?.toString() ?? '',
+              '_id': item['_id']?.toString() ?? '',
+              // معلومات للملاحظة/التفاصيل
+              'patientName': patientName,
+              'patientPhone': patientPhone,
+              'patientAge': patientAge,
+              'appointmentSequence': appointmentSequence,
+              'doctorId': doctorId,
+            };
+
+            return result;
+          }).toList();
+        } else {
+          // لا توجد مواعيد
+          appointments.value = [];
+        }
+      } else {
+        // API failed
+        appointments.value = [];
       }
     } catch (e) {
       print('Error loading appointments: $e');

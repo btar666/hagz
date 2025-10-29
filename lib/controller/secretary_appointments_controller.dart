@@ -11,6 +11,8 @@ class SecretaryAppointmentsController extends GetxController {
   final appointments = <Map<String, dynamic>>[].obs;
   final query = ''.obs;
   final isLoading = false.obs;
+  final currentAppointmentNumber = Rxn<int>();
+  final isLoadingCurrentNumber = false.obs;
 
   // مرشح التاريخ للسكرتير
   final Rxn<DateTime> startDate = Rxn<DateTime>();
@@ -21,6 +23,83 @@ class SecretaryAppointmentsController extends GetxController {
   void onInit() {
     super.onInit();
     loadAppointments();
+    loadCurrentAppointmentNumber();
+  }
+
+  /// جلب رقم الموعد الحالي من الـ API
+  Future<void> loadCurrentAppointmentNumber() async {
+    try {
+      isLoadingCurrentNumber.value = true;
+
+      final user = _session.currentUser.value;
+      if (user?.associatedDoctor == null || user!.associatedDoctor.isEmpty) {
+        print('⚠️ No associated doctor found for secretary');
+        return;
+      }
+
+      print('🔵 Calling API for doctorId: ${user.associatedDoctor}');
+      final res = await _service.getCurrentAppointmentNumber(
+        doctorId: user.associatedDoctor,
+      );
+
+      print('🔵 API Response: $res');
+      print('🔵 res[ok]: ${res['ok']}');
+      print('🔵 res[data]: ${res['data']}');
+
+      if (res['ok'] == true && res['data'] != null) {
+        final outerData = res['data'];
+        print('🔵 outerData structure: $outerData');
+
+        // البيانات متداخلة - data داخل data
+        final innerData = outerData['data'];
+        print('🔵 innerData structure: $innerData');
+
+        if (innerData != null) {
+          var number = innerData['currentAppointmentNumber'];
+          print(
+            '🔵 currentAppointmentNumber from innerData: $number (type: ${number.runtimeType})',
+          );
+
+          // إذا كان الرقم string، حوله إلى int
+          int? finalNumber;
+          if (number is String) {
+            finalNumber = int.tryParse(number);
+          } else if (number is int) {
+            finalNumber = number;
+          } else if (number == 0) {
+            finalNumber = 0;
+          }
+
+          // إضافة +1 للموعد الحالي ليصبح الموعد التالي
+          if (finalNumber != null) {
+            currentAppointmentNumber.value = finalNumber + 1;
+          } else {
+            currentAppointmentNumber.value = null;
+          }
+
+          print(
+            '✅ Current appointment number loaded: ${currentAppointmentNumber.value}',
+          );
+
+          // طباعة معلومات إضافية
+          if (innerData['nextPatient'] != null) {
+            print('📋 Next patient: ${innerData['nextPatient']}');
+          }
+        } else {
+          print('⚠️ innerData is null');
+          currentAppointmentNumber.value = null;
+        }
+      } else {
+        print('⚠️ No current appointment number available');
+        print('⚠️ Response message: ${res['message']}');
+        currentAppointmentNumber.value = null;
+      }
+    } catch (e) {
+      print('❌ Error loading current appointment number: $e');
+      currentAppointmentNumber.value = null;
+    } finally {
+      isLoadingCurrentNumber.value = false;
+    }
   }
 
   void setDateRange(DateTime? start, DateTime? end) {
@@ -64,6 +143,8 @@ class SecretaryAppointmentsController extends GetxController {
           if (data is List) {
             appointments.value = _processAppointments(data);
             print('✅ Loaded ${appointments.length} appointments for secretary');
+            // تحديث رقم الموعد الحالي بعد تحميل المواعيد
+            loadCurrentAppointmentNumber();
           }
         }
       } else {
@@ -132,7 +213,7 @@ class SecretaryAppointmentsController extends GetxController {
       }
 
       // تحويل الحالة إلى قيم داخلية موحدة
-      String status = 'pending';
+      String status = 'confirmed'; // القيمة الافتراضية مؤكد
       final apiStatus = item['status']?.toString() ?? '';
       if (apiStatus.contains('مكتمل') ||
           apiStatus.toLowerCase() == 'completed') {
@@ -143,7 +224,11 @@ class SecretaryAppointmentsController extends GetxController {
       } else if (apiStatus.contains('مؤكد') ||
           apiStatus.toLowerCase() == 'confirmed' ||
           apiStatus == 'مؤكد') {
-        status = 'pending';
+        status = 'confirmed';
+      } else if (apiStatus.contains('لم يحضر') ||
+          apiStatus.toLowerCase() == 'no-show' ||
+          apiStatus == 'لم يحضر') {
+        status = 'no-show';
       }
 
       // معلومات المريض
@@ -152,6 +237,20 @@ class SecretaryAppointmentsController extends GetxController {
       final patientAge = item['patientAge']?.toString() ?? '';
       final time = item['appointmentTime']?.toString() ?? '';
       final amount = item['amount']?.toString() ?? '0';
+      // تسلسل الموعد (قد يأتي بأسماء مختلفة وبأنواع مختلفة)
+      final dynamic seqRaw =
+          item['appointmentSequence'] ??
+          item['queueNumber'] ??
+          item['sequenceNumber'] ??
+          item['sequence'] ??
+          item['order'] ??
+          item['position'];
+      int? appointmentSequence;
+      if (seqRaw is int) {
+        appointmentSequence = seqRaw;
+      } else if (seqRaw is String) {
+        appointmentSequence = int.tryParse(seqRaw);
+      }
 
       return {
         'id': item['_id']?.toString() ?? '',
@@ -165,6 +264,7 @@ class SecretaryAppointmentsController extends GetxController {
         'patientAge': patientAge,
         'patientNotes': item['patientNotes']?.toString() ?? '',
         'appointmentId': item['_id']?.toString() ?? '',
+        'appointmentSequence': appointmentSequence,
       };
     }).toList();
   }

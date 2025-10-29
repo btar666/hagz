@@ -2,6 +2,11 @@ import 'package:get/get.dart';
 import 'banner_controller.dart';
 import 'home_controller.dart';
 import 'hospitals_controller.dart';
+import '../bindings/delegate_home_binding.dart';
+import '../bindings/delegate_all_visits_binding.dart';
+import 'delegate_home_controller.dart';
+import 'delegate_all_visits_controller.dart';
+import 'session_controller.dart';
 
 class MainController extends GetxController {
   // Current page index for bottom navigation
@@ -18,6 +23,28 @@ class MainController extends GetxController {
 
   void changeTab(int index) {
     currentIndex.value = index;
+
+    // حذف Controllers القديمة عند التنقل بين صفحات المندوب
+    final session = Get.find<SessionController>();
+    if (session.role.value == 'delegate') {
+      // حذف Controller الصفحة السابقة إذا كانت موجودة
+      if (index == 0) {
+        // دخول صفحة الرئيسية - حذف Controller جميع الزيارات
+        if (Get.isRegistered<DelegateAllVisitsController>()) {
+          Get.delete<DelegateAllVisitsController>();
+        }
+        // تهيئة Controller الرئيسية
+        DelegateHomeBinding().dependencies();
+      } else if (index == 1) {
+        // دخول صفحة جميع الزيارات - حذف Controller الرئيسية
+        if (Get.isRegistered<DelegateHomeController>()) {
+          Get.delete<DelegateHomeController>();
+        }
+        // تهيئة Controller جميع الزيارات
+        DelegateAllVisitsBinding().dependencies();
+      }
+    }
+
     // فعّل تأثير Skeleton عام عند كل تبديل تبويب ليظهر على الكروت فوراً
     _pulseNavLoading();
     // وعند الذهاب للرئيسية فعّل تحميل القوائم لعرض بطاقات وهمية من المصدر

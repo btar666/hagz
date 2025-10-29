@@ -16,12 +16,12 @@ class AppointmentDetailsPage extends StatelessWidget {
     switch (s) {
       case 'مكتمل':
         return const Color(0xFF2ECC71);
-      case 'قيد الانتظار':
-        return const Color(0xFFFFA000);
       case 'ملغي':
         return const Color(0xFFFF3B30);
       case 'مؤكد':
         return const Color(0xFF18A2AE);
+      case 'لم يحضر':
+        return const Color(0xFFE91E63);
       default:
         return AppColors.textSecondary;
     }

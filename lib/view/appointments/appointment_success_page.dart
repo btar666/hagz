@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../widget/my_text.dart';
+import '../../controller/secretary_appointments_controller.dart';
+import '../../controller/session_controller.dart';
 
 class AppointmentSuccessPage extends StatelessWidget {
   const AppointmentSuccessPage({Key? key}) : super(key: key);
@@ -44,6 +46,21 @@ class AppointmentSuccessPage extends StatelessWidget {
         children: [
           GestureDetector(
             onTap: () {
+              // تحديث بيانات السكرتير إذا كان مسجل دخول
+              final session = Get.find<SessionController>();
+              if (session.role.value == 'secretary') {
+                try {
+                  final secretaryController =
+                      Get.find<SecretaryAppointmentsController>();
+                  secretaryController.loadAppointments();
+                  print('✅ Secretary appointments refreshed after booking');
+                } catch (e) {
+                  print(
+                    '⚠️ Could not find SecretaryAppointmentsController: $e',
+                  );
+                }
+              }
+
               // العودة للصفحة الرئيسية
               Get.until((route) => route.isFirst);
             },
@@ -121,6 +138,19 @@ class AppointmentSuccessPage extends StatelessWidget {
         width: double.infinity,
         child: ElevatedButton(
           onPressed: () {
+            // تحديث بيانات السكرتير إذا كان مسجل دخول
+            final session = Get.find<SessionController>();
+            if (session.role.value == 'secretary') {
+              try {
+                final secretaryController =
+                    Get.find<SecretaryAppointmentsController>();
+                secretaryController.loadAppointments();
+                print('✅ Secretary appointments refreshed after booking');
+              } catch (e) {
+                print('⚠️ Could not find SecretaryAppointmentsController: $e');
+              }
+            }
+
             // العودة للصفحة الرئيسية وحذف جميع الصفحات السابقة
             Get.until((route) => route.isFirst);
           },

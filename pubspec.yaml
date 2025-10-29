@@ -57,6 +57,12 @@ dependencies:
   shared_preferences: ^2.2.3
   uuid: ^4.5.1
   url_launcher: ^6.3.0
+  
+  # Location & Maps
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  location: ^8.0.1
+  geocoding: ^3.0.0
    
 
 dev_dependencies:

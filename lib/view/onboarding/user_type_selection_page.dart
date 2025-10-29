@@ -53,13 +53,33 @@ class _UserTypeSelectionPageState extends State<UserTypeSelectionPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(height: 48.h),
-              // top circle avatar placeholder
+              // top circle avatar - medicine icon
               Container(
                 width: 260.w,
                 height: 260.w,
                 decoration: BoxDecoration(
                   color: const Color(0xFFD9D9D9),
                   shape: BoxShape.circle,
+                ),
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/icons/home/medicine_icon.jpg',
+                    width: 260.w,
+                    height: 260.w,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 260.w,
+                        height: 260.w,
+                        color: const Color(0xFFD9D9D9),
+                        child: const Icon(
+                          Icons.medical_services_outlined,
+                          size: 100,
+                          color: Colors.white,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
               SizedBox(height: 40.h),

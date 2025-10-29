@@ -6,7 +6,7 @@ import '../controller/hospitals_controller.dart';
 class HomeBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<HomeController>(() => HomeController());
-    Get.lazyPut<HospitalsController>(() => HospitalsController());
+    Get.put<HomeController>(HomeController(), permanent: true);
+    Get.put<HospitalsController>(HospitalsController(), permanent: true);
   }
 }

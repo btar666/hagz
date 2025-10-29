@@ -48,4 +48,10 @@ class ApiConstants {
       '$chats/secretary/conversations';
   // Secretary
   static const String secretary = '$baseUrl/api/secretary';
+  // Delegate Visits
+  static const String visits = '$baseUrl/api/visits';
+  static const String visitsStats = '$visits/stats';
+  static const String visitsByGovernorate = '$visits/by-governorate';
+  static const String visitsByRepresentative = '$visits/by-representative';
+  static const String representatives = '$baseUrl/api/representatives';
 }

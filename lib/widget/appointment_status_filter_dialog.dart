@@ -17,9 +17,10 @@ class _AppointmentStatusFilterDialogState
     extends State<AppointmentStatusFilterDialog> {
   final Map<String, bool> _selected = {
     'الكل': true, // مفعل افتراضياً
+    'مؤكد': false,
     'مكتمل': false,
-    'قيد الانتظار': false,
     'ملغي': false,
+    'لم يحضر': false,
   };
 
   @override
@@ -65,7 +66,7 @@ class _AppointmentStatusFilterDialogState
                 children: [
                   Expanded(child: _chip('الكل')),
                   SizedBox(width: 12.w),
-                  Expanded(child: _chip('قيد الانتظار')),
+                  Expanded(child: _chip('مؤكد')),
                 ],
               ),
               SizedBox(height: 12.h),
@@ -74,6 +75,14 @@ class _AppointmentStatusFilterDialogState
                   Expanded(child: _chip('مكتمل')),
                   SizedBox(width: 12.w),
                   Expanded(child: _chip('ملغي')),
+                ],
+              ),
+              SizedBox(height: 12.h),
+              Row(
+                children: [
+                  Expanded(child: _chip('لم يحضر')),
+                  SizedBox(width: 12.w),
+                  Expanded(child: SizedBox.shrink()),
                 ],
               ),
               SizedBox(height: 20.h),
@@ -123,9 +132,10 @@ class _AppointmentStatusFilterDialogState
         if (label == 'الكل') {
           // إذا تم اختيار "الكل"، إلغاء جميع الفلاتر الأخرى
           _selected['الكل'] = true;
+          _selected['مؤكد'] = false;
           _selected['مكتمل'] = false;
-          _selected['قيد الانتظار'] = false;
           _selected['ملغي'] = false;
+          _selected['لم يحضر'] = false;
         } else {
           // إذا تم اختيار فلتر آخر، إلغاء "الكل"
           _selected[label] = !isSelected;

@@ -8,12 +8,12 @@ import '../../widget/my_text.dart';
 import '../../widget/search_widget.dart';
 import '../home/search_page.dart';
 import '../../bindings/search_binding.dart';
-import '../../bindings/delegate_all_visits_binding.dart';
-import '../../controller/delegate_all_visits_controller.dart';
+import '../../bindings/delegate_hospitals_visits_binding.dart';
+import '../../controller/delegate_hospitals_visits_controller.dart';
 import 'add_visit_page.dart';
 
-class DelegateAllVisitsPage extends StatelessWidget {
-  const DelegateAllVisitsPage({super.key});
+class DelegateHospitalsVisitsPage extends StatelessWidget {
+  const DelegateHospitalsVisitsPage({super.key});
 
   void _showVisitTypeDialog(BuildContext context) {
     showModalBottomSheet(
@@ -103,11 +103,11 @@ class DelegateAllVisitsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // التأكد من تهيئة Controller
-    if (!Get.isRegistered<DelegateAllVisitsController>()) {
-      DelegateAllVisitsBinding().dependencies();
+    if (!Get.isRegistered<DelegateHospitalsVisitsController>()) {
+      DelegateHospitalsVisitsBinding().dependencies();
     }
-    final controller = Get.find<DelegateAllVisitsController>();
+    final controller = Get.find<DelegateHospitalsVisitsController>();
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -119,7 +119,7 @@ class DelegateAllVisitsPage extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w),
                 child: MyText(
-                  'جميع الزيارات',
+                  'زيارات المستشفيات',
                   fontSize: 26.sp,
                   fontWeight: FontWeight.w900,
                   color: AppColors.textPrimary,
@@ -133,7 +133,7 @@ class DelegateAllVisitsPage extends StatelessWidget {
                 children: [
                   Expanded(
                     child: SearchWidget(
-                      hint: 'ابحث عن طبيب أو مستشفى ..',
+                      hint: 'ابحث عن مستشفى ..',
                       readOnly: true,
                       onTap: () => Get.to(
                         () => const SearchPage(),
@@ -161,19 +161,12 @@ class DelegateAllVisitsPage extends StatelessWidget {
                 ],
               ),
             ),
-
             SizedBox(height: 16.h),
-
             Expanded(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w),
-                child: Obx(() => _buildListForTab(controller)),
+                child: Obx(() => _buildVisitsList(controller)),
               ),
-            ),
-
-            Padding(
-              padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
-              child: Obx(() => _buildBottomTabs(controller)),
             ),
           ],
         ),
@@ -181,7 +174,7 @@ class DelegateAllVisitsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildListForTab(DelegateAllVisitsController controller) {
+  Widget _buildVisitsList(DelegateHospitalsVisitsController controller) {
     if (controller.isLoading.value) {
       return Skeletonizer(
         enabled: true,
@@ -197,12 +190,12 @@ class DelegateAllVisitsPage extends StatelessWidget {
       );
     }
 
-    final visits = controller.currentTabVisits;
+    final visits = controller.hospitalsVisits;
 
     if (visits.isEmpty) {
       return Center(
         child: MyText(
-          'لا توجد زيارات',
+          'لا توجد زيارات للمستشفيات',
           fontSize: 16.sp,
           fontWeight: FontWeight.w600,
           color: AppColors.textSecondary,
@@ -226,47 +219,6 @@ class DelegateAllVisitsPage extends StatelessWidget {
         },
         separatorBuilder: (_, __) => SizedBox(height: 12.h),
         itemCount: visits.length,
-      ),
-    );
-  }
-
-  Widget _buildBottomTabs(DelegateAllVisitsController controller) {
-    final List<String> tabLabels = ['أطباء', 'مستشفيات', 'مجمعات'];
-    return Container(
-      height: 50.h,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(25.r),
-      ),
-      child: Row(
-        children: List.generate(3, (index) {
-          final bool isSelected = controller.currentTab.value == index;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => controller.changeTab(index),
-              child: Container(
-                height: 50.h,
-                decoration: isSelected
-                    ? BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(25.r),
-                      )
-                    : null,
-                child: Center(
-                  child: MyText(
-                    tabLabels[index],
-                    fontFamily: 'Expo Arabic',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16.sp,
-                    height: 1.0,
-                    color: isSelected ? Colors.white : AppColors.primary,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
       ),
     );
   }

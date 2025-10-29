@@ -46,103 +46,105 @@ class DoctorProfilePage extends StatelessWidget {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: const Color(0xFFF4FEFF),
-        body: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Header with back button, title, and chat button
-              _buildHeader(),
+        appBar: _buildAppBar(),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                // Doctor image section
+                _buildDoctorImage(controller),
 
-              // Doctor image section
-              _buildDoctorImage(controller),
+                SizedBox(height: 20.h),
 
-              SizedBox(height: 20.h),
+                // Doctor name and specialty
+                _buildDoctorInfo(),
 
-              // Doctor name and specialty
-              _buildDoctorInfo(),
+                SizedBox(height: 20.h),
 
-              SizedBox(height: 20.h),
+                // Social media icons
+                _buildSocialMediaIcons(),
 
-              // Social media icons
-              _buildSocialMediaIcons(),
+                SizedBox(height: 30.h),
 
-              SizedBox(height: 30.h),
+                // Expandable sections
+                _buildExpandableSections(controller),
 
-              // Expandable sections
-              _buildExpandableSections(controller),
+                SizedBox(height: 30.h),
 
-              SizedBox(height: 30.h),
+                // Book appointment button
+                _buildBookButton(),
 
-              // Book appointment button
-              _buildBookButton(),
-
-              SizedBox(height: 30.h),
-            ],
+                SizedBox(height: 30.h),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  PreferredSizeWidget _buildAppBar() {
     final session = Get.find<SessionController>();
     final isOwnProfile = session.currentUser.value?.id == doctorId;
 
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Chat button (only show if not own profile)
-            isOwnProfile
-                ? SizedBox(width: 48.w, height: 48.w)
-                : GestureDetector(
-                    onTap: () => Get.to(
-                      () => ChatDetailsPage(
-                        title: doctorName,
-                        receiverId: doctorId,
-                      ),
-                      binding: ChatsBinding(),
-                    ),
-                    child: Container(
-                      width: 48.w,
-                      height: 48.w,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(20.r),
-                      ),
-                      child: Center(
-                        child: Image.asset(
-                          'assets/icons/home/Message Icon.png',
-                          width: 22,
-                          height: 22,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.chat_bubble_outline,
-                              color: Colors.white,
-                              size: 20,
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-
-            // Title
-            MyText(
-              'بروفايل الطبيب',
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-              textAlign: TextAlign.center,
-            ),
-
-            // Back button
-            const BackButtonWidget(),
-          ],
-        ),
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      automaticallyImplyLeading: false,
+      leading: const SizedBox.shrink(),
+      title: MyText(
+        'بروفايل الطبيب',
+        fontSize: 18.sp,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+        textAlign: TextAlign.center,
       ),
+      centerTitle: true,
+      actions: [
+        // Back button on the left (in RTL, we use Directionality to force left position)
+        Padding(
+          padding: EdgeInsets.only(right: 16.w),
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: const BackButtonWidget(),
+          ),
+        ),
+        // Chat button (only show if not own profile)
+        if (!isOwnProfile)
+          Padding(
+            padding: EdgeInsets.only(right: 16.w),
+            child: GestureDetector(
+              onTap: () => Get.to(
+                () => ChatDetailsPage(title: doctorName, receiverId: doctorId),
+                binding: ChatsBinding(),
+              ),
+              child: Container(
+                width: 48.w,
+                height: 48.w,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: Center(
+                  child: Image.asset(
+                    'assets/icons/home/Message Icon.png',
+                    width: 22,
+                    height: 22,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(
+                        Icons.chat_bubble_outline,
+                        color: Colors.white,
+                        size: 20,
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+        SizedBox(width: 16.w),
+      ],
     );
   }
 
