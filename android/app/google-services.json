@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "708091445021",
+    "project_id": "shsalfa-5a67b",
+    "storage_bucket": "shsalfa-5a67b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:708091445021:android:cf94fcbf230823f1892bf4",
+        "android_client_info": {
+          "package_name": "com.example.hagz"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBp3SJ7SE3n5Q-dEYy1-bGN9dWiLWXcor4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

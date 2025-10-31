@@ -1,8 +1,13 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:hagz/firebase_options.dart';
+import 'package:hagz/services/firebase_messaging_service.dart';
+import 'package:hagz/services/local_notifications_service.dart';
 import 'controller/main_controller.dart';
 import 'controller/chat_controller.dart';
 import 'bindings/home_binding.dart';
@@ -14,7 +19,15 @@ import 'service_layer/services/get_storage_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  final localNotificationsService = LocalNotificationsService.instance();
+  await localNotificationsService.init();
+
+  final firebaseMessagingService = FirebaseMessagingService.instance();
+  await firebaseMessagingService.init(localNotificationsService: localNotificationsService);
+
+  FirebaseMessaging.instance.subscribeToTopic('appall');
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
