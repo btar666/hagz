@@ -610,7 +610,7 @@ class SecretaryHomePage extends StatelessWidget {
               builder: (_) => AppointmentDetailsPage(
                 name: appointment['patientName'] ?? name,
                 age: appointment['patientAge'] ?? '22',
-                gender: 'انثى', // يمكن إضافة هذا الحقل لاحقاً
+                gender: 'أنثى', // يمكن إضافة هذا الحقل لاحقاً
                 phone: appointment['patientPhone'] ?? '0770 000 0000',
                 date: formattedDate,
                 time: time,

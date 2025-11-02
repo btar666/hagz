@@ -469,7 +469,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                   ),
                   child: Center(
                     child: MyText(
-                      'انثى',
+                      'أنثى',
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
                       color: _selectedGender == 'أنثى'

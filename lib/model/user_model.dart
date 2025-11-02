@@ -4,7 +4,7 @@ class UserModel {
   final String id;
   final String name;
   final String phone;
-  final String gender; // 'ذكر' | 'انثى' or server English mapping
+  final String gender; // 'ذكر' | 'أنثى' or server English mapping
   final int age;
   final String city;
   final String userType; // 'User' | 'Doctor' | 'Secretary' | 'Representative'

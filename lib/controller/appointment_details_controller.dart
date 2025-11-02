@@ -22,20 +22,40 @@ class AppointmentDetailsController extends GetxController {
     triedLoadRating.value = true;
     isLoadingRating.value = true;
     try {
+      print('📊 Loading rating for appointment: $appointmentId');
       final res = await _ratingsService.getByAppointment(appointmentId);
+      print('📊 Rating response: $res');
       if (res['ok'] == true) {
         final data = res['data'];
+        print('📊 Rating data: $data');
         if (data is Map<String, dynamic>) {
           final obj = data['data'] is Map<String, dynamic>
               ? data['data']
               : data;
-          ratingId.value = obj['_id']?.toString();
+          print('📊 Rating object: $obj');
+          ratingId.value = obj['_id']?.toString() ?? obj['id']?.toString();
           final num? r = obj['rating'] as num?;
           ratingValue.value = r?.toInt();
           ratingComment.value = obj['comment']?.toString();
+          print(
+            '📊 Loaded rating - ID: ${ratingId.value}, Value: ${ratingValue.value}, Comment: ${ratingComment.value}',
+          );
+        } else if (data is List && data.isNotEmpty) {
+          // Handle case where API returns list
+          final obj = data[0] as Map<String, dynamic>;
+          ratingId.value = obj['_id']?.toString() ?? obj['id']?.toString();
+          final num? r = obj['rating'] as num?;
+          ratingValue.value = r?.toInt();
+          ratingComment.value = obj['comment']?.toString();
+          print(
+            '📊 Loaded rating from list - ID: ${ratingId.value}, Value: ${ratingValue.value}',
+          );
         }
+      } else {
+        print('📊 No rating found or error: ${res['message']}');
       }
-    } catch (_) {
+    } catch (e) {
+      print('📊 Error loading rating: $e');
     } finally {
       isLoadingRating.value = false;
     }
@@ -103,10 +123,22 @@ class AppointmentDetailsController extends GetxController {
       }
       if (res['ok'] == true) {
         // تحديث القيم المحلية
-        ratingId.value =
-            res['data']?['data']?['_id']?.toString() ?? ratingId.value;
+        final responseData = res['data'];
+        if (responseData is Map<String, dynamic>) {
+          final obj = responseData['data'] is Map<String, dynamic>
+              ? responseData['data']
+              : responseData;
+          ratingId.value =
+              obj['_id']?.toString() ?? obj['id']?.toString() ?? ratingId.value;
+        } else {
+          ratingId.value =
+              responseData?['_id']?.toString() ??
+              responseData?['id']?.toString() ??
+              ratingId.value;
+        }
         ratingValue.value = rating;
         ratingComment.value = comment;
+        print('✅ Rating saved - ID: ${ratingId.value}, Value: $rating');
         Get.snackbar('تم', 'تم حفظ التقييم');
         return true;
       } else {

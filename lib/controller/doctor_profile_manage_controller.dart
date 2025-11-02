@@ -118,7 +118,7 @@ class DoctorProfileManageController extends GetxController {
       final g = user.gender.trim();
       if (g == 'ذكر' || g.toLowerCase() == 'male') {
         genderPersonalIndex.value = 0;
-      } else if (g == 'انثى' || g == 'أنثى' || g.toLowerCase() == 'female') {
+      } else if (g == 'أنثى' || g.toLowerCase() == 'female') {
         genderPersonalIndex.value = 1;
       }
     }
@@ -240,7 +240,7 @@ class DoctorProfileManageController extends GetxController {
     await LoadingDialog.show(message: 'جاري حفظ التعديلات...');
 
     try {
-      final gender = genderPersonalIndex.value == 0 ? 'ذكر' : 'انثى';
+      final gender = genderPersonalIndex.value == 0 ? 'ذكر' : 'أنثى';
       final age = int.tryParse(agePersonalCtrl.text.trim()) ?? 18;
 
       final res = await _userService.updateUserInfo(

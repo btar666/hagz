@@ -19,6 +19,9 @@ import '../../widget/confirm_dialogs.dart';
 import '../secretary/secretary_profile_edit_page.dart';
 import '../delegate/delegate_profile_edit_page.dart';
 import '../../widget/animated_pressable.dart';
+import 'about_page.dart';
+import '../../controller/about_controller.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -249,7 +252,12 @@ class SettingsPage extends StatelessWidget {
               title: 'حول التطبيق',
               color: AppColors.secondary,
               onTap: () {
-                // Handle about app
+                Get.to(
+                  () => const AboutPage(),
+                  binding: BindingsBuilder(() {
+                    Get.put(AboutController());
+                  }),
+                );
               },
             ),
             SizedBox(height: 16.h),
@@ -259,8 +267,16 @@ class SettingsPage extends StatelessWidget {
               icon: Icons.help,
               title: 'المساعدة',
               color: AppColors.secondary,
-              onTap: () {
-                // Handle help
+              onTap: () async {
+                // Get support link from AboutController or use default
+                final aboutController = Get.put(AboutController());
+                await aboutController.loadAboutInfo();
+                if (aboutController.supportLink.value.isNotEmpty) {
+                  await _openSupportLink(aboutController.supportLink.value);
+                } else {
+                  // Default support link if not loaded
+                  await _openSupportLink('https://wa.me/9647801275675');
+                }
               },
             ),
             SizedBox(height: 16.h),
@@ -410,5 +426,28 @@ class SettingsPage extends StatelessWidget {
         // TODO: Handle account deletion
       },
     );
+  }
+
+  Future<void> _openSupportLink(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        Get.snackbar(
+          'خطأ',
+          'لا يمكن فتح رابط الدعم',
+          backgroundColor: Colors.black87,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'خطأ',
+        'حدث خطأ أثناء فتح رابط الدعم',
+        backgroundColor: Colors.black87,
+        colorText: Colors.white,
+      );
+    }
   }
 }

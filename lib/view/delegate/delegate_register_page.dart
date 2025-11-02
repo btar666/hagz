@@ -591,7 +591,7 @@ class DelegateRegisterPage extends StatelessWidget {
                   groupValue: c.genderIndex.value,
                   onChanged: (val) => c.genderIndex.value = val,
                   title: MyText(
-                    'انثى',
+                    'أنثى',
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,

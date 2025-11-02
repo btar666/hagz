@@ -265,4 +265,19 @@ class AppointmentsService {
     print('🔢 GET CURRENT APPOINTMENT NUMBER RESPONSE: $result');
     return result;
   }
+
+  /// GET /api/doctors/{doctorId}/calendar/{year}/{month}
+  /// Get doctor's calendar for a specific month
+  Future<Map<String, dynamic>> getDoctorCalendar({
+    required String doctorId,
+    required int year,
+    required int month,
+  }) async {
+    final url =
+        '${ApiConstants.doctorCalendar}/$doctorId/calendar/$year/$month';
+    print('📅 GET DOCTOR CALENDAR URL: $url');
+    final result = await _api.get(url);
+    print('📅 GET DOCTOR CALENDAR RESPONSE: $result');
+    return result;
+  }
 }

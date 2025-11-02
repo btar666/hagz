@@ -9,6 +9,8 @@ import '../../controller/search_controller.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'hospital/hospital_details_page.dart';
 import '../../bindings/hospital_details_binding.dart';
+import 'doctors/doctor_profile_page.dart';
+import '../../bindings/doctor_profile_binding.dart';
 
 class SearchPage extends StatelessWidget {
   const SearchPage({super.key});
@@ -186,22 +188,46 @@ class SearchPage extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final item = items[index];
                       final name = (item['name'] ?? '').toString();
-                      final spec = (item['specialization'] ?? '').toString();
                       final type = (item['type'] ?? '').toString();
                       final image = (item['image'] ?? '').toString();
                       final id = (item['_id'] ?? item['id'] ?? '').toString();
                       final isHospital = type == 'مستشفى' || type == 'مجمع طبي';
 
+                      // Extract specialization ID
+                      String specializationId = '';
+                      final specData = item['specialization'];
+                      if (specData != null) {
+                        if (specData is String) {
+                          specializationId = specData;
+                        } else if (specData is Map) {
+                          specializationId =
+                              (specData['_id'] ?? specData['id'] ?? '')
+                                  .toString();
+                        }
+                      }
+
                       return GestureDetector(
-                        onTap: isHospital
-                            ? () {
-                                Get.to(
-                                  () => const HospitalDetailsPage(),
-                                  arguments: {'id': id},
-                                  binding: HospitalDetailsBinding(),
-                                );
-                              }
-                            : null,
+                        onTap: () {
+                          if (isHospital) {
+                            Get.to(
+                              () => const HospitalDetailsPage(),
+                              arguments: {'id': id},
+                              binding: HospitalDetailsBinding(),
+                            );
+                          } else {
+                            // Navigate to doctor profile page
+                            Get.to(
+                              () => DoctorProfilePage(
+                                doctorId: id,
+                                doctorName: name,
+                                specializationId: specializationId.isEmpty
+                                    ? '—'
+                                    : specializationId,
+                              ),
+                              binding: DoctorProfileBinding(),
+                            );
+                          }
+                        },
                         child: Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -291,9 +317,9 @@ class SearchPage extends StatelessWidget {
                                       textAlign: TextAlign.center,
                                     )
                                   : SpecializationText(
-                                      specializationId: spec.isEmpty
+                                      specializationId: specializationId.isEmpty
                                           ? null
-                                          : spec,
+                                          : specializationId,
                                       fontSize: 12.45.sp,
                                       fontWeight: FontWeight.w600,
                                       color: AppColors.textSecondary,

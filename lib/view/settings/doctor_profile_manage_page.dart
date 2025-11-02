@@ -38,6 +38,9 @@ class DoctorProfileManagePage extends StatelessWidget {
       controller.loadDoctorPricing(userId);
       controller.loadRatingsCount(userId);
 
+      // Load calendar for current month
+      controller.loadDoctorCalendar(doctorId: userId);
+
       // Prefill social media from API
       if (!manageController.prefillCalled.value) {
         manageController.prefillSocialFromApi(userId);
@@ -697,7 +700,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                       ),
                     ),
                     child: MyText(
-                      'انثى',
+                      'أنثى',
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w800,
                       color: sel ? AppColors.primary : AppColors.textSecondary,
@@ -1923,8 +1926,10 @@ class DoctorProfileManagePage extends StatelessWidget {
 
     Color bgForStatus(String status) {
       switch (status) {
+        case 'full':
+          return const Color(0xFFE3F5ED); // light green - الحجز ممتلأ
         case 'available':
-          return const Color(0xFFE3F5ED); // light green
+          return const Color(0xFFEFF3F8); // light gray - الحجز متاح
         case 'holiday':
           return const Color(0xFFFFF0D5); // light yellow
         case 'closed':
@@ -2045,21 +2050,24 @@ class DoctorProfileManagePage extends StatelessWidget {
               );
             }
             final day = i - startIndex + 1;
-            final status = controller.dayStatuses[day] ?? 'open';
-            return Container(
-              decoration: BoxDecoration(
-                color: bgForStatus(status),
-                borderRadius: BorderRadius.circular(14.r),
-              ),
-              child: Center(
-                child: MyText(
-                  '$day',
-                  fontSize: 20.sp,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.textPrimary,
+            // Use Obx for each day to track individual status changes
+            return Obx(() {
+              final status = controller.dayStatuses[day] ?? 'open';
+              return Container(
+                decoration: BoxDecoration(
+                  color: bgForStatus(status),
+                  borderRadius: BorderRadius.circular(14.r),
                 ),
-              ),
-            );
+                child: Center(
+                  child: MyText(
+                    '$day',
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              );
+            });
           },
         ),
         SizedBox(height: 16.h),
@@ -2076,7 +2084,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                   color: AppColors.textPrimary,
                 ),
                 SizedBox(width: 10.w),
-                legendDot(const Color(0xFFEFF3F8)),
+                legendDot(const Color(0xFFEFF3F8)), // رمادي - available
               ],
             ),
             SizedBox(height: 12.h),
@@ -2089,7 +2097,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                   color: AppColors.textPrimary,
                 ),
                 SizedBox(width: 10.w),
-                legendDot(const Color(0xFF2ECC71)),
+                legendDot(const Color(0xFFE3F5ED)), // أخضر - full
               ],
             ),
             SizedBox(height: 12.h),

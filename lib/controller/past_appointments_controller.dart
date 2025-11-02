@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
 import '../service_layer/services/appointments_service.dart';
 import 'session_controller.dart';
 
@@ -11,6 +12,16 @@ class PastAppointmentsController extends GetxController {
   final appointments = <Map<String, dynamic>>[].obs;
   final query = ''.obs;
   final isLoading = false.obs;
+  final isLoadingMore = false.obs;
+
+  // Pagination
+  var page = 1.obs;
+  var limit = 20.obs;
+  var total = 0.obs;
+  var hasMore = true.obs;
+
+  // ScrollController for pagination
+  final ScrollController scrollController = ScrollController();
 
   // مرشح التاريخ للطبيب
   final Rxn<DateTime> startDate = Rxn<DateTime>();
@@ -25,22 +36,47 @@ class PastAppointmentsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadAppointments();
+    // Setup scroll listener for pagination
+    scrollController.addListener(_onScroll);
+    loadAppointments(reset: true);
+  }
+
+  @override
+  void onClose() {
+    scrollController.dispose();
+    super.onClose();
+  }
+
+  void _onScroll() {
+    if (scrollController.position.pixels >=
+        scrollController.position.maxScrollExtent - 200) {
+      // Load more when near bottom (200px before end)
+      loadMore();
+    }
   }
 
   void setDateRange(DateTime? start, DateTime? end) {
     startDate.value = start;
     endDate.value = end;
-    loadAppointments();
+    loadAppointments(reset: true);
   }
 
   /// جلب المواعيد من الـ API (حسب الدور)
-  Future<void> loadAppointments() async {
+  Future<void> loadAppointments({bool reset = false}) async {
     final userId = _session.currentUser.value?.id;
     if (userId == null || userId.isEmpty) return;
 
+    if (reset) {
+      page.value = 1;
+      hasMore.value = true;
+      appointments.clear();
+      isLoading.value = true;
+    } else {
+      if (!hasMore.value || isLoadingMore.value) return;
+      isLoadingMore.value = true;
+    }
+
     final role = _session.role.value;
-    isLoading.value = true;
     try {
       Map<String, dynamic> res;
       if (role == 'doctor') {
@@ -54,6 +90,7 @@ class PastAppointmentsController extends GetxController {
 
         // إذا كان التاريخ واحد فقط (اليوم فقط)، استخدم getDoctorAppointmentsByDate
         if (s != null && e != null && s == e) {
+          // For single date, we don't use pagination
           res = await _service.getDoctorAppointmentsByDate(
             doctorId: userId,
             date: s,
@@ -61,18 +98,25 @@ class PastAppointmentsController extends GetxController {
         } else {
           res = await _service.getDoctorAppointments(
             doctorId: userId,
+            page: page.value,
+            limit: limit.value,
             startDate: s,
             endDate: e,
           );
         }
       } else {
         // للمستخدم (المريض): جلب مواعيده
-        res = await _service.getPatientAppointments(patientId: userId);
+        res = await _service.getPatientAppointments(
+          patientId: userId,
+          page: page.value,
+          limit: limit.value,
+        );
       }
 
       if (res['ok'] == true) {
         final responseData = res['data'];
         List<dynamic> dataList = [];
+        int totalCount = 0;
 
         // معالجة الاستجابة من getDoctorAppointmentsByDate (تاريخ واحد)
         if (responseData != null) {
@@ -81,15 +125,28 @@ class PastAppointmentsController extends GetxController {
             final data = responseData['data'];
             if (data is List) {
               dataList = data;
+            } else if (data is Map && data['data'] is List) {
+              // Handle paginated response structure
+              dataList = data['data'] as List;
+              final pagination = data['pagination'] as Map<String, dynamic>?;
+              totalCount =
+                  int.tryParse((pagination?['total'] ?? '0').toString()) ?? 0;
             }
           } else if (responseData is List) {
             // إذا كانت الاستجابة list مباشرة
             dataList = responseData;
+          } else if (responseData is Map && responseData['data'] is List) {
+            // Handle paginated response
+            dataList = responseData['data'] as List;
+            final pagination =
+                responseData['pagination'] as Map<String, dynamic>?;
+            totalCount =
+                int.tryParse((pagination?['total'] ?? '0').toString()) ?? 0;
           }
         }
 
         if (dataList.isNotEmpty) {
-          appointments.value = dataList.map((item) {
+          final newAppointments = dataList.map((item) {
             // تحويل التاريخ
             final dateStr = item['appointmentDate']?.toString() ?? '';
             DateTime appointmentDate = DateTime.now();
@@ -177,19 +234,56 @@ class PastAppointmentsController extends GetxController {
 
             return result;
           }).toList();
+
+          if (reset) {
+            appointments.value = newAppointments.cast<Map<String, dynamic>>();
+          } else {
+            appointments.addAll(newAppointments.cast<Map<String, dynamic>>());
+          }
+
+          // Update pagination info
+          if (totalCount > 0) {
+            total.value = totalCount;
+          } else {
+            // If no pagination info, estimate from current data
+            total.value = appointments.length;
+          }
+
+          // Check if has more
+          hasMore.value = appointments.length < total.value;
+          if (hasMore.value) {
+            page.value = page.value + 1;
+          }
         } else {
           // لا توجد مواعيد
-          appointments.value = [];
+          if (reset) {
+            appointments.value = [];
+          }
+          hasMore.value = false;
         }
       } else {
         // API failed
-        appointments.value = [];
+        if (reset) {
+          appointments.value = [];
+        }
+        hasMore.value = false;
       }
     } catch (e) {
       print('Error loading appointments: $e');
+      if (reset) {
+        appointments.value = [];
+      }
+      hasMore.value = false;
     } finally {
       isLoading.value = false;
+      isLoadingMore.value = false;
     }
+  }
+
+  /// تحميل المزيد من المواعيد
+  Future<void> loadMore() async {
+    if (!hasMore.value || isLoadingMore.value) return;
+    await loadAppointments();
   }
 
   /// البحث في المواعيد

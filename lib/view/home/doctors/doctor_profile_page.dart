@@ -42,6 +42,21 @@ class DoctorProfilePage extends StatelessWidget {
     controller.loadDoctorSocial(doctorId);
     controller.loadRatingsCount(doctorId);
 
+    // Load calendar for this doctor
+    // Check if we need to load (different doctor or first time)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (controller.currentDoctorIdForCalendar.value != doctorId) {
+        print('📅 Loading calendar for doctor: $doctorId (${doctorName})');
+        // Reset calendar data for new doctor
+        controller.dayStatuses.clear();
+        controller.selectedMonth.value = DateTime.now();
+        // Load calendar for this doctor
+        controller.loadDoctorCalendar(doctorId: doctorId);
+      } else {
+        print('📅 Calendar already loaded for doctor: $doctorId');
+      }
+    });
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -91,7 +106,47 @@ class DoctorProfilePage extends StatelessWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       automaticallyImplyLeading: false,
-      leading: const SizedBox.shrink(),
+      leadingWidth: 80.w,
+      leading: !isOwnProfile
+          ? Padding(
+              padding: EdgeInsets.only(left: 16.w),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: GestureDetector(
+                  onTap: () => Get.to(
+                    () => ChatDetailsPage(
+                      title: doctorName,
+                      receiverId: doctorId,
+                    ),
+                    binding: ChatsBinding(),
+                  ),
+                  child: Container(
+                    width: 48.w,
+                    height: 48.w,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Center(
+                      child: Image.asset(
+                        'assets/icons/home/Message Icon.png',
+                        width: 22,
+                        height: 22,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.chat_bubble_outline,
+                            color: Colors.white,
+                            size: 20,
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            )
+          : const SizedBox.shrink(),
       title: MyText(
         'بروفايل الطبيب',
         fontSize: 18.sp,
@@ -101,49 +156,11 @@ class DoctorProfilePage extends StatelessWidget {
       ),
       centerTitle: true,
       actions: [
-        // Back button on the left (in RTL, we use Directionality to force left position)
+        // Back button on the right in RTL
         Padding(
-          padding: EdgeInsets.only(right: 16.w),
-          child: Directionality(
-            textDirection: TextDirection.ltr,
-            child: const BackButtonWidget(),
-          ),
+          padding: EdgeInsets.only(left: 16.w),
+          child: const BackButtonWidget(),
         ),
-        // Chat button (only show if not own profile)
-        if (!isOwnProfile)
-          Padding(
-            padding: EdgeInsets.only(right: 16.w),
-            child: GestureDetector(
-              onTap: () => Get.to(
-                () => ChatDetailsPage(title: doctorName, receiverId: doctorId),
-                binding: ChatsBinding(),
-              ),
-              child: Container(
-                width: 48.w,
-                height: 48.w,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                child: Center(
-                  child: Image.asset(
-                    'assets/icons/home/Message Icon.png',
-                    width: 22,
-                    height: 22,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                        Icons.chat_bubble_outline,
-                        color: Colors.white,
-                        size: 20,
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ),
-        SizedBox(width: 16.w),
       ],
     );
   }
@@ -424,9 +441,18 @@ class DoctorProfilePage extends StatelessWidget {
             ),
             const Divider(height: 1, thickness: 1),
             _buildExpandableSection(
-              title: 'طلب سيارة أجرة',
+              title: 'المواعيد المتاحة',
               isExpanded: controller.isAvailabilityExpanded,
               onToggle: controller.toggleAvailabilityExpansion,
+              content: _buildAvailabilityContent(controller),
+              isFirst: false,
+              isLast: false,
+            ),
+            const Divider(height: 1, thickness: 1),
+            _buildExpandableSection(
+              title: 'طلب سيارة أجرة',
+              isExpanded: false.obs,
+              onToggle: () {},
               content: _buildInsuranceContent(controller),
               isFirst: false,
               isLast: true,
@@ -1203,6 +1229,249 @@ class DoctorProfilePage extends StatelessWidget {
         ),
       );
     });
+  }
+
+  Widget _buildAvailabilityContent(DoctorProfileController controller) {
+    final DateTime month = controller.selectedMonth.value;
+    final int year = month.year;
+    final int m = month.month;
+    final DateTime firstDay = DateTime(year, m, 1);
+    final int startIndex = firstDay.weekday % 7; // 0 => Sunday
+    final int daysInMonth = DateTime(year, m + 1, 0).day;
+    final int total = ((startIndex + daysInMonth + 6) ~/ 7) * 7;
+
+    final weekNames = [
+      'أحد',
+      'اثنين',
+      'ثلاثاء',
+      'أربعاء',
+      'خميس',
+      'جمعة',
+      'سبت',
+    ];
+
+    Color bgForStatus(String status) {
+      switch (status) {
+        case 'full':
+          return const Color(0xFFE3F5ED); // light green - الحجز ممتلأ
+        case 'available':
+          return const Color(0xFFEFF3F8); // light gray - الحجز متاح
+        case 'holiday':
+          return const Color(0xFFFFF0D5); // light yellow
+        case 'closed':
+          return const Color(0xFFFFE4E4); // light red
+        case 'open':
+        default:
+          return const Color(0xFFEFF3F8); // light gray
+      }
+    }
+
+    Widget legendDot(Color color) => Container(
+      width: 14,
+      height: 14,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+
+    return Obx(
+      () => controller.isLoadingCalendar.value
+          ? Skeletonizer(
+              enabled: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(height: 50.h, color: Colors.grey[300]),
+                  SizedBox(height: 10.h),
+                  Container(height: 20.h, color: Colors.grey[300]),
+                  SizedBox(height: 10.h),
+                  Container(height: 300.h, color: Colors.grey[300]),
+                ],
+              ),
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Month header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        InkWell(
+                          onTap: controller.prevMonth,
+                          child: const Icon(
+                            Icons.chevron_right,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        SizedBox(width: 4.w),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10.w,
+                            vertical: 6.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12.r),
+                            border: Border.all(color: AppColors.divider),
+                          ),
+                          child: Row(
+                            children: [
+                              MyText(
+                                '$year, $m',
+                                fontSize: 16.sp,
+                                color: AppColors.textPrimary,
+                              ),
+                              const Icon(
+                                Icons.expand_more,
+                                color: AppColors.textSecondary,
+                                size: 18,
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: 4.w),
+                        InkWell(
+                          onTap: controller.nextMonth,
+                          child: const Icon(
+                            Icons.chevron_left,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    MyText(
+                      'هذا الشهر',
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.textPrimary,
+                    ),
+                  ],
+                ),
+                SizedBox(height: 10.h),
+                // Weekdays header
+                Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      for (final name in weekNames)
+                        MyText(
+                          name,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textSecondary,
+                        ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 10.h),
+                // Calendar grid
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 7,
+                    crossAxisSpacing: 12.w,
+                    mainAxisSpacing: 12.h,
+                    childAspectRatio: 1.0,
+                  ),
+                  itemCount: total,
+                  itemBuilder: (_, i) {
+                    if (i < startIndex || i >= startIndex + daysInMonth) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14.r),
+                          border: Border.all(
+                            color: AppColors.divider,
+                            width: 1,
+                            style: BorderStyle.solid,
+                          ),
+                        ),
+                      );
+                    }
+                    final day = i - startIndex + 1;
+                    // Use Obx for each day to track individual status changes
+                    return Obx(() {
+                      final status = controller.dayStatuses[day] ?? 'open';
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: bgForStatus(status),
+                          borderRadius: BorderRadius.circular(14.r),
+                        ),
+                        child: Center(
+                          child: MyText(
+                            '$day',
+                            fontSize: 20.sp,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      );
+                    });
+                  },
+                ),
+                SizedBox(height: 16.h),
+                // Legend
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        MyText(
+                          'الحجز متاح',
+                          fontSize: 18.sp,
+                          color: AppColors.textPrimary,
+                        ),
+                        SizedBox(width: 10.w),
+                        legendDot(const Color(0xFFEFF3F8)),
+                      ],
+                    ),
+                    SizedBox(height: 12.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        MyText(
+                          'الحجوزات ممتلئة',
+                          fontSize: 18.sp,
+                          color: AppColors.textPrimary,
+                        ),
+                        SizedBox(width: 10.w),
+                        legendDot(const Color(0xFFE3F5ED)), // أخضر - full
+                      ],
+                    ),
+                    SizedBox(height: 12.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        MyText(
+                          'عطلة العيادة',
+                          fontSize: 18.sp,
+                          color: AppColors.textPrimary,
+                        ),
+                        SizedBox(width: 10.w),
+                        legendDot(const Color(0xFFFFF0D5)),
+                      ],
+                    ),
+                    SizedBox(height: 12.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        MyText(
+                          'مغلق',
+                          fontSize: 18.sp,
+                          color: AppColors.textPrimary,
+                        ),
+                        SizedBox(width: 10.w),
+                        legendDot(const Color(0xFFFFE4E4)),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+    );
   }
 
   Widget _buildInsuranceContent(DoctorProfileController controller) {

@@ -63,12 +63,12 @@ class AppointmentDetailsPage extends StatelessWidget {
         ? Get.find<PastAppointmentsController>()
         : Get.put(PastAppointmentsController());
 
-    // تحميل التقييم مرة واحدة فقط عند الدخول
+    // تحميل التقييم عند الدخول
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (controller.triedLoadRating.value) return;
       final role = Get.find<SessionController>().role.value;
       if (role == 'user' && statusText == 'مكتمل' && appointmentId.isNotEmpty) {
-        controller.triedLoadRating.value = true;
+        // Reset and reload rating for this appointment
+        controller.triedLoadRating.value = false;
         controller.loadAppointmentRating(appointmentId);
       }
     });
@@ -433,6 +433,7 @@ class AppointmentDetailsPage extends StatelessWidget {
             ),
             SizedBox(height: 12.h),
             if (controller.ratingId.value != null &&
+                controller.ratingId.value!.isNotEmpty &&
                 controller.ratingValue.value != null) ...[
               Container(
                 padding: EdgeInsets.symmetric(vertical: 8.h),

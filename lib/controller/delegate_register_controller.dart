@@ -143,7 +143,7 @@ class DelegateRegisterController extends GetxController {
         name: nameCtrl.text.trim(),
         phone: phoneCtrl.text.trim(),
         password: passwordCtrl.text.trim(),
-        gender: genderIndex.value == 0 ? 'ذكر' : 'انثى',
+        gender: genderIndex.value == 0 ? 'ذكر' : 'أنثى',
         age: int.parse(selectedAge.value!),
         city: selectedCity.value!,
         userType: 'Representative',

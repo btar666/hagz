@@ -90,7 +90,7 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
     final String g = user.gender.trim().toLowerCase();
     if (g == 'male' || g == 'ذكر') {
       _genderIndex = 0;
-    } else if (g == 'female' || g == 'انثى' || g == 'أنثى') {
+    } else if (g == 'female' || g == 'أنثى') {
       _genderIndex = 1;
     }
 
@@ -254,7 +254,7 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
                 children: [
                   Expanded(child: _genderButton('ذكر', 0)),
                   SizedBox(width: 16.w),
-                  Expanded(child: _genderButton('انثى', 1)),
+                  Expanded(child: _genderButton('أنثى', 1)),
                 ],
               ),
               SizedBox(height: 16.h),
@@ -880,7 +880,7 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
     try {
       final name = _nameCtrl.text.trim();
       final phone = _phoneCtrl.text.trim();
-      final gender = _genderIndex == 0 ? 'ذكر' : 'انثى';
+      final gender = _genderIndex == 0 ? 'ذكر' : 'أنثى';
       final age = int.tryParse(_age) ?? 0;
       final res = await _userService.updateUserInfo(
         name: name,

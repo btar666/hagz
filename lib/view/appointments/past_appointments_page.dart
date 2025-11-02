@@ -170,6 +170,8 @@ class PastAppointmentsPage extends StatelessWidget {
                 child: Obx(() {
                   final isLoading = controller.isLoading.value;
                   final items = controller.filtered;
+                  final hasMore = controller.hasMore.value;
+                  final isLoadingMore = controller.isLoadingMore.value;
 
                   if (!isLoading && items.isEmpty) {
                     return Center(
@@ -192,7 +194,8 @@ class PastAppointmentsPage extends StatelessWidget {
                           ),
                           SizedBox(height: 8.h),
                           TextButton(
-                            onPressed: controller.loadAppointments,
+                            onPressed: () =>
+                                controller.loadAppointments(reset: true),
                             child: const Text('تحديث'),
                           ),
                         ],
@@ -203,13 +206,30 @@ class PastAppointmentsPage extends StatelessWidget {
                   return Skeletonizer(
                     enabled: isLoading,
                     child: ListView.separated(
+                      controller: controller.scrollController,
                       padding: EdgeInsets.only(top: 4.h, bottom: 8.h),
-                      itemCount: isLoading ? 8 : items.length,
+                      itemCount: isLoading
+                          ? 8
+                          : items.length + (hasMore && !isLoading ? 1 : 0),
                       separatorBuilder: (_, __) => Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16.w),
                         child: Divider(color: AppColors.divider, height: 1),
                       ),
                       itemBuilder: (_, i) {
+                        // Show loading indicator at the end if has more
+                        if (!isLoading && i >= items.length) {
+                          return isLoadingMore
+                              ? Padding(
+                                  padding: EdgeInsets.all(16.w),
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                )
+                              : const SizedBox.shrink();
+                        }
+
                         final hasReal = !isLoading && i < items.length;
                         final item = hasReal
                             ? items[i]
