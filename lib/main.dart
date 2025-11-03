@@ -34,7 +34,6 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // init persistent storage
   await GetStorageService().init();
 
   runApp(const MedicalApp());
