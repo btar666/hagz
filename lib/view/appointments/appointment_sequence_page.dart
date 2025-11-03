@@ -53,7 +53,7 @@ class AppointmentSequencePage extends StatelessWidget {
                     Expanded(
                       child: Center(
                         child: Text(
-                          'تسلسل المواعيد',
+                          'appointment_sequence_title'.tr,
                           style: TextStyle(
                             color: AppColors.textPrimary,
                             fontSize: 22.sp,

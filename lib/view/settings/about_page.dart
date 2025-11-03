@@ -29,7 +29,7 @@ class AboutPage extends StatelessWidget {
             child: const BackButtonWidget(),
           ),
           title: MyText(
-            'حول التطبيق',
+            'about_app_title'.tr,
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,

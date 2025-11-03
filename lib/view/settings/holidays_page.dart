@@ -33,7 +33,7 @@ class HolidaysPage extends StatelessWidget {
                   Expanded(
                     child: Center(
                       child: MyText(
-                        'إدارة العطل',
+                        'manage_holidays_title'.tr,
                         fontSize: 22.sp,
                         fontWeight: FontWeight.w900,
                         color: AppColors.textPrimary,

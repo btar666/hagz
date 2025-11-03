@@ -59,7 +59,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                   Expanded(
                     child: Center(
                       child: MyText(
-                        'ادارة حسابك الشخصي',
+                        'manage_personal_account_title'.tr,
                         fontSize: 22.sp,
                         fontWeight: FontWeight.w900,
                         color: AppColors.textPrimary,
@@ -89,7 +89,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                             elevation: 0,
                           ),
                           child: MyText(
-                            'تعديل وسائل التواصل',
+                            'edit_social_media'.tr,
                             fontSize: 20.sp,
                             fontWeight: FontWeight.w900,
                             color: Colors.white,
@@ -124,7 +124,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                             padding: EdgeInsets.symmetric(vertical: 14.h),
                           ),
                           child: MyText(
-                            'تعديل المعلومات الشخصية',
+                            'edit_personal_info'.tr,
                             fontSize: 18.sp,
                             fontWeight: FontWeight.w900,
                             color: AppColors.primary,
@@ -366,8 +366,8 @@ class DoctorProfileManagePage extends StatelessWidget {
     final v = input.trim();
     if (v.isEmpty || v.startsWith('http://ABCDEFG')) {
       Get.snackbar(
-        'لا يوجد رابط',
-        'لم يتم ضبط رابط الواتساب',
+        'error'.tr,
+        'error_loading_support_link'.tr,
         backgroundColor: Colors.black87,
         colorText: Colors.white,
       );
@@ -488,7 +488,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                     elevation: 0,
                   ),
                   child: MyText(
-                    'حفظ',
+                    'save'.tr,
                     fontSize: 18.sp,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
@@ -642,11 +642,11 @@ class DoctorProfileManagePage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _plainRow(manageController.namePersonalCtrl, hint: 'الاسم الكامل'),
+          _plainRow(manageController.namePersonalCtrl, hint: 'full_name'.tr),
           SizedBox(height: 12.h),
           _plainRow(
             manageController.phonePersonalCtrl,
-            hint: 'رقم الهاتف',
+            hint: 'phone_number'.tr,
             trailingAsset: 'assets/icons/home/phone.png',
           ),
           SizedBox(height: 12.h),
@@ -672,7 +672,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                       ),
                     ),
                     child: MyText(
-                      'ذكر',
+                      'male'.tr,
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w800,
                       color: sel ? AppColors.primary : AppColors.textSecondary,
@@ -700,7 +700,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                       ),
                     ),
                     child: MyText(
-                      'أنثى',
+                      'female'.tr,
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w800,
                       color: sel ? AppColors.primary : AppColors.textSecondary,
@@ -711,7 +711,7 @@ class DoctorProfileManagePage extends StatelessWidget {
             ],
           ),
           SizedBox(height: 12.h),
-          _plainRow(manageController.agePersonalCtrl, hint: 'العمر'),
+          _plainRow(manageController.agePersonalCtrl, hint: 'age_label'.tr),
           SizedBox(height: 12.h),
           _cityDropdown(),
           SizedBox(height: 12.h),
@@ -754,7 +754,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                     elevation: 0,
                   ),
                   child: MyText(
-                    'حفظ',
+                    'save'.tr,
                     fontSize: 18.sp,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
@@ -874,7 +874,7 @@ class DoctorProfileManagePage extends StatelessWidget {
               fontSize: 16,
             ),
             decoration: InputDecoration(
-              hintText: 'اكتب سيرتك الذاتية هنا...',
+              hintText: 'write_cv_here'.tr,
               hintStyle: TextStyle(
                 fontFamily: 'Expo Arabic',
                 color: AppColors.textLight,
@@ -907,7 +907,7 @@ class DoctorProfileManagePage extends StatelessWidget {
         ),
         SizedBox(height: 12.h),
         MyText(
-          'صور الشهادات',
+          'certificate_images'.tr,
           fontSize: 16.sp,
           fontWeight: FontWeight.w800,
           color: AppColors.textPrimary,
@@ -1015,17 +1015,17 @@ class DoctorProfileManagePage extends StatelessWidget {
                       if (res['ok'] == true) {
                         controller.updateBio(controller.cvDescription.value);
                         Get.snackbar(
-                          'تمت الإضافة',
-                          'تم إضافة السيرة الذاتية بنجاح',
+                          'success'.tr,
+                          'cv_added_success'.tr,
                           backgroundColor: AppColors.primary,
                           colorText: Colors.white,
                           duration: const Duration(seconds: 2),
                         );
                       } else {
                         Get.snackbar(
-                          'فشل الإضافة',
+                          'error'.tr,
                           (res['data']?['message']?.toString() ??
-                              'تعذر إضافة السيرة'),
+                              'cv_add_failed'.tr),
                           backgroundColor: const Color(0xFFFF3B30),
                           colorText: Colors.white,
                           duration: const Duration(seconds: 2),
@@ -1064,17 +1064,17 @@ class DoctorProfileManagePage extends StatelessWidget {
                       if (res['ok'] == true) {
                         controller.updateBio(controller.cvDescription.value);
                         Get.snackbar(
-                          'تم الحفظ',
-                          'تم تعديل السيرة الذاتية',
+                          'success'.tr,
+                          'cv_update_success'.tr,
                           backgroundColor: AppColors.primary,
                           colorText: Colors.white,
                           duration: const Duration(seconds: 2),
                         );
                       } else {
                         Get.snackbar(
-                          'فشل التعديل',
+                          'error'.tr,
                           (res['data']?['message']?.toString() ??
-                              'تعذر حفظ السيرة'),
+                              'cv_update_failed'.tr),
                           backgroundColor: const Color(0xFFFF3B30),
                           colorText: Colors.white,
                           duration: const Duration(seconds: 2),
@@ -1090,7 +1090,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                       elevation: 0,
                     ),
                     child: MyText(
-                      'تعديل',
+                      'edit'.tr,
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
@@ -1106,17 +1106,17 @@ class DoctorProfileManagePage extends StatelessWidget {
                         controller.updateBio('');
                         controller.certificateImages.clear();
                         Get.snackbar(
-                          'تم الحذف',
-                          'تم حذف السيرة الذاتية',
+                          'success'.tr,
+                          'cv_delete_success'.tr,
                           backgroundColor: AppColors.primary,
                           colorText: Colors.white,
                           duration: const Duration(seconds: 2),
                         );
                       } else {
                         Get.snackbar(
-                          'فشل الحذف',
+                          'error'.tr,
                           (res['data']?['message']?.toString() ??
-                              'تعذر حذف السيرة'),
+                              'cv_delete_failed'.tr),
                           backgroundColor: const Color(0xFFFF3B30),
                           colorText: Colors.white,
                           duration: const Duration(seconds: 2),
@@ -1132,7 +1132,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                       ),
                     ),
                     child: MyText(
-                      'حذف',
+                      'delete'.tr,
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w800,
                       color: const Color(0xFFFF3B30),
@@ -1156,7 +1156,7 @@ class DoctorProfileManagePage extends StatelessWidget {
           imageQuality: 85,
         );
         if (picked == null) return;
-        await LoadingDialog.show(message: 'جاري رفع الصورة...');
+        await LoadingDialog.show(message: 'uploading_image'.tr);
         try {
           final upload = UploadService();
           final res = await upload.uploadImage(File(picked.path));
@@ -1166,27 +1166,27 @@ class DoctorProfileManagePage extends StatelessWidget {
             if (url.isNotEmpty) {
               controller.addCertificate(url);
               await showStatusDialog(
-                title: 'تم الرفع',
+                title: 'success'.tr,
                 message: res['message']?.toString().isNotEmpty == true
                     ? res['message'] as String
-                    : 'تم رفع الصورة بنجاح',
+                    : 'upload_success'.tr,
                 color: AppColors.primary,
                 icon: Icons.check_circle_outline,
               );
             } else {
               await showStatusDialog(
-                title: 'فشل الرفع',
-                message: 'تعذر الحصول على الرابط من الخادم',
+                title: 'upload_failed'.tr,
+                message: 'failed_to_get_link'.tr,
                 color: const Color(0xFFFF3B30),
                 icon: Icons.error_outline,
               );
             }
           } else {
             await showStatusDialog(
-              title: 'فشل الرفع',
+              title: 'upload_failed'.tr,
               message: (res['message']?.toString().isNotEmpty == true)
                   ? res['message'] as String
-                  : 'يرجى المحاولة لاحقاً',
+                  : 'please_try_later'.tr,
               color: const Color(0xFFFF3B30),
               icon: Icons.error_outline,
             );
@@ -1194,8 +1194,8 @@ class DoctorProfileManagePage extends StatelessWidget {
         } catch (_) {
           LoadingDialog.hide();
           await showStatusDialog(
-            title: 'خطأ',
-            message: 'حدث خطأ أثناء رفع الصورة',
+            title: 'error'.tr,
+            message: 'error_uploading_image'.tr,
             color: const Color(0xFFFF3B30),
             icon: Icons.error_outline,
           );
@@ -1241,7 +1241,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                 children: [
                   Expanded(
                     child: MyText(
-                      'العنوان',
+                      'address_label'.tr,
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
@@ -1297,7 +1297,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                 children: [
                   Expanded(
                     child: MyText(
-                      'الآراء',
+                      'opinions'.tr,
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
@@ -1375,7 +1375,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                 children: [
                   Expanded(
                     child: MyText(
-                      'سعر الحجز',
+                      'appointment_price'.tr,
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
@@ -1420,7 +1420,7 @@ class DoctorProfileManagePage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         MyText(
-          'حدد سعر الحجز للمرضى',
+          'set_appointment_price'.tr,
           fontSize: 16.sp,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
@@ -1480,8 +1480,8 @@ class DoctorProfileManagePage extends StatelessWidget {
               final text = priceCtrl.text.trim();
               if (text.isEmpty) {
                 Get.snackbar(
-                  'خطأ',
-                  'يرجى إدخال السعر',
+                  'error'.tr,
+                  'please_enter_price'.tr,
                   backgroundColor: const Color(0xFFFF3B30),
                   colorText: Colors.white,
                 );
@@ -1490,8 +1490,8 @@ class DoctorProfileManagePage extends StatelessWidget {
               final double? price = double.tryParse(text);
               if (price == null || price <= 0) {
                 Get.snackbar(
-                  'خطأ',
-                  'يرجى إدخال سعر صحيح',
+                  'error'.tr,
+                  'please_enter_valid_price'.tr,
                   backgroundColor: const Color(0xFFFF3B30),
                   colorText: Colors.white,
                 );
@@ -1501,14 +1501,14 @@ class DoctorProfileManagePage extends StatelessWidget {
               final String? userId = session.currentUser.value?.id;
               if (userId == null || userId.isEmpty) {
                 Get.snackbar(
-                  'خطأ',
-                  'يرجى تسجيل الدخول',
+                  'error'.tr,
+                  'please_login'.tr,
                   backgroundColor: const Color(0xFFFF3B30),
                   colorText: Colors.white,
                 );
                 return;
               }
-              await LoadingDialog.show(message: 'جاري الحفظ...');
+              await LoadingDialog.show(message: 'saving'.tr);
               try {
                 final res = await controller.saveOrUpdatePricing(
                   doctorId: userId,
@@ -1518,16 +1518,17 @@ class DoctorProfileManagePage extends StatelessWidget {
                 LoadingDialog.hide();
                 if (res['ok'] == true) {
                   await showStatusDialog(
-                    title: 'تم الحفظ',
-                    message: 'تم حفظ سعر الحجز بنجاح',
+                    title: 'success'.tr,
+                    message: 'price_saved_success'.tr,
                     color: AppColors.primary,
                     icon: Icons.check_circle_outline,
                   );
                 } else {
                   await showStatusDialog(
-                    title: 'فشل الحفظ',
+                    title: 'price_save_failed'.tr,
                     message:
-                        res['data']?['message']?.toString() ?? 'تعذر حفظ السعر',
+                        res['data']?['message']?.toString() ??
+                        'failed_to_save_price'.tr,
                     color: const Color(0xFFFF3B30),
                     icon: Icons.error_outline,
                   );
@@ -1535,8 +1536,8 @@ class DoctorProfileManagePage extends StatelessWidget {
               } catch (e) {
                 LoadingDialog.hide();
                 await showStatusDialog(
-                  title: 'خطأ',
-                  message: 'حدث خطأ غير متوقع',
+                  title: 'error'.tr,
+                  message: 'unexpected_error'.tr,
                   color: const Color(0xFFFF3B30),
                   icon: Icons.error_outline,
                 );
@@ -1550,7 +1551,7 @@ class DoctorProfileManagePage extends StatelessWidget {
               elevation: 0,
             ),
             child: MyText(
-              'حفظ السعر',
+              'save_price'.tr,
               fontSize: 18.sp,
               fontWeight: FontWeight.w900,
               color: Colors.white,
@@ -1619,11 +1620,11 @@ class DoctorProfileManagePage extends StatelessWidget {
           child: ElevatedButton(
             onPressed: () async {
               if (addressCtrl.text.trim().isEmpty) {
-                Get.snackbar('خطأ', 'يرجى إدخال العنوان');
+                Get.snackbar('error'.tr, 'please_enter_address'.tr);
                 return;
               }
 
-              LoadingDialog.show(message: 'جاري تحديث العنوان...');
+              LoadingDialog.show(message: 'updating_address'.tr);
 
               final result = await controller.updateDoctorAddress(
                 addressCtrl.text.trim(),
@@ -1632,12 +1633,12 @@ class DoctorProfileManagePage extends StatelessWidget {
               LoadingDialog.hide();
 
               if (result['ok'] == true) {
-                Get.snackbar('نجح', 'تم تحديث العنوان بنجاح');
+                Get.snackbar('success'.tr, 'address_updated_success'.tr);
                 controller.toggleAddressExpansion();
               } else {
                 Get.snackbar(
-                  'خطأ',
-                  result['message'] ?? 'فشل في تحديث العنوان',
+                  'error'.tr,
+                  result['message'] ?? 'address_update_failed'.tr,
                 );
               }
             },
@@ -1649,7 +1650,7 @@ class DoctorProfileManagePage extends StatelessWidget {
               elevation: 0,
             ),
             child: MyText(
-              'حفظ العنوان',
+              'save_address'.tr,
               fontSize: 16.sp,
               fontWeight: FontWeight.w700,
               color: Colors.white,
@@ -1734,7 +1735,7 @@ class DoctorProfileManagePage extends StatelessWidget {
             children: [
               Expanded(
                 child: _pillButton(
-                  label: 'حذف',
+                  label: 'delete'.tr,
                   bg: const Color(0xFFFFEEEE),
                   fg: const Color(0xFFFF3040),
                   onTap: () => controller.removeOpinionAt(index),
@@ -1743,7 +1744,7 @@ class DoctorProfileManagePage extends StatelessWidget {
               SizedBox(width: 16.w),
               Expanded(
                 child: _pillButton(
-                  label: published ? 'الغاء النشر' : 'نشر',
+                  label: published ? 'unpublish'.tr : 'publish'.tr,
                   bg: published
                       ? const Color(0xFFE8F7FA)
                       : const Color(0xFFFFF4DB),
@@ -1868,7 +1869,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                 children: [
                   Expanded(
                     child: MyText(
-                      'المواعيد المتاحة',
+                      'available_appointments'.tr,
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
@@ -1915,13 +1916,13 @@ class DoctorProfileManagePage extends StatelessWidget {
     final int total = ((startIndex + daysInMonth + 6) ~/ 7) * 7;
 
     final weekNames = [
-      'أحد',
-      'اثنين',
-      'ثلاثاء',
-      'أربعاء',
-      'خميس',
-      'جمعة',
-      'سبت',
+      'sunday'.tr,
+      'monday'.tr,
+      'tuesday'.tr,
+      'wednesday'.tr,
+      'thursday'.tr,
+      'friday'.tr,
+      'saturday'.tr,
     ];
 
     Color bgForStatus(String status) {
@@ -1999,7 +2000,7 @@ class DoctorProfileManagePage extends StatelessWidget {
               ],
             ),
             MyText(
-              'هذا الشهر',
+              'this_month'.tr,
               fontSize: 18.sp,
               fontWeight: FontWeight.w900,
               color: AppColors.textPrimary,
@@ -2079,7 +2080,7 @@ class DoctorProfileManagePage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 MyText(
-                  'الحجز متاح',
+                  'appointments_available'.tr,
                   fontSize: 18.sp,
                   color: AppColors.textPrimary,
                 ),
@@ -2092,7 +2093,7 @@ class DoctorProfileManagePage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 MyText(
-                  'الحجوزات ممتلئة',
+                  'appointments_full'.tr,
                   fontSize: 18.sp,
                   color: AppColors.textPrimary,
                 ),
@@ -2105,7 +2106,7 @@ class DoctorProfileManagePage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 MyText(
-                  'عطلة العيادة',
+                  'clinic_holiday'.tr,
                   fontSize: 18.sp,
                   color: AppColors.textPrimary,
                 ),
@@ -2118,7 +2119,7 @@ class DoctorProfileManagePage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 MyText(
-                  'العيادة مغلقة',
+                  'clinic_closed'.tr,
                   fontSize: 18.sp,
                   color: AppColors.textPrimary,
                 ),
@@ -2156,7 +2157,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                 children: [
                   Expanded(
                     child: MyText(
-                      'صور لحالات تمت معالجتها',
+                      'case_images'.tr,
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
@@ -2206,7 +2207,7 @@ class DoctorProfileManagePage extends StatelessWidget {
         children: [
           // Form: Add new case
           MyText(
-            'إضافة حالة جديدة',
+            'add_new_case'.tr,
             fontSize: 18.sp,
             fontWeight: FontWeight.w800,
             color: AppColors.textPrimary,
@@ -2225,8 +2226,8 @@ class DoctorProfileManagePage extends StatelessWidget {
               controller: titleCtrl,
               textAlign: TextAlign.right,
               textDirection: TextDirection.rtl,
-              decoration: const InputDecoration(
-                hintText: 'عنوان الحالة',
+              decoration: InputDecoration(
+                hintText: 'case_title'.tr,
                 border: InputBorder.none,
               ),
               style: TextStyle(
@@ -2250,8 +2251,8 @@ class DoctorProfileManagePage extends StatelessWidget {
               textAlign: TextAlign.right,
               textDirection: TextDirection.rtl,
               maxLines: 3,
-              decoration: const InputDecoration(
-                hintText: 'وصف الحالة',
+              decoration: InputDecoration(
+                hintText: 'case_description'.tr,
                 border: InputBorder.none,
               ),
               style: TextStyle(
@@ -2295,7 +2296,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                           ),
                           SizedBox(width: 8.w),
                           MyText(
-                            'عام',
+                            'general'.tr,
                             fontSize: 16.sp,
                             fontWeight: FontWeight.w800,
                             color: visibility.value == 'public'
@@ -2337,7 +2338,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                           ),
                           SizedBox(width: 8.w),
                           MyText(
-                            'خاص',
+                            'private'.tr,
                             fontSize: 16.sp,
                             fontWeight: FontWeight.w800,
                             color: visibility.value == 'private'
@@ -2404,7 +2405,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                       imageQuality: 85,
                     );
                     if (picked == null) return;
-                    await LoadingDialog.show(message: 'جاري رفع الصورة...');
+                    await LoadingDialog.show(message: 'uploading_image'.tr);
                     try {
                       final upload = UploadService();
                       final res = await upload.uploadImage(File(picked.path));
@@ -2432,7 +2433,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                       children: [
                         const Icon(Icons.add, color: AppColors.primary),
                         MyText(
-                          'إضافة صورة',
+                          'add_image'.tr,
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w700,
                           color: AppColors.primary,
@@ -2452,14 +2453,14 @@ class DoctorProfileManagePage extends StatelessWidget {
                 if (titleCtrl.text.trim().isEmpty ||
                     descCtrl.text.trim().isEmpty) {
                   await showStatusDialog(
-                    title: 'خطأ',
-                    message: 'يرجى ملء جميع الحقول',
+                    title: 'error'.tr,
+                    message: 'please_fill_all_fields'.tr,
                     color: const Color(0xFFFF3B30),
                     icon: Icons.error_outline,
                   );
                   return;
                 }
-                await LoadingDialog.show(message: 'جاري إضافة الحالة...');
+                await LoadingDialog.show(message: 'adding_case'.tr);
                 try {
                   final res = await controller.createNewCase(
                     title: titleCtrl.text.trim(),
@@ -2474,17 +2475,17 @@ class DoctorProfileManagePage extends StatelessWidget {
                     caseImages.clear();
                     visibility.value = 'public';
                     await showStatusDialog(
-                      title: 'تمت الإضافة',
-                      message: 'تم إضافة الحالة بنجاح',
+                      title: 'success'.tr,
+                      message: 'case_added_success'.tr,
                       color: AppColors.primary,
                       icon: Icons.check_circle_outline,
                     );
                   } else {
                     await showStatusDialog(
-                      title: 'فشل الإضافة',
+                      title: 'error'.tr,
                       message:
                           (res['data']?['message']?.toString() ??
-                          'تعذر إضافة الحالة'),
+                          'case_add_failed'.tr),
                       color: const Color(0xFFFF3B30),
                       icon: Icons.error_outline,
                     );
@@ -2492,8 +2493,8 @@ class DoctorProfileManagePage extends StatelessWidget {
                 } catch (_) {
                   LoadingDialog.hide();
                   await showStatusDialog(
-                    title: 'خطأ',
-                    message: 'حدث خطأ أثناء إضافة الحالة',
+                    title: 'error'.tr,
+                    message: 'error_adding_case'.tr,
                     color: const Color(0xFFFF3B30),
                     icon: Icons.error_outline,
                   );
@@ -2508,7 +2509,7 @@ class DoctorProfileManagePage extends StatelessWidget {
               ),
               icon: const Icon(Icons.add, color: Colors.white),
               label: MyText(
-                'إضافة الحالة',
+                'add_case'.tr,
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
@@ -2519,7 +2520,7 @@ class DoctorProfileManagePage extends StatelessWidget {
           Divider(color: AppColors.divider, height: 1),
           SizedBox(height: 12.h),
           MyText(
-            'الحالات المضافة',
+            'added_cases'.tr,
             fontSize: 18.sp,
             fontWeight: FontWeight.w800,
             color: AppColors.textPrimary,
@@ -2566,7 +2567,7 @@ class DoctorProfileManagePage extends StatelessWidget {
             )
           else if (controller.apiCases.isEmpty)
             MyText(
-              'لا توجد حالات بعد',
+              'no_cases_yet'.tr,
               fontSize: 16.sp,
               fontWeight: FontWeight.w700,
               color: AppColors.textSecondary,
@@ -2623,7 +2624,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                     maxLines: 2,
                   ),
                   trailing: IconButton(
-                    tooltip: 'حذف',
+                    tooltip: 'delete_case'.tr,
                     icon: const Icon(Icons.delete, color: Color(0xFFFF3B30)),
                     onPressed: () async {
                       final caseId = caseData['_id']?.toString() ?? '';
@@ -2634,14 +2635,14 @@ class DoctorProfileManagePage extends StatelessWidget {
                       );
                       if (!confirmed) return;
 
-                      await LoadingDialog.show(message: 'جاري الحذف...');
+                      await LoadingDialog.show(message: 'deleting_case'.tr);
                       try {
                         final res = await controller.deleteCase(caseId);
                         LoadingDialog.hide();
                         if (res['ok'] == true) {
                           await showStatusDialog(
-                            title: 'تم الحذف',
-                            message: 'تم حذف الحالة بنجاح',
+                            title: 'success'.tr,
+                            message: 'case_deleted_success'.tr,
                             color: AppColors.primary,
                             icon: Icons.check_circle_outline,
                           );
@@ -2652,12 +2653,12 @@ class DoctorProfileManagePage extends StatelessWidget {
                               'تعذر حذف الحالة';
 
                           // تحديد العنوان بناءً على نوع الخطأ
-                          String errorTitle = 'فشل الحذف';
+                          String errorTitle = 'case_delete_failed'.tr;
                           if (errorMessage.contains('غير مصرح') ||
                               errorMessage.contains('not authorized') ||
                               errorMessage.contains('Unauthorized')) {
-                            errorTitle = 'غير مصرح لك';
-                            errorMessage = 'ليس لديك صلاحية حذف هذه الحالة';
+                            errorTitle = 'case_delete_unauthorized'.tr;
+                            errorMessage = 'case_delete_unauthorized_msg'.tr;
                           }
 
                           await showStatusDialog(
@@ -2670,8 +2671,8 @@ class DoctorProfileManagePage extends StatelessWidget {
                       } catch (_) {
                         LoadingDialog.hide();
                         await showStatusDialog(
-                          title: 'خطأ',
-                          message: 'حدث خطأ أثناء حذف الحالة',
+                          title: 'error'.tr,
+                          message: 'error_deleting_case'.tr,
                           color: const Color(0xFFFF3B30),
                           icon: Icons.error_outline,
                         );
