@@ -29,7 +29,7 @@ class AuthController extends GetxController {
   final TextEditingController regPasswordCtrl = TextEditingController();
   final TextEditingController specializationCtrl = TextEditingController();
   final RxString specializationId = ''.obs; // ID الاختصاص بدلاً من النص
-  final RxString gender = ''.obs; // 'ذكر' | 'انثى'
+  final RxString gender = ''.obs; // 'ذكر' | 'أنثى'
   final RxInt age = 18.obs; // default
   final RxString imageUrl = ''.obs;
 

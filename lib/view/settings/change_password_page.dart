@@ -18,7 +18,7 @@ class ChangePasswordPage extends StatelessWidget {
         backgroundColor: const Color(0xFFF4FEFF),
         elevation: 0,
         title: MyText(
-          'تغيير كلمة السر',
+          'change_password_title'.tr,
           fontSize: 22.sp,
           fontWeight: FontWeight.w900,
           color: AppColors.textPrimary,
@@ -43,26 +43,26 @@ class ChangePasswordPage extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _label('كلمة السر الحالية'),
+                      _label('current_password'.tr),
                       SizedBox(height: 8.h),
                       _roundedPasswordField(
                         controller: c.oldCtrl,
-                        hint: 'ادخل كلمة السر الحالية',
+                        hint: 'current_password_hint'.tr,
                         hideRx: c.hideOld,
                         validator: (v) => (v == null || v.trim().isEmpty)
-                            ? 'يرجى إدخال كلمة السر الحالية'
+                            ? 'please_enter_current_password'.tr
                             : null,
                       ),
                       SizedBox(height: 16.h),
 
-                      _label('كلمة السر الجديدة'),
+                      _label('new_password'.tr),
                       SizedBox(height: 8.h),
                       _roundedPasswordField(
                         controller: c.newCtrl,
-                        hint: 'ادخل كلمة السر الجديدة',
+                        hint: 'new_password_hint'.tr,
                         hideRx: c.hideNew,
                         validator: (v) => (v == null || v.trim().length < 6)
-                            ? 'كلمة السر يجب أن تكون 6 أحرف على الأقل'
+                            ? 'password_min_length'.tr
                             : null,
                       ),
 
@@ -83,7 +83,7 @@ class ChangePasswordPage extends StatelessWidget {
                                 ),
                               ),
                               child: MyText(
-                                'الغاء',
+                                'cancel'.tr,
                                 fontSize: 18.sp,
                                 fontWeight: FontWeight.w800,
                                 color: const Color(0xFFFFB74D),
@@ -103,7 +103,7 @@ class ChangePasswordPage extends StatelessWidget {
                                 elevation: 0,
                               ),
                               child: MyText(
-                                'حفظ',
+                                'save'.tr,
                                 fontSize: 18.sp,
                                 fontWeight: FontWeight.w900,
                                 color: Colors.white,

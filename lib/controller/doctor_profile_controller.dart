@@ -5,6 +5,7 @@ import '../service_layer/services/case_service.dart';
 import '../service_layer/services/doctor_pricing_service.dart';
 import '../service_layer/services/user_service.dart';
 import '../service_layer/services/ratings_service.dart';
+import '../service_layer/services/appointments_service.dart';
 import 'session_controller.dart';
 
 class DoctorProfileController extends GetxController {
@@ -71,6 +72,7 @@ class DoctorProfileController extends GetxController {
   final DoctorPricingService _pricingService = DoctorPricingService();
   final UserService _userService = UserService();
   final RatingsService _ratingsService = RatingsService();
+  final AppointmentsService _appointmentsService = AppointmentsService();
   final SessionController _session = Get.find<SessionController>();
 
   // CV state
@@ -105,6 +107,9 @@ class DoctorProfileController extends GetxController {
   var selectedMonth = DateTime.now().obs; // always first day semantics in view
   // status per day: 'available' | 'full' | 'holiday' | 'closed'
   var dayStatuses = <int, String>{}.obs;
+  var isLoadingCalendar = false.obs;
+  var currentDoctorIdForCalendar =
+      ''.obs; // Store doctorId for calendar loading
 
   // Treated cases (legacy single-case editors)
   var treatedCaseName = ''.obs;
@@ -129,8 +134,13 @@ class DoctorProfileController extends GetxController {
     loadDoctorData();
     // opinions will be fetched by view when doctorId is known
 
-    // Seed sample calendar statuses similar to design
-    _seedCurrentMonthStatuses();
+    // Load calendar for current month
+    final doctorId = _session.currentUser.value?.id ?? '';
+    if (doctorId.isNotEmpty) {
+      loadDoctorCalendar(doctorId: doctorId);
+    } else {
+      _seedCurrentMonthStatuses();
+    }
   }
 
   Future<void> loadOpinionsForTarget(String targetId) async {
@@ -371,33 +381,128 @@ class DoctorProfileController extends GetxController {
   // Availability helpers
   void _seedCurrentMonthStatuses() {
     dayStatuses.clear();
-    // Example: days 8, 16, 26, 30 => available (green tint in UI)
-    for (final d in [8, 16, 26, 30]) {
-      dayStatuses[d] = 'available';
-    }
-    // days 10, 17, 31 => holiday
-    for (final d in [10, 17, 31]) {
-      dayStatuses[d] = 'holiday';
-    }
-    // days 11, 18, 19 => closed
-    for (final d in [11, 18, 19]) {
-      dayStatuses[d] = 'closed';
-    }
+    // This is now a fallback - will be overridden by API data
     // the rest default to 'open' (light grey)
+  }
+
+  /// Load calendar from API for a specific doctor and month
+  Future<void> loadDoctorCalendar({
+    required String doctorId,
+    int? year,
+    int? month,
+  }) async {
+    if (doctorId.isEmpty) {
+      print('⚠️ loadDoctorCalendar: doctorId is empty');
+      return;
+    }
+
+    print('📅 loadDoctorCalendar called for doctorId: $doctorId');
+    // Store doctorId for later use in nextMonth/prevMonth
+    currentDoctorIdForCalendar.value = doctorId;
+
+    final monthDate = selectedMonth.value;
+    final y = year ?? monthDate.year;
+    final m = month ?? monthDate.month;
+
+    isLoadingCalendar.value = true;
+    dayStatuses.clear();
+
+    try {
+      final res = await _appointmentsService.getDoctorCalendar(
+        doctorId: doctorId,
+        year: y,
+        month: m,
+      );
+
+      if (res['ok'] == true) {
+        final data = res['data'];
+        // API response structure: { status: true, code: "S200", message: "...", data: { status: true, code: "S200", message: "...", data: { year: 2025, month: 11, days: [...] } } }
+        // So res['data'] contains { status, code, message, data: { year, month, days } }
+        // We need to access res['data']['data']['days']
+        final actualData = (data is Map && data['data'] is Map)
+            ? data['data']
+            : data;
+
+        if (actualData is Map && actualData['days'] is List) {
+          final days = actualData['days'] as List;
+          print('📅 Calendar API returned ${days.length} days for $y/$m');
+          // Clear previous statuses and create new map
+          final newStatuses = <int, String>{};
+          for (var dayData in days) {
+            if (dayData is Map) {
+              final dateStr = dayData['date']?.toString() ?? '';
+              final status = dayData['status']?.toString() ?? 'open';
+
+              // Parse date to extract day number
+              if (dateStr.isNotEmpty) {
+                try {
+                  final date = DateTime.parse(dateStr);
+                  if (date.year == y && date.month == m) {
+                    newStatuses[date.day] = status;
+                    print('📅 Day ${date.day}: status = $status');
+                  }
+                } catch (e) {
+                  print('❌ Error parsing date $dateStr: $e');
+                }
+              }
+            }
+          }
+          // Update the observable map
+          dayStatuses.value = newStatuses;
+          print(
+            '✅ Loaded calendar: ${dayStatuses.length} days with status for $y/$m',
+          );
+          print(
+            '📅 Statuses summary: ${dayStatuses.entries.where((e) => e.value != 'available').length} non-default days',
+          );
+          // Debug: print all statuses
+          print('📅 All statuses: $dayStatuses');
+        } else {
+          print(
+            '⚠️ Unexpected data structure: actualData type = ${actualData.runtimeType}',
+          );
+          if (actualData is Map) {
+            print('⚠️ actualData keys: ${actualData.keys}');
+          }
+        }
+      } else {
+        print('❌ Failed to load calendar: ${res['message'] ?? res['data']}');
+      }
+    } catch (e) {
+      print('❌ Error loading calendar: $e');
+    } finally {
+      isLoadingCalendar.value = false;
+    }
   }
 
   void nextMonth() {
     final current = selectedMonth.value;
     final next = DateTime(current.year, current.month + 1, 1);
     selectedMonth.value = next;
-    _seedCurrentMonthStatuses();
+    // Load calendar for the new month using stored doctorId
+    final doctorId = currentDoctorIdForCalendar.value.isNotEmpty
+        ? currentDoctorIdForCalendar.value
+        : (_session.currentUser.value?.id ?? '');
+    if (doctorId.isNotEmpty) {
+      loadDoctorCalendar(doctorId: doctorId);
+    } else {
+      _seedCurrentMonthStatuses();
+    }
   }
 
   void prevMonth() {
     final current = selectedMonth.value;
     final prev = DateTime(current.year, current.month - 1, 1);
     selectedMonth.value = prev;
-    _seedCurrentMonthStatuses();
+    // Load calendar for the previous month using stored doctorId
+    final doctorId = currentDoctorIdForCalendar.value.isNotEmpty
+        ? currentDoctorIdForCalendar.value
+        : (_session.currentUser.value?.id ?? '');
+    if (doctorId.isNotEmpty) {
+      loadDoctorCalendar(doctorId: doctorId);
+    } else {
+      _seedCurrentMonthStatuses();
+    }
   }
 
   // Treated case mutations

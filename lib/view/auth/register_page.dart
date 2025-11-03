@@ -216,7 +216,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   children: [
                     Expanded(child: _genderButton('ذكر', index: 0)),
                     SizedBox(width: 16.w),
-                    Expanded(child: _genderButton('انثى', index: 1)),
+                    Expanded(child: _genderButton('أنثى', index: 1)),
                   ],
                 ),
                 SizedBox(height: 16.h),
@@ -410,12 +410,11 @@ class _RegisterPageState extends State<RegisterPage> {
                           auth.cityCtrl.text = _cityCtrl.text.trim();
                           auth.gender.value = _genderIndex == 0
                               ? 'ذكر'
-                              : 'انثى';
+                              : 'أنثى';
                           auth.age.value = int.tryParse(_age ?? '18') ?? 18;
                           // If user didn't pick an image, upload gender-based default
                           if ((_imageUrl == null || _imageUrl!.isEmpty)) {
                             final isFemale =
-                                auth.gender.value == 'انثى' ||
                                 auth.gender.value == 'أنثى' ||
                                 auth.gender.value.toLowerCase() == 'female';
                             final role = session

@@ -33,6 +33,9 @@ class ApiConstants {
   static const String ratings = '$baseUrl/api/ratings';
   // Doctor Statistics
   static const String doctorStatistics = '$baseUrl/api/doctor-statistics';
+  // Doctor Calendar
+  static const String doctorCalendar =
+      '$baseUrl/api/doctors'; // + /{doctorId}/calendar/{year}/{month}
   // Chat
   static const String chats = '$baseUrl/api/chats';
   static const String chatSend = '$chats/send';
@@ -54,4 +57,6 @@ class ApiConstants {
   static const String visitsByGovernorate = '$visits/by-governorate';
   static const String visitsByRepresentative = '$visits/by-representative';
   static const String representatives = '$baseUrl/api/representatives';
+  // About
+  static const String about = '$baseUrl/api/about';
 }

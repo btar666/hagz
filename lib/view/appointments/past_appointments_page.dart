@@ -67,7 +67,7 @@ class PastAppointmentsPage extends StatelessWidget {
                     Expanded(
                       child: Center(
                         child: Text(
-                          'كل المواعيد',
+                          'all_appointments'.tr,
                           style: TextStyle(
                             color: AppColors.textPrimary,
                             fontSize: 22.sp,
@@ -97,8 +97,8 @@ class PastAppointmentsPage extends StatelessWidget {
                         child: TextField(
                           onChanged: controller.updateQuery,
                           textAlign: TextAlign.center,
-                          decoration: const InputDecoration(
-                            hintText: 'ابحث عن مريض ..',
+                          decoration: InputDecoration(
+                            hintText: 'search_patient'.tr,
                             border: InputBorder.none,
                           ),
                           style: const TextStyle(fontFamily: 'Expo Arabic'),
@@ -142,7 +142,7 @@ class PastAppointmentsPage extends StatelessWidget {
                         SizedBox(width: 8.w),
                         Expanded(
                           child: Text(
-                            'الفترة: $start - $end',
+                            '${'date_range'.tr}: $start - $end',
                             textAlign: TextAlign.right,
                             style: TextStyle(
                               color: AppColors.textSecondary,
@@ -158,7 +158,7 @@ class PastAppointmentsPage extends StatelessWidget {
                             color: AppColors.primary,
                             size: 18,
                           ),
-                          label: const Text('تحديد الفترة'),
+                          label: Text('select_date_range'.tr),
                         ),
                       ],
                     ),
@@ -170,6 +170,8 @@ class PastAppointmentsPage extends StatelessWidget {
                 child: Obx(() {
                   final isLoading = controller.isLoading.value;
                   final items = controller.filtered;
+                  final hasMore = controller.hasMore.value;
+                  final isLoadingMore = controller.isLoadingMore.value;
 
                   if (!isLoading && items.isEmpty) {
                     return Center(
@@ -183,7 +185,7 @@ class PastAppointmentsPage extends StatelessWidget {
                           ),
                           SizedBox(height: 16.h),
                           Text(
-                            'لا توجد مواعيد',
+                            'no_appointments'.tr,
                             style: TextStyle(
                               fontSize: 18.sp,
                               fontWeight: FontWeight.w600,
@@ -192,8 +194,9 @@ class PastAppointmentsPage extends StatelessWidget {
                           ),
                           SizedBox(height: 8.h),
                           TextButton(
-                            onPressed: controller.loadAppointments,
-                            child: const Text('تحديث'),
+                            onPressed: () =>
+                                controller.loadAppointments(reset: true),
+                            child: Text('update'.tr),
                           ),
                         ],
                       ),
@@ -203,13 +206,30 @@ class PastAppointmentsPage extends StatelessWidget {
                   return Skeletonizer(
                     enabled: isLoading,
                     child: ListView.separated(
+                      controller: controller.scrollController,
                       padding: EdgeInsets.only(top: 4.h, bottom: 8.h),
-                      itemCount: isLoading ? 8 : items.length,
+                      itemCount: isLoading
+                          ? 8
+                          : items.length + (hasMore && !isLoading ? 1 : 0),
                       separatorBuilder: (_, __) => Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16.w),
                         child: Divider(color: AppColors.divider, height: 1),
                       ),
                       itemBuilder: (_, i) {
+                        // Show loading indicator at the end if has more
+                        if (!isLoading && i >= items.length) {
+                          return isLoadingMore
+                              ? Padding(
+                                  padding: EdgeInsets.all(16.w),
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                )
+                              : const SizedBox.shrink();
+                        }
+
                         final hasReal = !isLoading && i < items.length;
                         final item = hasReal
                             ? items[i]
@@ -362,7 +382,7 @@ void _showChangeStatusSheet(
             children: [
               ListTile(
                 leading: const Icon(Icons.verified, color: AppColors.primary),
-                title: const Text('تعيين كمؤكد'),
+                title: Text('set_as_confirmed'.tr),
                 onTap: () {
                   Navigator.pop(context);
                   onPick('confirmed');
@@ -373,7 +393,7 @@ void _showChangeStatusSheet(
                   Icons.check_circle,
                   color: Color(0xFF2ECC71),
                 ),
-                title: const Text('تعيين كمكتمل'),
+                title: Text('set_as_completed'.tr),
                 onTap: () {
                   Navigator.pop(context);
                   onPick('completed');
@@ -381,7 +401,7 @@ void _showChangeStatusSheet(
               ),
               ListTile(
                 leading: const Icon(Icons.cancel, color: Color(0xFFFF3B30)),
-                title: const Text('تعيين كملغي'),
+                title: Text('set_as_cancelled'.tr),
                 onTap: () {
                   Navigator.pop(context);
                   onPick('cancelled');
@@ -549,8 +569,8 @@ void _showDateRangeFilterSheet(BuildContext context) {
                       children: [
                         const Icon(Icons.date_range, color: AppColors.primary),
                         const SizedBox(width: 8),
-                        const Text(
-                          'تحديد الفترة',
+                        Text(
+                          'select_date_range'.tr,
                           style: TextStyle(
                             fontFamily: 'Expo Arabic',
                             fontSize: 18,
@@ -570,27 +590,27 @@ void _showDateRangeFilterSheet(BuildContext context) {
                       runSpacing: 8,
                       children: [
                         _chip(
-                          'اليوم',
+                          'today'.tr,
                           () => applyQuickRange('today'),
                           isSelected: selectedQuickRange == 'today',
                         ),
                         _chip(
-                          'آخر 7 أيام',
+                          'last_7_days'.tr,
                           () => applyQuickRange('last7'),
                           isSelected: selectedQuickRange == 'last7',
                         ),
                         _chip(
-                          'هذا الشهر',
+                          'this_month'.tr,
                           () => applyQuickRange('thisMonth'),
                           isSelected: selectedQuickRange == 'thisMonth',
                         ),
                         _chip(
-                          'الشهر الماضي',
+                          'last_month'.tr,
                           () => applyQuickRange('lastMonth'),
                           isSelected: selectedQuickRange == 'lastMonth',
                         ),
                         _chip(
-                          'آخر 30 يوم',
+                          'last_30_days'.tr,
                           () => applyQuickRange('last30'),
                           isSelected: selectedQuickRange == 'last30',
                         ),
@@ -613,8 +633,8 @@ void _showDateRangeFilterSheet(BuildContext context) {
                                 color: AppColors.textSecondary,
                               ),
                               const SizedBox(width: 8),
-                              const Text(
-                                'بداية الفترة',
+                              Text(
+                                'start_period'.tr,
                                 style: TextStyle(
                                   fontFamily: 'Expo Arabic',
                                   fontWeight: FontWeight.w700,
@@ -635,8 +655,8 @@ void _showDateRangeFilterSheet(BuildContext context) {
                                 color: AppColors.textSecondary,
                               ),
                               const SizedBox(width: 8),
-                              const Text(
-                                'نهاية الفترة',
+                              Text(
+                                'end_period'.tr,
                                 style: TextStyle(
                                   fontFamily: 'Expo Arabic',
                                   fontWeight: FontWeight.w700,
@@ -660,7 +680,7 @@ void _showDateRangeFilterSheet(BuildContext context) {
                             c.setDateRange(null, null);
                             Navigator.pop(context);
                           },
-                          child: const Text('مسح'),
+                          child: Text('clear'.tr),
                         ),
                         const Spacer(),
                         ElevatedButton(
@@ -675,7 +695,7 @@ void _showDateRangeFilterSheet(BuildContext context) {
                             c.setDateRange(tempStart, tempEnd);
                             Navigator.pop(context);
                           },
-                          child: const Text('تطبيق'),
+                          child: Text('apply'.tr),
                         ),
                       ],
                     ),

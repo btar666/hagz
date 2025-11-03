@@ -542,6 +542,7 @@ class SecretaryAccountsPage extends StatelessWidget {
     final addressCtrl = TextEditingController();
     final ageCtrl = TextEditingController();
     String selectedGender = 'ذكر';
+    String? selectedCity;
     String? imageUrl;
     bool obscurePassword = true;
 
@@ -610,7 +611,12 @@ class SecretaryAccountsPage extends StatelessWidget {
 
                     // المدينة
                     _buildFieldLabel('المدينة *'),
-                    _buildTextField(cityCtrl, 'أدخل المدينة'),
+                    _buildCityDropdown(cityCtrl, selectedCity, (value) {
+                      setState(() {
+                        selectedCity = value;
+                        cityCtrl.text = value ?? '';
+                      });
+                    }),
                     SizedBox(height: 16.h),
 
                     // العنوان
@@ -765,6 +771,102 @@ class SecretaryAccountsPage extends StatelessWidget {
         textAlign: TextAlign.center,
         decoration: InputDecoration(hintText: hint, border: InputBorder.none),
         style: const TextStyle(fontFamily: 'Expo Arabic'),
+      ),
+    );
+  }
+
+  Widget _buildCityDropdown(
+    TextEditingController cityCtrl,
+    String? selectedCity,
+    Function(String?) onChanged,
+  ) {
+    const List<String> allowedCities = [
+      'بغداد',
+      'البصرة',
+      'نينوى',
+      'أربيل',
+      'النجف',
+      'كربلاء',
+      'الأنبار',
+      'ديالى',
+      'صلاح الدين',
+      'واسط',
+      'ذي قار',
+      'بابل',
+      'كركوك',
+      'السليمانية',
+      'المثنى',
+      'القادسية',
+      'ميسان',
+      'دهوك',
+    ];
+
+    return Container(
+      margin: EdgeInsets.only(top: 8.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+      ),
+      child: DropdownButtonFormField<String>(
+        value: selectedCity,
+        isExpanded: true,
+        decoration: InputDecoration(
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 16.w,
+            vertical: 16.h,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: AppColors.textLight, width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: AppColors.primary, width: 1),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: Colors.red, width: 1),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: Colors.red, width: 1),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16.r),
+            borderSide: BorderSide(color: AppColors.textLight, width: 1),
+          ),
+        ),
+        hint: MyText(
+          'اختر المحافظة',
+          fontSize: 14.sp,
+          color: AppColors.textSecondary,
+        ),
+        icon: Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: AppColors.textSecondary,
+          size: 24.r,
+        ),
+        style: TextStyle(
+          fontFamily: 'Expo Arabic',
+          fontSize: 14.sp,
+          color: AppColors.textPrimary,
+        ),
+        items: allowedCities
+            .map(
+              (c) => DropdownMenuItem<String>(
+                value: c,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: MyText(
+                    c,
+                    fontSize: 14.sp,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            )
+            .toList(),
+        onChanged: onChanged,
       ),
     );
   }
@@ -933,6 +1035,7 @@ class SecretaryAccountsPage extends StatelessWidget {
     );
     final ageCtrl = TextEditingController(text: item['age']?.toString() ?? '');
     String selectedGender = item['gender']?.toString() ?? 'ذكر';
+    String? selectedCity = item['city']?.toString();
     String? imageUrl = item['image']?.toString();
 
     Get.dialog(
@@ -993,7 +1096,12 @@ class SecretaryAccountsPage extends StatelessWidget {
 
                     // المدينة
                     _buildFieldLabel('المدينة *'),
-                    _buildTextField(cityCtrl, 'أدخل المدينة'),
+                    _buildCityDropdown(cityCtrl, selectedCity, (value) {
+                      setState(() {
+                        selectedCity = value;
+                        cityCtrl.text = value ?? '';
+                      });
+                    }),
                     SizedBox(height: 16.h),
 
                     // العنوان

@@ -19,6 +19,11 @@ import '../../widget/confirm_dialogs.dart';
 import '../secretary/secretary_profile_edit_page.dart';
 import '../delegate/delegate_profile_edit_page.dart';
 import '../../widget/animated_pressable.dart';
+import 'about_page.dart';
+import '../../controller/about_controller.dart';
+import '../../service_layer/services/get_storage_service.dart';
+import '../../controller/locale_controller.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -37,7 +42,7 @@ class SettingsPage extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'الإعدادات',
+          'settings'.tr,
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 20.sp,
@@ -52,7 +57,7 @@ class SettingsPage extends StatelessWidget {
             if (isDoctor) ...[
               _buildSettingsItem(
                 icon: Icons.person,
-                title: 'إدارة حسابك الشخصي',
+                title: 'manage_personal_account'.tr,
                 color: AppColors.secondary,
                 onTap: () {
                   Get.to(
@@ -66,7 +71,7 @@ class SettingsPage extends StatelessWidget {
               SizedBox(height: 16.h),
               _buildSettingsItem(
                 icon: Icons.access_time,
-                title: 'إدارة أوقات العمل',
+                title: 'manage_working_hours'.tr,
                 color: AppColors.secondary,
                 onTap: () {
                   Get.to(
@@ -80,7 +85,7 @@ class SettingsPage extends StatelessWidget {
               SizedBox(height: 16.h),
               _buildSettingsItem(
                 icon: Icons.beach_access,
-                title: 'إدارة العطل',
+                title: 'manage_holidays'.tr,
                 color: AppColors.secondary,
                 onTap: () {
                   Get.to(
@@ -94,7 +99,7 @@ class SettingsPage extends StatelessWidget {
               SizedBox(height: 16.h),
               _buildSettingsItem(
                 icon: Icons.people,
-                title: 'إدارة حسابات السكرتارية',
+                title: 'manage_secretary_accounts'.tr,
                 color: AppColors.secondary,
                 onTap: () {
                   Get.to(
@@ -108,7 +113,7 @@ class SettingsPage extends StatelessWidget {
               SizedBox(height: 16.h),
               _buildSettingsItem(
                 icon: Icons.format_list_numbered_rounded,
-                title: 'تسلسل المواعيد',
+                title: 'appointment_sequence_menu'.tr,
                 color: AppColors.primary,
                 onTap: () {
                   Get.to(() => const AppointmentSequencePage());
@@ -117,7 +122,7 @@ class SettingsPage extends StatelessWidget {
               SizedBox(height: 16.h),
               _buildSettingsItem(
                 icon: Icons.event_note_rounded,
-                title: 'كل المواعيد',
+                title: 'all_appointments'.tr,
                 color: AppColors.secondary,
                 onTap: () {
                   Get.to(
@@ -134,7 +139,7 @@ class SettingsPage extends StatelessWidget {
             if (isUser) ...[
               _buildSettingsItem(
                 icon: Icons.person,
-                title: 'تعديل ملفك الشخصي',
+                title: 'edit_profile'.tr,
                 color: AppColors.secondary,
                 onTap: () {
                   Get.to(
@@ -148,7 +153,7 @@ class SettingsPage extends StatelessWidget {
               SizedBox(height: 16.h),
               _buildSettingsItem(
                 icon: Icons.lock,
-                title: 'تغيير كلمة السر',
+                title: 'change_password'.tr,
                 color: AppColors.secondary,
                 onTap: () {
                   Get.to(
@@ -160,7 +165,7 @@ class SettingsPage extends StatelessWidget {
               SizedBox(height: 16.h),
               _buildSettingsItem(
                 icon: Icons.event_note_rounded,
-                title: 'كل المواعيد',
+                title: 'all_appointments'.tr,
                 color: AppColors.secondary,
                 onTap: () {
                   Get.to(
@@ -177,7 +182,7 @@ class SettingsPage extends StatelessWidget {
             if (isSecretary) ...[
               _buildSettingsItem(
                 icon: Icons.person,
-                title: 'تعديل الملف الشخصي',
+                title: 'edit_profile'.tr,
                 color: AppColors.secondary,
                 onTap: () {
                   Get.to(
@@ -191,7 +196,7 @@ class SettingsPage extends StatelessWidget {
               SizedBox(height: 16.h),
               _buildSettingsItem(
                 icon: Icons.lock,
-                title: 'تغيير كلمة السر',
+                title: 'change_password'.tr,
                 color: AppColors.secondary,
                 onTap: () {
                   Get.to(
@@ -206,7 +211,7 @@ class SettingsPage extends StatelessWidget {
             if (isDelegate) ...[
               _buildSettingsItem(
                 icon: Icons.person,
-                title: 'تعديل الملف الشخصي',
+                title: 'edit_profile'.tr,
                 color: AppColors.secondary,
                 onTap: () {
                   Get.to(
@@ -220,7 +225,7 @@ class SettingsPage extends StatelessWidget {
               SizedBox(height: 16.h),
               _buildSettingsItem(
                 icon: Icons.lock,
-                title: 'تغيير كلمة السر',
+                title: 'change_password'.tr,
                 color: AppColors.secondary,
                 onTap: () {
                   Get.to(
@@ -235,7 +240,7 @@ class SettingsPage extends StatelessWidget {
             // Language change
             _buildSettingsItem(
               icon: Icons.language,
-              title: 'تغيير اللغة',
+              title: 'change_language'.tr,
               color: AppColors.secondary,
               onTap: () {
                 _showLanguageDialog(context);
@@ -246,10 +251,15 @@ class SettingsPage extends StatelessWidget {
             // About app
             _buildSettingsItem(
               icon: Icons.info,
-              title: 'حول التطبيق',
+              title: 'about_app'.tr,
               color: AppColors.secondary,
               onTap: () {
-                // Handle about app
+                Get.to(
+                  () => const AboutPage(),
+                  binding: BindingsBuilder(() {
+                    Get.put(AboutController());
+                  }),
+                );
               },
             ),
             SizedBox(height: 16.h),
@@ -257,10 +267,18 @@ class SettingsPage extends StatelessWidget {
             // Help
             _buildSettingsItem(
               icon: Icons.help,
-              title: 'المساعدة',
+              title: 'help'.tr,
               color: AppColors.secondary,
-              onTap: () {
-                // Handle help
+              onTap: () async {
+                // Get support link from AboutController or use default
+                final aboutController = Get.put(AboutController());
+                await aboutController.loadAboutInfo();
+                if (aboutController.supportLink.value.isNotEmpty) {
+                  await _openSupportLink(aboutController.supportLink.value);
+                } else {
+                  // Default support link if not loaded
+                  await _openSupportLink('https://wa.me/9647801275675');
+                }
               },
             ),
             SizedBox(height: 16.h),
@@ -268,7 +286,7 @@ class SettingsPage extends StatelessWidget {
             // Development team
             _buildSettingsItem(
               icon: Icons.code,
-              title: 'فريق التطوير',
+              title: 'development_team'.tr,
               color: AppColors.secondary,
               onTap: () {
                 // Handle development team
@@ -279,7 +297,7 @@ class SettingsPage extends StatelessWidget {
             // Logout for all roles
             _buildSettingsItem(
               icon: Icons.logout,
-              title: 'تسجيل الخروج',
+              title: 'logout'.tr,
               color: AppColors.secondary,
               onTap: () {
                 showLogoutConfirmDialog(
@@ -296,7 +314,7 @@ class SettingsPage extends StatelessWidget {
             // Delete account (red color)
             _buildSettingsItem(
               icon: Icons.delete,
-              title: 'حذف الحساب',
+              title: 'delete_account'.tr,
               color: AppColors.error,
               onTap: () {
                 _showDeleteAccountDialog(context);
@@ -368,32 +386,228 @@ class SettingsPage extends StatelessWidget {
   }
 
   void _showLanguageDialog(BuildContext context) {
-    showDialog(
+    final storage = GetStorageService();
+    final currentLanguage = Get.locale?.languageCode ?? 'ar';
+
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('اختر اللغة'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+      backgroundColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      ),
+      builder: (context) {
+        // Use a ValueNotifier to hold the selected language state
+        final selectedLanguageNotifier = ValueNotifier<String>(currentLanguage);
+
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: ValueListenableBuilder<String>(
+            valueListenable: selectedLanguageNotifier,
+            builder: (context, selectedLanguage, _) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF4FEFF),
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(24.r),
+                  ),
+                ),
+                padding: EdgeInsets.all(24.w),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Handle bar
+                    Center(
+                      child: Container(
+                        width: 40.w,
+                        height: 4.h,
+                        margin: EdgeInsets.only(bottom: 20.h),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2.r),
+                        ),
+                      ),
+                    ),
+                    // Title
+                    Text(
+                      'select_language'.tr,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Expo Arabic',
+                        fontSize: 22.sp,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 24.h),
+                    // Language options
+                    _buildLanguageOption(
+                      context: context,
+                      languageCode: 'ar',
+                      languageName: 'العربية',
+                      flag: '🇸🇦',
+                      isSelected: selectedLanguage == 'ar',
+                      onTap: () {
+                        selectedLanguageNotifier.value = 'ar';
+                      },
+                    ),
+                    SizedBox(height: 12.h),
+                    _buildLanguageOption(
+                      context: context,
+                      languageCode: 'en',
+                      languageName: 'English',
+                      flag: '🇬🇧',
+                      isSelected: selectedLanguage == 'en',
+                      onTap: () {
+                        selectedLanguageNotifier.value = 'en';
+                      },
+                    ),
+                    SizedBox(height: 24.h),
+                    // Confirm button
+                    ElevatedButton(
+                      onPressed: () {
+                        final finalLanguage = selectedLanguageNotifier.value;
+                        Navigator.pop(context);
+
+                        if (finalLanguage != currentLanguage) {
+                          // Save language preference
+                          storage.write('selected_language', finalLanguage);
+
+                          // Update locale
+                          final newLocale = finalLanguage == 'en'
+                              ? const Locale('en')
+                              : const Locale('ar');
+                          Get.updateLocale(newLocale);
+                          // Update LocaleController to rebuild GetMaterialApp
+                          final localeController = Get.find<LocaleController>();
+                          localeController.updateLocale(newLocale);
+
+                          // Force rebuild by accessing locale to trigger Obx
+                          final _ = localeController.locale.value;
+
+                          // Show success message
+                          Future.delayed(const Duration(milliseconds: 300), () {
+                            Get.snackbar(
+                              'success'.tr,
+                              'language_changed'.tr,
+                              backgroundColor: Colors.black87,
+                              colorText: Colors.white,
+                              duration: const Duration(seconds: 2),
+                            );
+                          });
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 16.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'confirm'.tr,
+                        style: TextStyle(
+                          fontFamily: 'Expo Arabic',
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
+                    // Cancel button
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                        ),
+                      ),
+                      child: Text(
+                        'cancel'.tr,
+                        style: TextStyle(
+                          fontFamily: 'Expo Arabic',
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLanguageOption({
+    required BuildContext context,
+    required String languageCode,
+    required String languageName,
+    required String flag,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16.r),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.divider,
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
           children: [
-            ListTile(
-              title: const Text('العربية'),
-              leading: Radio(
-                value: 'ar',
-                groupValue: 'ar',
-                onChanged: (value) {
-                  Navigator.pop(context);
-                },
+            // Flag emoji
+            Text(flag, style: TextStyle(fontSize: 32.sp)),
+            SizedBox(width: 16.w),
+            // Language name
+            Expanded(
+              child: Text(
+                languageName,
+                style: TextStyle(
+                  fontFamily: 'Expo Arabic',
+                  fontSize: 18.sp,
+                  fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                  color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                ),
               ),
             ),
-            ListTile(
-              title: const Text('English'),
-              leading: Radio(
-                value: 'en',
-                groupValue: 'ar',
-                onChanged: (value) {
-                  Navigator.pop(context);
-                },
+            // Radio indicator
+            Container(
+              width: 24.w,
+              height: 24.w,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? AppColors.primary : AppColors.textLight,
+                  width: 2,
+                ),
+                color: isSelected ? AppColors.primary : Colors.transparent,
               ),
+              child: isSelected
+                  ? Icon(Icons.check, color: Colors.white, size: 16.sp)
+                  : null,
             ),
           ],
         ),
@@ -410,5 +624,28 @@ class SettingsPage extends StatelessWidget {
         // TODO: Handle account deletion
       },
     );
+  }
+
+  Future<void> _openSupportLink(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        Get.snackbar(
+          'error'.tr,
+          'error_loading_support_link'.tr,
+          backgroundColor: Colors.black87,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'error'.tr,
+        'error_opening_support_link'.tr,
+        backgroundColor: Colors.black87,
+        colorText: Colors.white,
+      );
+    }
   }
 }

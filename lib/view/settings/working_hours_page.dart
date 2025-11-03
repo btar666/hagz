@@ -32,7 +32,7 @@ class WorkingHoursPage extends StatelessWidget {
                   Expanded(
                     child: Center(
                       child: MyText(
-                        'إدارة أوقات العمل',
+                        'manage_working_hours_title'.tr,
                         fontSize: 22.sp,
                         fontWeight: FontWeight.w900,
                         color: AppColors.textPrimary,
@@ -101,7 +101,7 @@ class WorkingHoursPage extends StatelessWidget {
                                 child: OutlinedButton.icon(
                                   onPressed: () {},
                                   icon: const Icon(Icons.delete_outline),
-                                  label: MyText('حذف الكل', fontSize: 16.sp),
+                                  label: MyText('delete_all'.tr, fontSize: 16.sp),
                                 ),
                               ),
                               SizedBox(width: 12.w),
@@ -277,7 +277,7 @@ class WorkingHoursPage extends StatelessWidget {
               textAlign: TextAlign.right,
             ),
             subtitle: MyText(
-              isWorking ? '${day['startTime']} - ${day['endTime']}' : 'عطلة',
+              isWorking ? '${day['startTime']} - ${day['endTime']}' : 'holiday_label'.tr,
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
               color: AppColors.textSecondary,
@@ -293,7 +293,7 @@ class WorkingHoursPage extends StatelessWidget {
             children: isWorking
                 ? [
                     _buildTimeRow(
-                      label: 'من',
+                      label: 'from'.tr,
                       value: day['startTime'],
                       onTap: () => _selectTime(
                         dayIndex,
@@ -303,7 +303,7 @@ class WorkingHoursPage extends StatelessWidget {
                     ),
                     SizedBox(height: 12.h),
                     _buildTimeRow(
-                      label: 'إلى',
+                      label: 'to'.tr,
                       value: day['endTime'],
                       onTap: () =>
                           _selectTime(dayIndex, day['endTime'], isStart: false),

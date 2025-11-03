@@ -44,6 +44,7 @@ class SearchController extends GetxController {
   Future<void> fetch({bool reset = false}) async {
     if (reset) {
       results.clear();
+      page.value = 1; // Reset page when resetting
     }
     isLoading.value = true;
 

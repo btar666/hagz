@@ -21,6 +21,7 @@ class ChatDetailsPage extends StatelessWidget {
     // Set receiverId and load doctor conversation if provided
     if (receiverId != null && receiverId!.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        // openDoctorChat will handle clearing messages only if switching to different doctor
         ctrl.openDoctorChat(receiverId!, title);
       });
     }
