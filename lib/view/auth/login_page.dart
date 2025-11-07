@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 import '../../widget/back_button_widget.dart';
+import '../../controller/locale_controller.dart';
 import 'register_page.dart';
 import '../../controller/session_controller.dart';
 import '../../controller/auth_controller.dart';
@@ -41,21 +42,29 @@ class LoginPage extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 24.h),
-              MyText(
-                'تسجيل الدخول',
-                fontSize: 28.sp,
-                fontWeight: FontWeight.w900,
+              GetBuilder<LocaleController>(
+                builder: (localeController) {
+                  return MyText(
+                    'login'.tr,
+                    fontSize: 28.sp,
+                    fontWeight: FontWeight.w900,
+                  );
+                },
               ),
               SizedBox(height: 24.h),
-              Align(
-                alignment: Alignment.centerRight,
-                child: MyText(
-                  'رقم الهاتف',
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                  textAlign: TextAlign.right,
-                ),
+              GetBuilder<LocaleController>(
+                builder: (localeController) {
+                  return Align(
+                    alignment: Alignment.centerRight,
+                    child: MyText(
+                      'phone_number'.tr,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                      textAlign: TextAlign.right,
+                    ),
+                  );
+                },
               ),
               SizedBox(height: 8.h),
               Container(
@@ -70,93 +79,114 @@ class LoginPage extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: TextField(
-                  controller: auth.phoneCtrl,
-                  keyboardType: TextInputType.phone,
-                  textAlign: TextAlign.center,
-                  decoration: InputDecoration(
-                    hintText: '0000 000 0000',
-                    hintStyle: TextStyle(
-                      color: AppColors.textLight,
-                      fontSize: 18.sp,
-                      fontFamily: 'Expo Arabic',
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20.r),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: EdgeInsets.symmetric(vertical: 18.h),
-                  ),
-                  style: TextStyle(fontSize: 18.sp, fontFamily: 'Expo Arabic'),
-                ),
-              ),
-              SizedBox(height: 16.h),
-              Align(
-                alignment: Alignment.centerRight,
-                child: MyText(
-                  'كلمة المرور',
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                  textAlign: TextAlign.right,
-                ),
-              ),
-              SizedBox(height: 8.h),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.shadow,
-                      blurRadius: 10.r,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Obx(
-                  () => TextField(
-                    controller: auth.passwordCtrl,
-                    obscureText: auth.obscurePassword.value,
-                    textAlign: TextAlign.center,
-                    decoration: InputDecoration(
-                      hintText: '••••••••',
-                      hintStyle: TextStyle(
-                        color: AppColors.textLight,
+                child: GetBuilder<LocaleController>(
+                  builder: (localeController) {
+                    return TextField(
+                      key: ValueKey(
+                        'phone_field_${localeController.selectedLanguage.value}',
+                      ),
+                      controller: auth.phoneCtrl,
+                      keyboardType: TextInputType.phone,
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        hintText: 'phone_number_hint'.tr,
+                        hintStyle: TextStyle(
+                          color: AppColors.textLight,
+                          fontSize: 18.sp,
+                          fontFamily: 'Expo Arabic',
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20.r),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: EdgeInsets.symmetric(vertical: 18.h),
+                      ),
+                      style: TextStyle(
                         fontSize: 18.sp,
                         fontFamily: 'Expo Arabic',
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20.r),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: EdgeInsets.symmetric(
-                        vertical: 18.h,
-                        horizontal: 20.w,
-                      ),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          auth.obscurePassword.value
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          color: AppColors.textSecondary,
-                          size: 24.r,
+                    );
+                  },
+                ),
+              ),
+              SizedBox(height: 16.h),
+              GetBuilder<LocaleController>(
+                builder: (localeController) {
+                  return Align(
+                    alignment: Alignment.centerRight,
+                    child: MyText(
+                      'password'.tr,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                      textAlign: TextAlign.right,
+                    ),
+                  );
+                },
+              ),
+              SizedBox(height: 8.h),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.shadow,
+                      blurRadius: 10.r,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: GetBuilder<LocaleController>(
+                  builder: (localeController) {
+                    return Obx(
+                      () => TextField(
+                        key: ValueKey(
+                          'password_field_${localeController.selectedLanguage.value}',
                         ),
-                        onPressed: () {
-                          auth.obscurePassword.value =
-                              !auth.obscurePassword.value;
-                        },
+                        controller: auth.passwordCtrl,
+                        obscureText: auth.obscurePassword.value,
+                        textAlign: TextAlign.center,
+                        decoration: InputDecoration(
+                          hintText: 'password_hint'.tr,
+                          hintStyle: TextStyle(
+                            color: AppColors.textLight,
+                            fontSize: 18.sp,
+                            fontFamily: 'Expo Arabic',
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20.r),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: EdgeInsets.symmetric(
+                            vertical: 18.h,
+                            horizontal: 20.w,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              auth.obscurePassword.value
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: AppColors.textSecondary,
+                              size: 24.r,
+                            ),
+                            onPressed: () {
+                              auth.obscurePassword.value =
+                                  !auth.obscurePassword.value;
+                            },
+                          ),
+                        ),
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          fontFamily: 'Expo Arabic',
+                        ),
                       ),
-                    ),
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontFamily: 'Expo Arabic',
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
               SizedBox(height: 24.h),
@@ -171,11 +201,15 @@ class LoginPage extends StatelessWidget {
                     ),
                     elevation: 0,
                   ),
-                  child: MyText(
-                    'تسجيل الدخول',
-                    fontSize: 22.sp,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
+                  child: GetBuilder<LocaleController>(
+                    builder: (localeController) {
+                      return MyText(
+                        'login'.tr,
+                        fontSize: 22.sp,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      );
+                    },
                   ),
                 ),
               ),
@@ -203,29 +237,33 @@ class LoginPage extends StatelessWidget {
                           );
                         }
                       },
-                      child: RichText(
-                        text: TextSpan(
-                          style: TextStyle(
-                            fontFamily: 'Expo Arabic',
-                            fontSize: 16.sp,
-                          ),
-                          children: [
-                            TextSpan(
-                              text: 'ليس لديك حساب؟ ',
+                      child: GetBuilder<LocaleController>(
+                        builder: (localeController) {
+                          return RichText(
+                            text: TextSpan(
                               style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w700,
+                                fontFamily: 'Expo Arabic',
+                                fontSize: 16.sp,
                               ),
+                              children: [
+                                TextSpan(
+                                  text: 'dont_have_account'.tr,
+                                  style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: 'create_account_now'.tr,
+                                  style: TextStyle(
+                                    color: AppColors.secondary,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ],
                             ),
-                            TextSpan(
-                              text: 'أنشئ حسابك الآن',
-                              style: TextStyle(
-                                color: AppColors.secondary,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
                     ),
                   );

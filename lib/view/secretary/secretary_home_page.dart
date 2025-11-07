@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 import '../../widget/search_widget.dart';
+import '../../controller/locale_controller.dart';
 import '../../widget/appointment_status_filter_dialog.dart';
 import 'appointment_details_page.dart';
 import '../appointments/patient_registration_page.dart';
@@ -68,8 +69,8 @@ class SecretaryHomePage extends StatelessWidget {
                         );
                       } else {
                         Get.snackbar(
-                          'خطأ',
-                          'لا يمكن العثور على معلومات الطبيب المرتبط',
+                          'error'.tr,
+                          'doctor_info_not_found'.tr,
                           backgroundColor: Colors.red,
                           colorText: Colors.white,
                         );
@@ -92,10 +93,14 @@ class SecretaryHomePage extends StatelessWidget {
 
                   SizedBox(width: 12.w),
                   Expanded(
-                    child: SearchWidget(
-                      hint: 'ابحث عن مريض ..',
-                      readOnly: true,
-                      onTap: () {},
+                    child: GetBuilder<LocaleController>(
+                      builder: (localeController) {
+                        return SearchWidget(
+                          hint: 'search_patient'.tr,
+                          readOnly: true,
+                          onTap: () {},
+                        );
+                      },
                     ),
                   ),
                   SizedBox(width: 12.w),
@@ -157,11 +162,15 @@ class SecretaryHomePage extends StatelessWidget {
                               color: const Color(0xFF7CC7D0),
                             ),
                             SizedBox(height: 4.h),
-                            MyText(
-                              'الموعد الحالي',
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF7CC7D0),
+                            GetBuilder<LocaleController>(
+                              builder: (localeController) {
+                                return MyText(
+                                  'current_appointment'.tr,
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF7CC7D0),
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -185,11 +194,15 @@ class SecretaryHomePage extends StatelessWidget {
                               color: AppColors.textPrimary,
                             ),
                             SizedBox(height: 4.h),
-                            MyText(
-                              'عدد المواعيد',
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textSecondary,
+                            GetBuilder<LocaleController>(
+                              builder: (localeController) {
+                                return MyText(
+                                  'appointments_count'.tr,
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textSecondary,
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -205,49 +218,57 @@ class SecretaryHomePage extends StatelessWidget {
 
               SizedBox(height: 16.h),
 
-              Row(
-                children: [
-                  RichText(
-                    text: TextSpan(
-                      style: TextStyle(fontFamily: 'Expo Arabic'),
-                      children: [
-                        TextSpan(
-                          text: 'مواعيد اليوم ',
-                          style: TextStyle(
-                            fontSize: 22.sp,
-                            fontWeight: FontWeight.w900,
-                            color: const Color(0xFF7CC7D0),
+              GetBuilder<LocaleController>(
+                builder: (localeController) {
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: RichText(
+                          text: TextSpan(
+                            style: TextStyle(fontFamily: 'Expo Arabic'),
+                            children: [
+                              TextSpan(
+                                text: 'today_appointments'.tr + ' ',
+                                style: TextStyle(
+                                  fontSize: 22.sp,
+                                  fontWeight: FontWeight.w900,
+                                  color: const Color(0xFF7CC7D0),
+                                ),
+                              ),
+                              TextSpan(
+                                text:
+                                    '(${_filteredAppointments(appointmentsController, homeController).length} ${'appointments'.tr})',
+                                style: TextStyle(
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        TextSpan(
-                          text:
-                              '(${_filteredAppointments(appointmentsController, homeController).length} مواعيد)',
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textSecondary,
-                          ),
+                      ),
+                      SizedBox(width: 8.w),
+                      GestureDetector(
+                        onTap: () async {
+                          final picked = await showDialog<List<String>>(
+                            context: context,
+                            builder: (_) =>
+                                const AppointmentStatusFilterDialog(),
+                          );
+                          if (picked != null) {
+                            homeController.setActiveStatuses(picked);
+                          }
+                        },
+                        child: const Icon(
+                          Icons.tune,
+                          color: AppColors.textSecondary,
                         ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: () async {
-                      final picked = await showDialog<List<String>>(
-                        context: context,
-                        builder: (_) => const AppointmentStatusFilterDialog(),
-                      );
-                      if (picked != null) {
-                        homeController.setActiveStatuses(picked);
-                      }
-                    },
-                    child: const Icon(
-                      Icons.tune,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
+                      ),
+                    ],
+                  );
+                },
               ),
               SizedBox(height: 8.h),
 
@@ -283,13 +304,17 @@ class SecretaryHomePage extends StatelessWidget {
                     child: Column(
                       children: List.generate(
                         3,
-                        (index) => _appointmentItem(
-                          context: context,
-                          name: 'اسم المريض',
-                          status: 'مكتمل',
-                          time: '6:00 صباحاً',
-                          seq: index + 1,
-                          selected: false,
+                        (index) => GetBuilder<LocaleController>(
+                          builder: (localeController) {
+                            return _appointmentItem(
+                              context: context,
+                              name: 'patient_name'.tr,
+                              status: 'completed'.tr,
+                              time: '6:00 صباحاً',
+                              seq: index + 1,
+                              selected: false,
+                            );
+                          },
                         ),
                       ),
                     ),
@@ -297,16 +322,20 @@ class SecretaryHomePage extends StatelessWidget {
                 }
 
                 if (appointments.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20.h),
-                      child: MyText(
-                        'لا توجد مواعيد اليوم',
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
+                  return GetBuilder<LocaleController>(
+                    builder: (localeController) {
+                      return Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20.h),
+                          child: MyText(
+                            'no_appointments_today'.tr,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      );
+                    },
                   );
                 }
 
@@ -315,14 +344,18 @@ class SecretaryHomePage extends StatelessWidget {
                       .asMap()
                       .entries
                       .map(
-                        (e) => _appointmentItem(
-                          context: context,
-                          name: e.value['title'] ?? 'مريض',
-                          status: _getStatusText(e.value['status']),
-                          time: e.value['time'] ?? '',
-                          seq: e.key + 1,
-                          selected: e.key == 0,
-                          appointment: e.value,
+                        (e) => GetBuilder<LocaleController>(
+                          builder: (localeController) {
+                            return _appointmentItem(
+                              context: context,
+                              name: e.value['title'] ?? 'patient'.tr,
+                              status: _getStatusText(e.value['status']),
+                              time: e.value['time'] ?? '',
+                              seq: e.key + 1,
+                              selected: e.key == 0,
+                              appointment: e.value,
+                            );
+                          },
                         ),
                       )
                       .toList(),
@@ -355,31 +388,41 @@ class SecretaryHomePage extends StatelessWidget {
             onTap: () => homeCtrl.toggleNotifications(),
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-              child: Row(
-                children: [
-                  MyText(
-                    'التنبيهات اليومية',
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.textPrimary,
-                  ),
-                  const Spacer(),
-                  MyText(
-                    '6 مواعيد جديدة',
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFFFF5B5E),
-                  ),
-                  SizedBox(width: 10.w),
-                  Obx(
-                    () => Icon(
-                      homeCtrl.openNotifications.value
-                          ? Icons.expand_less
-                          : Icons.expand_more,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
+              child: GetBuilder<LocaleController>(
+                builder: (localeController) {
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: MyText(
+                          'daily_notifications'.tr,
+                          fontSize: 24.sp,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Flexible(
+                        child: MyText(
+                          'new_appointments'.tr.replaceAll('{count}', '6'),
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFFFF5B5E),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Obx(
+                        () => Icon(
+                          homeCtrl.openNotifications.value
+                              ? Icons.expand_less
+                              : Icons.expand_more,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -395,25 +438,46 @@ class SecretaryHomePage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        _notifRow(
-                          time: 'منذ 10 دقائق',
-                          title: 'تم حجز موعد جديد !',
-                          body: 'اضغط للحصول على المعلومات .',
-                          isAlert: true,
+                        GetBuilder<LocaleController>(
+                          builder: (localeController) {
+                            return _notifRow(
+                              time: 'minutes_ago'.tr.replaceAll(
+                                '{minutes}',
+                                '10',
+                              ),
+                              title: 'new_appointment_booked'.tr,
+                              body: 'click_for_info'.tr,
+                              isAlert: true,
+                            );
+                          },
                         ),
                         Divider(color: AppColors.divider, height: 24.h),
-                        _notifRow(
-                          time: 'منذ 10 دقائق',
-                          title: 'تم حجز موعد جديد !',
-                          body: 'اضغط للحصول على المعلومات .',
-                          isAlert: true,
+                        GetBuilder<LocaleController>(
+                          builder: (localeController) {
+                            return _notifRow(
+                              time: 'minutes_ago'.tr.replaceAll(
+                                '{minutes}',
+                                '10',
+                              ),
+                              title: 'new_appointment_booked'.tr,
+                              body: 'click_for_info'.tr,
+                              isAlert: true,
+                            );
+                          },
                         ),
                         Divider(color: AppColors.divider, height: 24.h),
-                        _notifRow(
-                          time: 'منذ 10 دقائق',
-                          title: 'تحديث جديد ينتظرك !',
-                          body: 'تم اضافة ميزات جديدة , حدث التطبيق و استمتع .',
-                          isAlert: false,
+                        GetBuilder<LocaleController>(
+                          builder: (localeController) {
+                            return _notifRow(
+                              time: 'minutes_ago'.tr.replaceAll(
+                                '{minutes}',
+                                '10',
+                              ),
+                              title: 'new_update_available'.tr,
+                              body: 'new_features_added'.tr,
+                              isAlert: false,
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -554,13 +618,13 @@ class SecretaryHomePage extends StatelessWidget {
   String _statusDisplay(String status) {
     switch (status) {
       case 'مكتمل':
-        return 'المواعيد المكتملة';
+        return 'completed_appointments'.tr;
       case 'مؤكد':
-        return 'المواعيد المؤكدة';
+        return 'confirmed_appointments'.tr;
       case 'ملغي':
-        return 'المواعيد الملغية';
+        return 'cancelled_appointments'.tr;
       case 'لم يحضر':
-        return 'المواعيد (لم يحضر)';
+        return 'no_show_appointments'.tr;
       default:
         return status;
     }
@@ -680,10 +744,14 @@ class SecretaryHomePage extends StatelessWidget {
                           color: AppColors.textSecondary,
                         ),
                         const MyText('•', color: AppColors.textSecondary),
-                        MyText(
-                          '$seq : التسلسل',
-                          fontSize: 16.sp,
-                          color: AppColors.textSecondary,
+                        GetBuilder<LocaleController>(
+                          builder: (localeController) {
+                            return MyText(
+                              '$seq : ${'sequence'.tr}',
+                              fontSize: 16.sp,
+                              color: AppColors.textSecondary,
+                            );
+                          },
                         ),
                       ],
                     ),

@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import '../../utils/app_colors.dart';
-import '../../service_layer/services/get_storage_service.dart';
 import '../../controller/locale_controller.dart';
 import 'user_type_selection_page.dart';
 
@@ -19,22 +18,21 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
 
-  final List<_SlideData> _slides = const [
+  List<_SlideData> get _slides => [
     _SlideData(
       imagePath: 'assets/icons/home/sblash1.png',
-      title: '" ابحث عن طبيبك بسهولة "',
-      description: 'تصفح مئات الأطباء من مختلف\nالاختصاصات في مكان واحد.',
+      title: 'onboarding_slide1_title'.tr,
+      description: 'onboarding_slide1_description'.tr,
     ),
     _SlideData(
       imagePath: 'assets/icons/home/sblash2.png',
-      title: '" رعاية موثوقة دوماً "',
-      description: 'أطباء معتمدون، معلومات دقيقة،\nوتجربة سهلة في كل خطوة.',
+      title: 'onboarding_slide2_title'.tr,
+      description: 'onboarding_slide2_description'.tr,
     ),
     _SlideData(
       imagePath: 'assets/icons/home/sblash3.png',
-      title: '" احجز موعدك بثوانٍ "',
-      description:
-          'اختر اليوم و الوقت المناسبين\nلك من المواعيد المتاحة فوراً.',
+      title: 'onboarding_slide3_title'.tr,
+      description: 'onboarding_slide3_description'.tr,
     ),
   ];
 
@@ -97,16 +95,20 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         ),
                         child: Row(
                           children: [
-                            Text(
-                              Get.locale?.languageCode == 'en'
-                                  ? 'English'
-                                  : 'العربية',
-                              style: TextStyle(
-                                fontFamily: 'Expo Arabic',
-                                color: AppColors.textPrimary,
-                                fontSize: 15.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
+                            GetBuilder<LocaleController>(
+                              builder: (localeController) {
+                                return Text(
+                                  Get.locale?.languageCode == 'en'
+                                      ? 'english_language'.tr
+                                      : 'arabic_language'.tr,
+                                  style: TextStyle(
+                                    fontFamily: 'Expo Arabic',
+                                    color: AppColors.textPrimary,
+                                    fontSize: 15.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                );
+                              },
                             ),
                             SizedBox(width: 6.w),
                             const Icon(
@@ -129,11 +131,15 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   onPageChanged: (index) =>
                       setState(() => _currentIndex = index),
                   itemBuilder: (context, index) {
-                    final slide = _slides[index];
-                    return _OnboardingSlide(
-                      imagePath: slide.imagePath,
-                      title: slide.title,
-                      description: slide.description,
+                    return GetBuilder<LocaleController>(
+                      builder: (localeController) {
+                        final slide = _slides[index];
+                        return _OnboardingSlide(
+                          imagePath: slide.imagePath,
+                          title: slide.title,
+                          description: slide.description,
+                        );
+                      },
                     );
                   },
                 ),
@@ -214,7 +220,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   void _showLanguageDialog(BuildContext context) {
-    final storage = GetStorageService();
     final currentLanguage = Get.locale?.languageCode ?? 'ar';
 
     showModalBottomSheet(
@@ -269,25 +274,33 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     ),
                     SizedBox(height: 24.h),
                     // Language options
-                    _buildLanguageOption(
-                      context: context,
-                      languageCode: 'ar',
-                      languageName: 'العربية',
-                      flag: '🇸🇦',
-                      isSelected: selectedLanguage == 'ar',
-                      onTap: () {
-                        selectedLanguageNotifier.value = 'ar';
+                    GetBuilder<LocaleController>(
+                      builder: (localeController) {
+                        return _buildLanguageOption(
+                          context: context,
+                          languageCode: 'ar',
+                          languageName: 'arabic_language'.tr,
+                          flag: '🇸🇦',
+                          isSelected: selectedLanguage == 'ar',
+                          onTap: () {
+                            selectedLanguageNotifier.value = 'ar';
+                          },
+                        );
                       },
                     ),
                     SizedBox(height: 12.h),
-                    _buildLanguageOption(
-                      context: context,
-                      languageCode: 'en',
-                      languageName: 'English',
-                      flag: '🇬🇧',
-                      isSelected: selectedLanguage == 'en',
-                      onTap: () {
-                        selectedLanguageNotifier.value = 'en';
+                    GetBuilder<LocaleController>(
+                      builder: (localeController) {
+                        return _buildLanguageOption(
+                          context: context,
+                          languageCode: 'en',
+                          languageName: 'english_language'.tr,
+                          flag: '🇬🇧',
+                          isSelected: selectedLanguage == 'en',
+                          onTap: () {
+                            selectedLanguageNotifier.value = 'en';
+                          },
+                        );
                       },
                     ),
                     SizedBox(height: 24.h),
@@ -298,31 +311,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         Navigator.pop(context);
 
                         if (finalLanguage != currentLanguage) {
-                          // Save language preference
-                          storage.write('selected_language', finalLanguage);
-
-                          // Update locale
-                          final newLocale = finalLanguage == 'en'
-                              ? const Locale('en')
-                              : const Locale('ar');
-                          Get.updateLocale(newLocale);
-                          // Update LocaleController to rebuild GetMaterialApp
+                          // Get the LocaleController and change language
                           final localeController = Get.find<LocaleController>();
-                          localeController.updateLocale(newLocale);
-
-                          // Force rebuild by accessing locale to trigger Obx
-                          final _ = localeController.locale.value;
+                          localeController.changeLanguage(finalLanguage);
 
                           // Show success message
-                          Future.delayed(const Duration(milliseconds: 300), () {
-                            Get.snackbar(
-                              'success'.tr,
-                              'language_changed'.tr,
-                              backgroundColor: Colors.black87,
-                              colorText: Colors.white,
-                              duration: const Duration(seconds: 2),
-                            );
-                          });
+                          Get.snackbar(
+                            'success'.tr,
+                            'language_changed'.tr,
+                            backgroundColor: Colors.black87,
+                            colorText: Colors.white,
+                            duration: const Duration(seconds: 2),
+                          );
                         }
                       },
                       style: ElevatedButton.styleFrom(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 import '../../widget/specialization_text.dart';
 import '../home/doctors/doctor_profile_page.dart';
@@ -9,6 +8,7 @@ import '../../bindings/doctor_profile_binding.dart';
 import '../../service_layer/services/specialization_service.dart';
 import '../../model/specialization_model.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import '../../controller/locale_controller.dart';
 
 class SpecialtiesPage extends StatefulWidget {
   const SpecialtiesPage({Key? key}) : super(key: key);
@@ -193,72 +193,83 @@ class _SpecialtiesPageState extends State<SpecialtiesPage> {
   }
 
   Widget _buildHeader() {
-    return Container(
-      padding: EdgeInsets.only(top: 50.h, bottom: 30.h),
-      child: Center(
-        child: MyText(
-          'الاختصاصات',
-          fontSize: 18.sp,
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
-          textAlign: TextAlign.center,
-        ),
-      ),
+    return GetBuilder<LocaleController>(
+      builder: (localeController) {
+        return Container(
+          padding: EdgeInsets.only(top: 50.h, bottom: 30.h),
+          child: Center(
+            child: MyText(
+              'specialties'.tr,
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+              textAlign: TextAlign.center,
+            ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildSearchBar() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 15.h),
-      child: Container(
-        height: 48.h,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(30.r),
-          border: Border.all(
-            color: const Color(0xFF7FC8D6).withOpacity(0.3),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 15,
-              offset: const Offset(0, 4),
+    return GetBuilder<LocaleController>(
+      builder: (localeController) {
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 15.h),
+          child: Container(
+            height: 48.h,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(30.r),
+              border: Border.all(
+                color: const Color(0xFF7FC8D6).withOpacity(0.3),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 15,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: TextField(
-          controller: _searchController,
-          onChanged: _onSearchChanged,
-          textAlign: TextAlign.right,
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 15.sp,
-            fontWeight: FontWeight.w500,
-          ),
-          decoration: InputDecoration(
-            hintText: 'ابحث عن طبيب...',
-            hintStyle: TextStyle(
-              color: const Color(0xFF9CA3AF),
-              fontSize: 15.sp,
-              fontWeight: FontWeight.w400,
-            ),
-            prefixIcon: Container(
-              padding: EdgeInsets.all(12.r),
-              child: Icon(
-                Icons.search,
-                color: const Color(0xFF7FC8D6),
-                size: 26.r,
+            child: TextField(
+              key: ValueKey(
+                'search_${localeController.selectedLanguage.value}',
+              ),
+              controller: _searchController,
+              onChanged: _onSearchChanged,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: Colors.black87,
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w500,
+              ),
+              decoration: InputDecoration(
+                hintText: 'search_doctor'.tr,
+                hintStyle: TextStyle(
+                  color: const Color(0xFF9CA3AF),
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w400,
+                ),
+                prefixIcon: Container(
+                  padding: EdgeInsets.all(12.r),
+                  child: Icon(
+                    Icons.search,
+                    color: const Color(0xFF7FC8D6),
+                    size: 26.r,
+                  ),
+                ),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 25.w,
+                  vertical: 18.h,
+                ),
               ),
             ),
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: 25.w,
-              vertical: 18.h,
-            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -293,11 +304,15 @@ class _SpecialtiesPageState extends State<SpecialtiesPage> {
               color: Colors.grey[400],
             ),
             SizedBox(height: 16.h),
-            MyText(
-              'لا توجد أطباء في هذا الاختصاص',
-              fontSize: 16.sp,
-              color: Colors.grey[600],
-              textAlign: TextAlign.center,
+            GetBuilder<LocaleController>(
+              builder: (localeController) {
+                return MyText(
+                  'no_doctors_in_specialty'.tr,
+                  fontSize: 16.sp,
+                  color: Colors.grey[600],
+                  textAlign: TextAlign.center,
+                );
+              },
             ),
           ],
         ),
@@ -315,7 +330,7 @@ class _SpecialtiesPageState extends State<SpecialtiesPage> {
 
   Widget _buildDoctorCard(Map<String, dynamic> doctor) {
     final String doctorId = doctor['_id']?.toString() ?? '';
-    final String name = doctor['name']?.toString() ?? 'طبيب';
+    final String name = doctor['name']?.toString() ?? 'doctor_default'.tr;
     final String specialization = doctor['specialization']?.toString() ?? '';
     final String image = doctor['image']?.toString() ?? '';
 

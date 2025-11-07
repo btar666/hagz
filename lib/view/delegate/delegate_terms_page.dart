@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 import '../../widget/back_button_widget.dart';
+import '../../controller/locale_controller.dart';
 import 'delegate_register_page.dart';
 import '../../bindings/delegate_register_binding.dart';
 
@@ -36,11 +37,15 @@ class DelegateTermsPage extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 24.h),
-              MyText(
-                'شروط العمل',
-                fontSize: 28.sp,
-                fontWeight: FontWeight.w900,
-                color: AppColors.textPrimary,
+              GetBuilder<LocaleController>(
+                builder: (localeController) {
+                  return MyText(
+                    'work_terms'.tr,
+                    fontSize: 28.sp,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textPrimary,
+                  );
+                },
               ),
               const Spacer(),
               SizedBox(
@@ -60,11 +65,15 @@ class DelegateTermsPage extends StatelessWidget {
                     ),
                     elevation: 0,
                   ),
-                  child: MyText(
-                    'التالي',
-                    fontSize: 22.sp,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
+                  child: GetBuilder<LocaleController>(
+                    builder: (localeController) {
+                      return MyText(
+                        'next'.tr,
+                        fontSize: 22.sp,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      );
+                    },
                   ),
                 ),
               ),

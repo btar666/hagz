@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../service_layer/services/visits_service.dart';
 import 'session_controller.dart';
@@ -9,6 +10,10 @@ class DelegateHomeController extends GetxController {
   // البيانات من الـ API
   final recentVisits = <Map<String, dynamic>>[].obs;
   final isLoading = false.obs;
+  
+  // البحث
+  final searchController = TextEditingController();
+  final searchQuery = ''.obs;
 
   @override
   void onInit() {
@@ -49,6 +54,12 @@ class DelegateHomeController extends GetxController {
             'isSubscribed': item['visitStatus']?.toString() == 'مشترك',
             'visits': item['visitCount'] as int?,
             'reason': item['nonSubscriptionReason']?.toString(),
+            'address': item['doctorAddress']?.toString() ?? '',
+            'phone': item['doctorPhone']?.toString() ?? '',
+            'governorate': item['governorate']?.toString() ?? '',
+            'district': item['district']?.toString() ?? '',
+            'notes': item['notes']?.toString() ?? '',
+            'coordinates': item['coordinates'] as Map<String, dynamic>? ?? {},
           };
         }).toList();
 
@@ -65,6 +76,31 @@ class DelegateHomeController extends GetxController {
     }
   }
 
+  /// الزيارات المفلترة بناءً على البحث
+  List<Map<String, dynamic>> get filteredRecentVisits {
+    if (searchQuery.value.isEmpty) {
+      return recentVisits;
+    }
+
+    final query = searchQuery.value.toLowerCase();
+    return recentVisits.where((visit) {
+      final title = (visit['title']?.toString() ?? '').toLowerCase();
+      final subtitle = (visit['subtitle']?.toString() ?? '').toLowerCase();
+      final address = (visit['address']?.toString() ?? '').toLowerCase();
+      final phone = (visit['phone']?.toString() ?? '').toLowerCase();
+      
+      return title.contains(query) ||
+          subtitle.contains(query) ||
+          address.contains(query) ||
+          phone.contains(query);
+    }).toList();
+  }
+  
+  /// تحديث البحث
+  void updateSearch(String query) {
+    searchQuery.value = query;
+  }
+
   /// إعادة تحميل البيانات
   Future<void> refresh() async {
     await loadRecentVisits();
@@ -74,6 +110,7 @@ class DelegateHomeController extends GetxController {
   void onClose() {
     // حذف البيانات عند مغادرة الصفحة
     recentVisits.clear();
+    searchController.dispose();
     isLoading.value = false;
     super.onClose();
   }

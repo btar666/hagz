@@ -57,12 +57,9 @@ class MedicalApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize locale in GetX
-    Get.locale = initialLocale;
-
     // Initialize LocaleController once
     final localeController = Get.put(
-      LocaleController(initialLocale),
+      LocaleController(),
       permanent: true,
     );
 
@@ -71,17 +68,14 @@ class MedicalApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return Obx(() {
-          // Force rebuild by reading locale value
-          final currentLocale = localeController.locale.value;
-          // Use builder to ensure app rebuilds
-          return GetMaterialApp(
-            key: ValueKey('app_locale_${currentLocale.languageCode}'),
-            builder: (context, child) {
-              // Access locale to ensure rebuild
-              final _ = Get.locale;
-              return child ?? const SizedBox.shrink();
-            },
+        return GetBuilder<LocaleController>(
+          id: 'locale_builder',
+          builder: (controller) {
+            final locale = controller.selectedLanguage.value == 'en'
+                ? const Locale('en')
+                : const Locale('ar');
+            return GetMaterialApp(
+              key: ValueKey('app_${controller.selectedLanguage.value}'),
             title: 'حجز - التطبيق الطبي',
             debugShowCheckedModeBanner: false,
             theme: ThemeData(
@@ -143,7 +137,7 @@ class MedicalApp extends StatelessWidget {
             ),
             home: _resolveStartPage(),
             translations: MyTranslations(),
-            locale: currentLocale,
+            locale: locale,
             fallbackLocale: const Locale('ar'),
             supportedLocales: const [Locale('ar'), Locale('en')],
             localizationsDelegates: const [
@@ -163,8 +157,9 @@ class MedicalApp extends StatelessWidget {
               // Global bindings for first home entry
               HomeBinding().dependencies();
             },
-          );
-        });
+            );
+          },
+        );
       },
     );
   }

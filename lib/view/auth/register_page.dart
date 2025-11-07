@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 import '../../widget/back_button_widget.dart';
+import '../../controller/locale_controller.dart';
 import 'login_page.dart';
 import '../main_page.dart';
 import '../../controller/auth_controller.dart';
@@ -174,92 +175,128 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 SizedBox(height: 24.h),
-                MyText(
-                  'انشاء الحساب',
-                  fontSize: 28.sp,
-                  fontWeight: FontWeight.w900,
+                GetBuilder<LocaleController>(
+                  builder: (localeController) {
+                    return MyText(
+                      'create_account'.tr,
+                      fontSize: 28.sp,
+                      fontWeight: FontWeight.w900,
+                    );
+                  },
                 ),
                 SizedBox(height: 24.h),
 
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: MyText(
-                    'اسم المستخدم',
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                    textAlign: TextAlign.right,
-                  ),
+                GetBuilder<LocaleController>(
+                  builder: (localeController) {
+                    return Align(
+                      alignment: Alignment.centerRight,
+                      child: MyText(
+                        'username'.tr,
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                        textAlign: TextAlign.right,
+                      ),
+                    );
+                  },
                 ),
                 SizedBox(height: 8.h),
-                _roundedField(
-                  controller: _nameCtrl,
-                  hint: 'اكتب اسمك',
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'هذا الحقل مطلوب !'
-                      : null,
+                GetBuilder<LocaleController>(
+                  builder: (localeController) {
+                    return _roundedField(
+                      controller: _nameCtrl,
+                      hint: 'enter_your_name'.tr,
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'field_required'.tr
+                          : null,
+                    );
+                  },
                 ),
                 SizedBox(height: 12.h),
 
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: MyText(
-                    'الجنس ( اضغط لاختيار )',
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textSecondary,
-                    textAlign: TextAlign.right,
-                  ),
+                GetBuilder<LocaleController>(
+                  builder: (localeController) {
+                    return Align(
+                      alignment: Alignment.centerRight,
+                      child: MyText(
+                        'gender_select'.tr,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textSecondary,
+                        textAlign: TextAlign.right,
+                      ),
+                    );
+                  },
                 ),
                 SizedBox(height: 10.h),
-                Row(
-                  children: [
-                    Expanded(child: _genderButton('ذكر', index: 0)),
-                    SizedBox(width: 16.w),
-                    Expanded(child: _genderButton('أنثى', index: 1)),
-                  ],
+                GetBuilder<LocaleController>(
+                  builder: (localeController) {
+                    return Row(
+                      children: [
+                        Expanded(child: _genderButton('male'.tr, index: 0)),
+                        SizedBox(width: 16.w),
+                        Expanded(child: _genderButton('female'.tr, index: 1)),
+                      ],
+                    );
+                  },
                 ),
                 SizedBox(height: 16.h),
 
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: MyText(
-                    'رقم الهاتف',
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                    textAlign: TextAlign.right,
-                  ),
+                GetBuilder<LocaleController>(
+                  builder: (localeController) {
+                    return Align(
+                      alignment: Alignment.centerRight,
+                      child: MyText(
+                        'phone_number'.tr,
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                        textAlign: TextAlign.right,
+                      ),
+                    );
+                  },
                 ),
                 SizedBox(height: 8.h),
-                _roundedField(
-                  controller: _phoneCtrl,
-                  hint: '0000 000 0000',
-                  keyboardType: TextInputType.phone,
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'هذا الحقل مطلوب !'
-                      : null,
+                GetBuilder<LocaleController>(
+                  builder: (localeController) {
+                    return _roundedField(
+                      controller: _phoneCtrl,
+                      hint: 'phone_number_hint'.tr,
+                      keyboardType: TextInputType.phone,
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'field_required'.tr
+                          : null,
+                    );
+                  },
                 ),
 
                 SizedBox(height: 12.h),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: MyText(
-                    'كلمة المرور',
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                    textAlign: TextAlign.right,
-                  ),
+                GetBuilder<LocaleController>(
+                  builder: (localeController) {
+                    return Align(
+                      alignment: Alignment.centerRight,
+                      child: MyText(
+                        'password'.tr,
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                        textAlign: TextAlign.right,
+                      ),
+                    );
+                  },
                 ),
                 SizedBox(height: 8.h),
-                _roundedField(
-                  controller: _passwordCtrl,
-                  hint: '••••••••',
-                  isPassword: true,
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'هذا الحقل مطلوب !'
-                      : null,
+                GetBuilder<LocaleController>(
+                  builder: (localeController) {
+                    return _roundedField(
+                      controller: _passwordCtrl,
+                      hint: 'password_hint'.tr,
+                      isPassword: true,
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'field_required'.tr
+                          : null,
+                    );
+                  },
                 ),
 
                 SizedBox(height: 16.h),
@@ -272,98 +309,105 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     SizedBox(width: 16.w),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          MyText(
-                            'المحافظة',
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
-                            textAlign: TextAlign.right,
-                          ),
-                          SizedBox(height: 8.h),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16.r),
-                            ),
-                            child: DropdownButtonFormField<String>(
-                              value: _selectedCity,
-                              isExpanded: true,
-                              decoration: InputDecoration(
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 16.w,
-                                  vertical: 16.h,
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16.r),
-                                  borderSide: BorderSide(
-                                    color: AppColors.textLight,
-                                    width: 1,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16.r),
-                                  borderSide: BorderSide(
-                                    color: AppColors.primary,
-                                    width: 1,
-                                  ),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16.r),
-                                  borderSide: BorderSide(
-                                    color: Colors.red,
-                                    width: 1,
-                                  ),
-                                ),
-                                focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16.r),
-                                  borderSide: BorderSide(
-                                    color: Colors.red,
-                                    width: 1,
-                                  ),
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16.r),
-                                  borderSide: BorderSide(
-                                    color: AppColors.textLight,
-                                    width: 1,
-                                  ),
-                                ),
+                      child: GetBuilder<LocaleController>(
+                        builder: (localeController) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              MyText(
+                                'province'.tr,
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
+                                textAlign: TextAlign.right,
                               ),
-                              hint: MyText(
-                                'اختر المحافظة',
-                                fontSize: 14.sp,
-                                color: AppColors.textSecondary,
-                              ),
-                              items: _allowedCities
-                                  .map(
-                                    (c) => DropdownMenuItem<String>(
-                                      value: c,
-                                      child: Align(
-                                        alignment: Alignment.centerRight,
-                                        child: MyText(
-                                          c,
-                                          fontSize: 14.sp,
-                                          color: AppColors.textPrimary,
-                                        ),
+                              SizedBox(height: 8.h),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16.r),
+                                ),
+                                child: DropdownButtonFormField<String>(
+                                  key: ValueKey(
+                                    'province_dropdown_${localeController.selectedLanguage.value}',
+                                  ),
+                                  value: _selectedCity,
+                                  isExpanded: true,
+                                  decoration: InputDecoration(
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 16.w,
+                                      vertical: 16.h,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      borderSide: BorderSide(
+                                        color: AppColors.textLight,
+                                        width: 1,
                                       ),
                                     ),
-                                  )
-                                  .toList(),
-                              validator: (v) => (v == null || v.isEmpty)
-                                  ? 'هذا الحقل مطلوب !'
-                                  : null,
-                              onChanged: (v) {
-                                setState(() {
-                                  _selectedCity = v;
-                                  _cityCtrl.text = v ?? '';
-                                });
-                              },
-                            ),
-                          ),
-                        ],
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      borderSide: BorderSide(
+                                        color: AppColors.primary,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    errorBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      borderSide: BorderSide(
+                                        color: Colors.red,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    focusedErrorBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      borderSide: BorderSide(
+                                        color: Colors.red,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16.r),
+                                      borderSide: BorderSide(
+                                        color: AppColors.textLight,
+                                        width: 1,
+                                      ),
+                                    ),
+                                  ),
+                                  hint: MyText(
+                                    'select_province'.tr,
+                                    fontSize: 14.sp,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  items: _allowedCities
+                                      .map(
+                                        (c) => DropdownMenuItem<String>(
+                                          value: c,
+                                          child: Align(
+                                            alignment: Alignment.centerRight,
+                                            child: MyText(
+                                              c,
+                                              fontSize: 14.sp,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                  validator: (v) => (v == null || v.isEmpty)
+                                      ? 'field_required'.tr
+                                      : null,
+                                  onChanged: (v) {
+                                    setState(() {
+                                      _selectedCity = v;
+                                      _cityCtrl.text = v ?? '';
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -376,19 +420,23 @@ class _RegisterPageState extends State<RegisterPage> {
                     if (session.role.value != 'doctor') {
                       return const SizedBox.shrink();
                     }
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        MyText(
-                          'التخصص',
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                          textAlign: TextAlign.right,
-                        ),
-                        SizedBox(height: 8.h),
-                        _specializationDropdown(),
-                      ],
+                    return GetBuilder<LocaleController>(
+                      builder: (localeController) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            MyText(
+                              'specialization'.tr,
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                              textAlign: TextAlign.right,
+                            ),
+                            SizedBox(height: 8.h),
+                            _specializationDropdown(),
+                          ],
+                        );
+                      },
                     );
                   },
                 ),
@@ -409,13 +457,13 @@ class _RegisterPageState extends State<RegisterPage> {
                           auth.regPasswordCtrl.text = _passwordCtrl.text.trim();
                           auth.cityCtrl.text = _cityCtrl.text.trim();
                           auth.gender.value = _genderIndex == 0
-                              ? 'ذكر'
-                              : 'أنثى';
+                              ? 'male'.tr
+                              : 'female'.tr;
                           auth.age.value = int.tryParse(_age ?? '18') ?? 18;
                           // If user didn't pick an image, upload gender-based default
                           if ((_imageUrl == null || _imageUrl!.isEmpty)) {
                             final isFemale =
-                                auth.gender.value == 'أنثى' ||
+                                auth.gender.value == 'female'.tr ||
                                 auth.gender.value.toLowerCase() == 'female';
                             final role = session
                                 .role
@@ -460,11 +508,15 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       elevation: 0,
                     ),
-                    child: MyText(
-                      'انشاء الحساب',
-                      fontSize: 22.sp,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                    child: GetBuilder<LocaleController>(
+                      builder: (localeController) {
+                        return MyText(
+                          'create_account'.tr,
+                          fontSize: 22.sp,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -478,29 +530,33 @@ class _RegisterPageState extends State<RegisterPage> {
                         // LoginPage لا يحتاج binding خاص
                       }),
                     ),
-                    child: RichText(
-                      text: TextSpan(
-                        style: TextStyle(
-                          fontFamily: 'Expo Arabic',
-                          fontSize: 16.sp,
-                        ),
-                        children: [
-                          TextSpan(
-                            text: 'لديك حساب؟ ',
+                    child: GetBuilder<LocaleController>(
+                      builder: (localeController) {
+                        return RichText(
+                          text: TextSpan(
                             style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w700,
+                              fontFamily: 'Expo Arabic',
+                              fontSize: 16.sp,
                             ),
+                            children: [
+                              TextSpan(
+                                text: 'have_account'.tr,
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              TextSpan(
+                                text: 'login_now'.tr,
+                                style: TextStyle(
+                                  color: AppColors.secondary,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
                           ),
-                          TextSpan(
-                            text: 'سجل الدخول',
-                            style: TextStyle(
-                              color: AppColors.secondary,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -520,54 +576,66 @@ class _RegisterPageState extends State<RegisterPage> {
     FormFieldValidator<String>? validator,
     bool isPassword = false,
   }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      textAlign: TextAlign.center,
-      obscureText: isPassword ? _obscurePassword : false,
-      validator: validator,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(
-          color: AppColors.textLight,
-          fontSize: 18.sp,
-          fontFamily: 'Expo Arabic',
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: EdgeInsets.symmetric(vertical: 18.h, horizontal: 20.w),
-        suffixIcon: isPassword
-            ? IconButton(
-                icon: Icon(
-                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                  color: AppColors.textSecondary,
-                  size: 24.r,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  });
-                },
-              )
-            : null,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20.r),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20.r),
-          borderSide: BorderSide(color: AppColors.primary, width: 1.4),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20.r),
-          borderSide: const BorderSide(color: Colors.red),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20.r),
-          borderSide: const BorderSide(color: Colors.red),
-        ),
-      ),
-      style: TextStyle(fontSize: 18.sp, fontFamily: 'Expo Arabic'),
+    return GetBuilder<LocaleController>(
+      builder: (localeController) {
+        return TextFormField(
+          key: ValueKey(
+            'rounded_field_${localeController.selectedLanguage.value}_$hint',
+          ),
+          controller: controller,
+          keyboardType: keyboardType,
+          textAlign: TextAlign.center,
+          obscureText: isPassword ? _obscurePassword : false,
+          validator: validator,
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(
+              color: AppColors.textLight,
+              fontSize: 18.sp,
+              fontFamily: 'Expo Arabic',
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: EdgeInsets.symmetric(
+              vertical: 18.h,
+              horizontal: 20.w,
+            ),
+            suffixIcon: isPassword
+                ? IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: AppColors.textSecondary,
+                      size: 24.r,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  )
+                : null,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20.r),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20.r),
+              borderSide: BorderSide(color: AppColors.primary, width: 1.4),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20.r),
+              borderSide: const BorderSide(color: Colors.red),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20.r),
+              borderSide: const BorderSide(color: Colors.red),
+            ),
+          ),
+          style: TextStyle(fontSize: 18.sp, fontFamily: 'Expo Arabic'),
+        );
+      },
     );
   }
 
@@ -611,10 +679,10 @@ class _RegisterPageState extends State<RegisterPage> {
             value: _selectedSpecializationId,
             decoration: InputDecoration(
               hintText: _loadingSpecializations
-                  ? 'جاري التحميل...'
+                  ? 'loading'.tr
                   : _specializations.isEmpty
-                  ? 'لا توجد اختصاصات'
-                  : 'اختر الاختصاص',
+                  ? 'no_specializations'.tr
+                  : 'select_specialization'.tr,
               hintStyle: TextStyle(
                 color: AppColors.textLight,
                 fontSize: 18.sp,
@@ -667,7 +735,7 @@ class _RegisterPageState extends State<RegisterPage> {
               final session = Get.find<SessionController>();
               if (session.role.value == 'doctor' &&
                   (value == null || value.isEmpty)) {
-                return 'هذا الحقل مطلوب للطبيب!';
+                return 'field_required_for_doctor'.tr;
               }
               return null;
             },
@@ -689,11 +757,15 @@ class _RegisterPageState extends State<RegisterPage> {
                 children: [
                   Icon(Icons.refresh, color: AppColors.primary, size: 16.sp),
                   SizedBox(width: 4.w),
-                  MyText(
-                    'إعادة المحاولة',
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
+                  GetBuilder<LocaleController>(
+                    builder: (localeController) {
+                      return MyText(
+                        'retry'.tr,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      );
+                    },
                   ),
                 ],
               ),
@@ -711,143 +783,161 @@ class _RegisterPageState extends State<RegisterPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        MyText(
-          'العمر',
-          fontSize: 16.sp,
-          fontWeight: FontWeight.w800,
-          color: AppColors.textPrimary,
-          textAlign: TextAlign.right,
+        GetBuilder<LocaleController>(
+          builder: (localeController) {
+            return MyText(
+              'age'.tr,
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+              textAlign: TextAlign.right,
+            );
+          },
         ),
         SizedBox(height: 8.h),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-          child: DropdownButtonFormField<String>(
-            value: _age,
-            isExpanded: true,
-            menuMaxHeight: 400.h,
-            dropdownColor: Colors.white,
-            decoration: InputDecoration(
-              hintText: 'اختر العمر',
-              hintStyle: TextStyle(
-                color: AppColors.textLight,
-                fontSize: 18.sp,
-                fontFamily: 'Expo Arabic',
-              ),
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 16.w,
-                vertical: 16.h,
-              ),
-              enabledBorder: OutlineInputBorder(
+        GetBuilder<LocaleController>(
+          builder: (localeController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(16.r),
-                borderSide: BorderSide(color: AppColors.textLight, width: 1),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16.r),
-                borderSide: BorderSide(color: AppColors.primary, width: 1),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16.r),
-                borderSide: BorderSide(color: Colors.red, width: 1),
-              ),
-              focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16.r),
-                borderSide: BorderSide(color: Colors.red, width: 1),
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16.r),
-                borderSide: BorderSide(color: AppColors.textLight, width: 1),
-              ),
-            ),
-            icon: Icon(
-              Icons.keyboard_arrow_down_rounded,
-              color: AppColors.textSecondary,
-              size: 24.r,
-            ),
-            style: TextStyle(
-              fontFamily: 'Expo Arabic',
-              fontSize: 18.sp,
-              color: AppColors.textPrimary,
-            ),
-            selectedItemBuilder: (BuildContext context) {
-              return ages.map((String age) {
-                return Align(
-                  alignment: Alignment.center,
-                  child: MyText(
-                    age,
+              child: DropdownButtonFormField<String>(
+                key: ValueKey(
+                  'age_dropdown_${localeController.selectedLanguage.value}',
+                ),
+                value: _age,
+                isExpanded: true,
+                menuMaxHeight: 400.h,
+                dropdownColor: Colors.white,
+                decoration: InputDecoration(
+                  hintText: 'select_age'.tr,
+                  hintStyle: TextStyle(
+                    color: AppColors.textLight,
                     fontSize: 18.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    fontFamily: 'Expo Arabic',
                   ),
-                );
-              }).toList();
-            },
-            items: ages.map((String age) {
-              final isSelected = _age == age;
-              return DropdownMenuItem<String>(
-                value: age,
-                child: SizedBox(
-                  height: 52.h,
-                  child: Container(
-                    margin: EdgeInsets.symmetric(
-                      horizontal: 8.w,
-                      vertical: 2.h,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 16.h,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                    borderSide: BorderSide(
+                      color: AppColors.textLight,
+                      width: 1,
                     ),
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primary.withOpacity(0.1)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: isSelected
-                          ? Border.all(color: AppColors.primary, width: 1.5)
-                          : Border.all(
-                              color: AppColors.textLight.withOpacity(0.2),
-                              width: 1,
-                            ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: MyText(
-                            age,
-                            fontSize: 18.sp,
-                            fontWeight: isSelected
-                                ? FontWeight.w900
-                                : FontWeight.w600,
-                            color: isSelected
-                                ? AppColors.primary
-                                : AppColors.textPrimary,
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        if (isSelected)
-                          Container(
-                            width: 24.w,
-                            height: 24.w,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 16.r,
-                            ),
-                          ),
-                      ],
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                    borderSide: BorderSide(color: AppColors.primary, width: 1),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                    borderSide: BorderSide(color: Colors.red, width: 1),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                    borderSide: BorderSide(color: Colors.red, width: 1),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                    borderSide: BorderSide(
+                      color: AppColors.textLight,
+                      width: 1,
                     ),
                   ),
                 ),
-              );
-            }).toList(),
-            onChanged: onChanged,
-            validator: (value) =>
-                (value == null || value.isEmpty) ? 'هذا الحقل مطلوب !' : null,
-          ),
+                icon: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: AppColors.textSecondary,
+                  size: 24.r,
+                ),
+                style: TextStyle(
+                  fontFamily: 'Expo Arabic',
+                  fontSize: 18.sp,
+                  color: AppColors.textPrimary,
+                ),
+                selectedItemBuilder: (BuildContext context) {
+                  return ages.map((String age) {
+                    return Align(
+                      alignment: Alignment.center,
+                      child: MyText(
+                        age,
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    );
+                  }).toList();
+                },
+                items: ages.map((String age) {
+                  final isSelected = _age == age;
+                  return DropdownMenuItem<String>(
+                    value: age,
+                    child: SizedBox(
+                      height: 52.h,
+                      child: Container(
+                        margin: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 2.h,
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.primary.withOpacity(0.1)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: isSelected
+                              ? Border.all(color: AppColors.primary, width: 1.5)
+                              : Border.all(
+                                  color: AppColors.textLight.withOpacity(0.2),
+                                  width: 1,
+                                ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: MyText(
+                                age,
+                                fontSize: 18.sp,
+                                fontWeight: isSelected
+                                    ? FontWeight.w900
+                                    : FontWeight.w600,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppColors.textPrimary,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            if (isSelected)
+                              Container(
+                                width: 24.w,
+                                height: 24.w,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 16.r,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+                onChanged: onChanged,
+                validator: (value) => (value == null || value.isEmpty)
+                    ? 'field_required'.tr
+                    : null,
+              ),
+            );
+          },
         ),
       ],
     );

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../service_layer/services/visits_service.dart';
 import 'session_controller.dart';
@@ -13,6 +14,10 @@ class DelegateAllVisitsController extends GetxController {
 
   final isLoading = false.obs;
   final currentTab = 0.obs; // 0: أطباء, 1: مستشفيات, 2: مجمعات
+  
+  // البحث
+  final searchController = TextEditingController();
+  final searchQuery = ''.obs;
 
   @override
   void onInit() {
@@ -67,6 +72,12 @@ class DelegateAllVisitsController extends GetxController {
             'visits': item['visitCount'] as int?,
             'reason': item['nonSubscriptionReason']?.toString(),
             'type': visitType,
+            'address': item['doctorAddress']?.toString() ?? '',
+            'phone': item['doctorPhone']?.toString() ?? '',
+            'governorate': item['governorate']?.toString() ?? '',
+            'district': item['district']?.toString() ?? '',
+            'notes': item['notes']?.toString() ?? '',
+            'coordinates': item['coordinates'] as Map<String, dynamic>? ?? {},
           };
         }).toList();
 
@@ -112,18 +123,45 @@ class DelegateAllVisitsController extends GetxController {
     currentTab.value = index;
   }
 
-  /// جلب البيانات للتبويب الحالي
+  /// جلب البيانات للتبويب الحالي مع البحث
   List<Map<String, dynamic>> get currentTabVisits {
+    List<Map<String, dynamic>> visits;
     switch (currentTab.value) {
       case 0:
-        return doctorsVisits;
+        visits = doctorsVisits;
+        break;
       case 1:
-        return hospitalsVisits;
+        visits = hospitalsVisits;
+        break;
       case 2:
-        return complexesVisits;
+        visits = complexesVisits;
+        break;
       default:
-        return doctorsVisits;
+        visits = doctorsVisits;
     }
+
+    // تطبيق البحث
+    if (searchQuery.value.isEmpty) {
+      return visits;
+    }
+
+    final query = searchQuery.value.toLowerCase();
+    return visits.where((visit) {
+      final title = (visit['title']?.toString() ?? '').toLowerCase();
+      final subtitle = (visit['subtitle']?.toString() ?? '').toLowerCase();
+      final address = (visit['address']?.toString() ?? '').toLowerCase();
+      final phone = (visit['phone']?.toString() ?? '').toLowerCase();
+      
+      return title.contains(query) ||
+          subtitle.contains(query) ||
+          address.contains(query) ||
+          phone.contains(query);
+    }).toList();
+  }
+  
+  /// تحديث البحث
+  void updateSearch(String query) {
+    searchQuery.value = query;
   }
 
   /// إعادة تحميل البيانات
@@ -137,6 +175,7 @@ class DelegateAllVisitsController extends GetxController {
     doctorsVisits.clear();
     hospitalsVisits.clear();
     complexesVisits.clear();
+    searchController.dispose();
     isLoading.value = false;
     currentTab.value = 0;
     super.onClose();

@@ -11,6 +11,7 @@ import '../../bindings/search_binding.dart';
 import '../../bindings/delegate_doctors_visits_binding.dart';
 import '../../controller/delegate_doctors_visits_controller.dart';
 import 'add_visit_page.dart';
+import 'visit_details_page.dart';
 
 class DelegateDoctorsVisitsPage extends StatelessWidget {
   const DelegateDoctorsVisitsPage({super.key});
@@ -216,6 +217,25 @@ class DelegateDoctorsVisitsPage extends StatelessWidget {
             subscribed: visit['isSubscribed'] as bool,
             visits: visit['visits'] as int?,
             reason: visit['reason'] as String?,
+            onTap: () {
+              Get.to(
+                () => const VisitDetailsPage(),
+                arguments: {
+                  'id': visit['id'],
+                  'title': visit['title'],
+                  'subtitle': visit['subtitle'],
+                  'isSubscribed': visit['isSubscribed'],
+                  'visits': visit['visits'],
+                  'reason': visit['reason'],
+                  'type': 'doctor',
+                  'address': visit['address'],
+                  'phone': visit['phone'],
+                  'governorate': visit['governorate'],
+                  'district': visit['district'],
+                  'notes': visit['notes'],
+                },
+              );
+            },
           );
         },
         separatorBuilder: (_, __) => SizedBox(height: 12.h),
@@ -231,94 +251,100 @@ class _VisitCard extends StatelessWidget {
   final bool subscribed;
   final int? visits;
   final String? reason;
+  final VoidCallback? onTap;
   const _VisitCard({
     required this.title,
     required this.subtitle,
     required this.subscribed,
     this.visits,
     this.reason,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18.r),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _StatusBadge(isSubscribed: subscribed, visits: visits),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      MyText(
-                        title,
-                        fontSize: 20.sp,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimary,
-                        textAlign: TextAlign.right,
-                      ),
-                      SizedBox(height: 6.h),
-                      MyText(
-                        subtitle,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18.r),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18.r),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadow,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(16.w),
+          child: Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _StatusBadge(isSubscribed: subscribed, visits: visits),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        MyText(
+                          title,
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary,
+                          textAlign: TextAlign.right,
+                        ),
+                        SizedBox(height: 6.h),
+                        MyText(
+                          subtitle,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textSecondary,
+                          textAlign: TextAlign.right,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if (!subscribed) ...[
+                SizedBox(height: 12.h),
+                Divider(color: AppColors.divider, height: 1),
+                SizedBox(height: 12.h),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: RichText(
+                    text: TextSpan(
+                      style: TextStyle(
+                        fontFamily: 'Expo Arabic',
                         fontSize: 16.sp,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textSecondary,
-                        textAlign: TextAlign.right,
                       ),
-                    ],
+                      children: [
+                        const TextSpan(
+                          text: 'سبب عدم الاشتراك : ',
+                          style: TextStyle(
+                            color: Color(0xFFFF3B30),
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        TextSpan(
+                          text: reason ?? '',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
-            ),
-            if (!subscribed) ...[
-              SizedBox(height: 12.h),
-              Divider(color: AppColors.divider, height: 1),
-              SizedBox(height: 12.h),
-              Align(
-                alignment: Alignment.centerRight,
-                child: RichText(
-                  text: TextSpan(
-                    style: TextStyle(
-                      fontFamily: 'Expo Arabic',
-                      fontSize: 16.sp,
-                    ),
-                    children: [
-                      const TextSpan(
-                        text: 'سبب عدم الاشتراك : ',
-                        style: TextStyle(
-                          color: Color(0xFFFF3B30),
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      TextSpan(
-                        text: reason ?? '',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ],
-          ],
+          ),
         ),
       ),
     );
