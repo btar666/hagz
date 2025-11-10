@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
+import '../../controller/locale_controller.dart';
 import '../auth/login_page.dart';
 import '../../controller/session_controller.dart';
 
@@ -15,7 +16,12 @@ class UserTypeSelectionPage extends StatefulWidget {
 }
 
 class _UserTypeSelectionPageState extends State<UserTypeSelectionPage> {
-  final List<String> _roles = const ['مستخدم', 'دكتور', 'سكرتير', 'مندوب'];
+  List<String> get _roles => [
+    'user_type'.tr,
+    'doctor_type'.tr,
+    'secretary_type'.tr,
+    'delegate_type'.tr,
+  ];
   int _selectedIndex = 1; // default like screenshot: Doctor selected
 
   void _onNext() {
@@ -90,46 +96,59 @@ class _UserTypeSelectionPageState extends State<UserTypeSelectionPage> {
                         ),
                       ),
                       SizedBox(height: 24.h),
-                      MyText(
-                        'اختر نوع المستخدم',
-                        fontSize: 28.sp,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimary,
-                        textAlign: TextAlign.center,
+                      GetBuilder<LocaleController>(
+                        builder: (localeController) {
+                          return MyText(
+                            'select_user_type'.tr,
+                            fontSize: 28.sp,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.textPrimary,
+                            textAlign: TextAlign.center,
+                          );
+                        },
                       ),
                       SizedBox(height: 24.h),
 
                       // role buttons
-                      ...List.generate(_roles.length, (index) {
-                        final bool isSelected = index == _selectedIndex;
-                        return Padding(
-                          padding: EdgeInsets.only(bottom: 12.h),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(28.r),
-                            onTap: () => setState(() => _selectedIndex = index),
-                            child: Container(
-                              height: 56.h,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppColors.primary
-                                    : AppColors.primaryLight.withOpacity(0.75),
-                                borderRadius: BorderRadius.circular(28.r),
-                              ),
-                              child: MyText(
-                                _roles[index],
-                                fontSize: 20.sp,
-                                fontWeight: isSelected
-                                    ? FontWeight.w900
-                                    : FontWeight.w700,
-                                color: isSelected
-                                    ? Colors.white
-                                    : AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
+                      GetBuilder<LocaleController>(
+                        builder: (localeController) {
+                          return Column(
+                            children: List.generate(_roles.length, (index) {
+                              final bool isSelected = index == _selectedIndex;
+                              return Padding(
+                                padding: EdgeInsets.only(bottom: 12.h),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(28.r),
+                                  onTap: () =>
+                                      setState(() => _selectedIndex = index),
+                                  child: Container(
+                                    height: 56.h,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? AppColors.primary
+                                          : AppColors.primaryLight.withOpacity(
+                                              0.75,
+                                            ),
+                                      borderRadius: BorderRadius.circular(28.r),
+                                    ),
+                                    child: MyText(
+                                      _roles[index],
+                                      fontSize: 20.sp,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w900
+                                          : FontWeight.w700,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          );
+                        },
+                      ),
 
                       SizedBox(height: 24.h),
 
@@ -150,11 +169,15 @@ class _UserTypeSelectionPageState extends State<UserTypeSelectionPage> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               SizedBox(width: 12.w),
-                              MyText(
-                                'التالي',
-                                fontSize: 22.sp,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
+                              GetBuilder<LocaleController>(
+                                builder: (localeController) {
+                                  return MyText(
+                                    'next'.tr,
+                                    fontSize: 22.sp,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                  );
+                                },
                               ),
                               Container(
                                 width: 40.h,

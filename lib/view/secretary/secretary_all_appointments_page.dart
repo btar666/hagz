@@ -6,6 +6,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
 import '../../widget/search_widget.dart';
+import '../../controller/locale_controller.dart';
 import '../../widget/appointment_status_filter_dialog.dart';
 import 'appointment_details_page.dart';
 import '../../controller/secretary_appointments_controller.dart';
@@ -22,201 +23,238 @@ class _SecretaryAllAppointmentsPageState
     extends State<SecretaryAllAppointmentsPage> {
   final SecretaryAppointmentsController _controller =
       Get.find<SecretaryAppointmentsController>();
-  final Set<String> _expandedMonths = {'هذا الشهر'}; // expanded by default
+  final Set<String> _expandedMonths =
+      {}; // Will be initialized with translated text
   final List<String> _activeStatuses = [];
 
   // إضافة المتغيرات الجديدة
   int _selectedYear = DateTime.now().year;
-  final List<String> _monthNames = [
-    'يناير',
-    'فبراير',
-    'مارس',
-    'أبريل',
-    'مايو',
-    'يونيو',
-    'يوليو',
-    'أغسطس',
-    'سبتمبر',
-    'أكتوبر',
-    'نوفمبر',
-    'ديسمبر',
-  ];
+
+  List<String> get _monthNames {
+    return [
+      'january'.tr,
+      'february'.tr,
+      'march'.tr,
+      'april'.tr,
+      'may'.tr,
+      'june'.tr,
+      'july'.tr,
+      'august'.tr,
+      'september'.tr,
+      'october'.tr,
+      'november'.tr,
+      'december'.tr,
+    ];
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize expanded months with translated text
+    _expandedMonths.add('this_month'.tr);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4FEFF),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF4FEFF),
-        elevation: 0,
-        title: MyText(
-          'جميع المواعيد',
-          fontSize: 22.sp,
-          fontWeight: FontWeight.w900,
-          color: AppColors.textPrimary,
-        ),
-        centerTitle: true,
-        actions: [
-          // زر تغيير السنة
-          GestureDetector(
-            onTap: _showYearPicker,
-            child: Container(
-              margin: EdgeInsets.only(right: 16.w),
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: const Color(0xFF7CC7D0),
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-              child: MyText(
-                '$_selectedYear',
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
+    return GetBuilder<LocaleController>(
+      builder: (localeController) {
+        // Update expanded months when language changes
+        if (!_expandedMonths.contains('this_month'.tr) &&
+            _expandedMonths.contains('هذا الشهر')) {
+          _expandedMonths.remove('هذا الشهر');
+          _expandedMonths.add('this_month'.tr);
+        }
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFF4FEFF),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFFF4FEFF),
+            elevation: 0,
+            title: MyText(
+              'all_appointments'.tr,
+              fontSize: 22.sp,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
             ),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: SearchWidget(
-                    hint: 'ابحث عن مريض ..',
-                    onChanged: (value) {
-                      _controller.query.value = value;
-                    },
+            centerTitle: true,
+            actions: [
+              // زر تغيير السنة
+              GestureDetector(
+                onTap: _showYearPicker,
+                child: Container(
+                  margin: EdgeInsets.only(right: 16.w),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 6.h,
                   ),
-                ),
-                SizedBox(width: 12.w),
-                GestureDetector(
-                  onTap: () async {
-                    final picked = await showDialog<List<String>>(
-                      context: context,
-                      builder: (_) => const AppointmentStatusFilterDialog(),
-                    );
-                    if (picked != null) {
-                      setState(() {
-                        _activeStatuses
-                          ..clear()
-                          ..addAll(picked);
-                      });
-                    }
-                  },
-                  child: Container(
-                    width: 56.w,
-                    height: 56.w,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF7CC7D0),
-                      borderRadius: BorderRadius.circular(16.r),
-                    ),
-                    child: const Icon(Icons.tune, color: Colors.white),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7CC7D0),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
-                ),
-              ],
-            ),
-            if (_activeStatuses.isNotEmpty) ...[
-              SizedBox(height: 10.h),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Wrap(
-                  spacing: 8.w,
-                  runSpacing: 8.h,
-                  children: _activeStatuses
-                      .map(
-                        (s) => _filterTag(
-                          s,
-                          () => setState(() => _activeStatuses.remove(s)),
-                        ),
-                      )
-                      .toList(),
+                  child: MyText(
+                    '$_selectedYear',
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
-            SizedBox(height: 16.h),
-            Obx(() {
-              final isLoading = _controller.isLoading.value;
-              final appointments = _controller.filteredAppointments;
-
-              if (isLoading) {
-                return Skeletonizer(
-                  enabled: true,
-                  child: Column(
-                    children: List.generate(
-                      3,
-                      (index) => _buildMonthBlock('هذا الشهر'),
-                    ),
-                  ),
-                );
-              }
-
-              if (appointments.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40.h),
-                    child: MyText(
-                      'لا توجد مواعيد',
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                );
-              }
-
-              // تجميع المواعيد حسب الشهر
-              final Map<String, List<Map<String, dynamic>>>
-              groupedAppointments = {};
-              for (final appointment in appointments) {
-                final date = appointment['date'] as DateTime;
-                final monthKey = _getMonthKey(date);
-
-                if (!groupedAppointments.containsKey(monthKey)) {
-                  groupedAppointments[monthKey] = [];
-                }
-                groupedAppointments[monthKey]!.add(appointment);
-              }
-
-              // إنشاء قائمة الشهور للعرض (من الشهر الحالي إلى 1)
-              final List<String> monthsToShow = [];
-              final currentMonth = DateTime.now().month;
-
-              if (_selectedYear == DateTime.now().year) {
-                // إذا كانت السنة الحالية، اعرض من الشهر الحالي إلى 1
-                for (int i = currentMonth; i >= 1; i--) {
-                  final monthKey = i == currentMonth
-                      ? 'هذا الشهر'
-                      : _monthNames[i - 1];
-                  monthsToShow.add(monthKey);
-                }
-              } else {
-                // إذا كانت سنة أخرى، اعرض جميع الشهور من 12 إلى 1
-                for (int i = 12; i >= 1; i--) {
-                  monthsToShow.add(_monthNames[i - 1]);
-                }
-              }
-
-              return Column(
-                children: monthsToShow
-                    .map(
-                      (month) => Padding(
-                        padding: EdgeInsets.only(bottom: 12.h),
-                        child: _buildMonthBlock(
-                          month,
-                          groupedAppointments[month] ?? [],
-                        ),
+          ),
+          body: SingleChildScrollView(
+            padding: EdgeInsets.all(16.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: GetBuilder<LocaleController>(
+                        builder: (localeController) {
+                          return SearchWidget(
+                            hint: 'search_patient'.tr,
+                            onChanged: (value) {
+                              _controller.query.value = value;
+                            },
+                          );
+                        },
                       ),
-                    )
-                    .toList(),
-              );
-            }),
-          ],
-        ),
-      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    GestureDetector(
+                      onTap: () async {
+                        final picked = await showDialog<List<String>>(
+                          context: context,
+                          builder: (_) => const AppointmentStatusFilterDialog(),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            _activeStatuses
+                              ..clear()
+                              ..addAll(picked);
+                          });
+                        }
+                      },
+                      child: Container(
+                        width: 56.w,
+                        height: 56.w,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF7CC7D0),
+                          borderRadius: BorderRadius.circular(16.r),
+                        ),
+                        child: const Icon(Icons.tune, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_activeStatuses.isNotEmpty) ...[
+                  SizedBox(height: 10.h),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Wrap(
+                      spacing: 8.w,
+                      runSpacing: 8.h,
+                      children: _activeStatuses
+                          .map(
+                            (s) => _filterTag(
+                              s,
+                              () => setState(() => _activeStatuses.remove(s)),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+                ],
+                SizedBox(height: 16.h),
+                Obx(() {
+                  final isLoading = _controller.isLoading.value;
+                  final appointments = _controller.filteredAppointments;
+
+                  if (isLoading) {
+                    return GetBuilder<LocaleController>(
+                      builder: (localeController) {
+                        return Skeletonizer(
+                          enabled: true,
+                          child: Column(
+                            children: List.generate(
+                              3,
+                              (index) => _buildMonthBlock('this_month'.tr),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }
+
+                  if (appointments.isEmpty) {
+                    return GetBuilder<LocaleController>(
+                      builder: (localeController) {
+                        return Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 40.h),
+                            child: MyText(
+                              'no_appointments'.tr,
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }
+
+                  // تجميع المواعيد حسب الشهر
+                  final Map<String, List<Map<String, dynamic>>>
+                  groupedAppointments = {};
+                  for (final appointment in appointments) {
+                    final date = appointment['date'] as DateTime;
+                    final monthKey = _getMonthKey(date);
+
+                    if (!groupedAppointments.containsKey(monthKey)) {
+                      groupedAppointments[monthKey] = [];
+                    }
+                    groupedAppointments[monthKey]!.add(appointment);
+                  }
+
+                  // إنشاء قائمة الشهور للعرض (من الشهر الحالي إلى 1)
+                  final List<String> monthsToShow = [];
+                  final currentMonth = DateTime.now().month;
+
+                  if (_selectedYear == DateTime.now().year) {
+                    // إذا كانت السنة الحالية، اعرض من الشهر الحالي إلى 1
+                    for (int i = currentMonth; i >= 1; i--) {
+                      final monthKey = i == currentMonth
+                          ? 'this_month'.tr
+                          : _monthNames[i - 1];
+                      monthsToShow.add(monthKey);
+                    }
+                  } else {
+                    // إذا كانت سنة أخرى، اعرض جميع الشهور من 12 إلى 1
+                    for (int i = 12; i >= 1; i--) {
+                      monthsToShow.add(_monthNames[i - 1]);
+                    }
+                  }
+
+                  return Column(
+                    children: monthsToShow
+                        .map(
+                          (month) => Padding(
+                            padding: EdgeInsets.only(bottom: 12.h),
+                            child: _buildMonthBlock(
+                              month,
+                              groupedAppointments[month] ?? [],
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -230,19 +268,23 @@ class _SecretaryAllAppointmentsPageState
     if (isExpanded) {
       if (appointmentsList.isEmpty) {
         // عرض رسالة "لا يوجد حجوزات في هذا الشهر"
-        return _monthSection(title, [
-          Center(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 40.h),
-              child: MyText(
-                'لا يوجد حجوزات في هذا الشهر',
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textSecondary,
+        return GetBuilder<LocaleController>(
+          builder: (localeController) {
+            return _monthSection(title, [
+              Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40.h),
+                  child: MyText(
+                    'no_appointments_this_month'.tr,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ),
-            ),
-          ),
-        ]);
+            ]);
+          },
+        );
       }
 
       final filtered = _activeStatuses.isEmpty
@@ -258,14 +300,20 @@ class _SecretaryAllAppointmentsPageState
             .asMap()
             .entries
             .map(
-              (e) => _timelineRow(
-                e.value['title'] ?? 'مريض',
-                _getStatusText(e.value['status']),
-                e.value['time'] ?? '',
-                '${e.key + 1} : التسلسل',
-                _formatDate(e.value['date'] as DateTime),
-                statusColor: _statusColor(_getStatusText(e.value['status'])),
-                appointment: e.value,
+              (e) => GetBuilder<LocaleController>(
+                builder: (localeController) {
+                  return _timelineRow(
+                    e.value['title'] ?? 'patient'.tr,
+                    _getStatusText(e.value['status']),
+                    e.value['time'] ?? '',
+                    '${e.key + 1} : ${'sequence'.tr}',
+                    _formatDate(e.value['date'] as DateTime),
+                    statusColor: _statusColor(
+                      _getStatusText(e.value['status']),
+                    ),
+                    appointment: e.value,
+                  );
+                },
               ),
             )
             .toList(),
@@ -402,12 +450,12 @@ class _SecretaryAllAppointmentsPageState
               builder: (_) => AppointmentDetailsPage(
                 name: appointment['patientName'] ?? name,
                 age: appointment['patientAge'] ?? '22',
-                gender: 'أنثى', // يمكن إضافة هذا الحقل لاحقاً
+                gender: 'female'.tr, // يمكن إضافة هذا الحقل لاحقاً
                 phone: appointment['patientPhone'] ?? '0770 000 0000',
                 date: date,
                 time: time,
                 price: price,
-                paymentStatus: 'تم الدفع',
+                paymentStatus: 'paid'.tr,
                 seq: int.tryParse(seq.split(' ').first) ?? 1,
                 appointmentId: appointmentId,
               ),
@@ -494,11 +542,18 @@ class _SecretaryAllAppointmentsPageState
                 color: const Color(0xFF7CC7D0).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12.r),
               ),
-              child: MyText(
-                '$count مواعيد',
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF7CC7D0),
+              child: GetBuilder<LocaleController>(
+                builder: (localeController) {
+                  return MyText(
+                    'appointments_count_text'.tr.replaceAll(
+                      '{count}',
+                      count.toString(),
+                    ),
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF7CC7D0),
+                  );
+                },
               ),
             ),
           ],
@@ -519,7 +574,7 @@ class _SecretaryAllAppointmentsPageState
     final appointmentMonth = DateTime(date.year, date.month);
 
     if (appointmentMonth.isAtSameMomentAs(thisMonth)) {
-      return 'هذا الشهر';
+      return 'this_month'.tr;
     } else {
       return _monthNames[date.month - 1];
     }
@@ -594,13 +649,17 @@ class _SecretaryAllAppointmentsPageState
                         ),
                       ),
                       Expanded(
-                        child: Center(
-                          child: MyText(
-                            'اختر السنة',
-                            fontSize: 22.sp,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.textPrimary,
-                          ),
+                        child: GetBuilder<LocaleController>(
+                          builder: (localeController) {
+                            return Center(
+                              child: MyText(
+                                'select_year'.tr,
+                                fontSize: 22.sp,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.textPrimary,
+                              ),
+                            );
+                          },
                         ),
                       ),
                       SizedBox(width: 40.w),
@@ -650,11 +709,15 @@ class _SecretaryAllAppointmentsPageState
                                 borderRadius: BorderRadius.circular(16.r),
                               ),
                             ),
-                            child: MyText(
-                              'إلغاء',
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textSecondary,
+                            child: GetBuilder<LocaleController>(
+                              builder: (localeController) {
+                                return MyText(
+                                  'cancel'.tr,
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textSecondary,
+                                );
+                              },
                             ),
                           ),
                         ),
@@ -679,11 +742,15 @@ class _SecretaryAllAppointmentsPageState
                               ),
                               elevation: 0,
                             ),
-                            child: MyText(
-                              'تم',
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                            child: GetBuilder<LocaleController>(
+                              builder: (localeController) {
+                                return MyText(
+                                  'done'.tr,
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                );
+                              },
                             ),
                           ),
                         ),

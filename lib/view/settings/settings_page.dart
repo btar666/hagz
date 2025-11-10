@@ -21,7 +21,6 @@ import '../delegate/delegate_profile_edit_page.dart';
 import '../../widget/animated_pressable.dart';
 import 'about_page.dart';
 import '../../controller/about_controller.dart';
-import '../../service_layer/services/get_storage_service.dart';
 import '../../controller/locale_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -386,7 +385,6 @@ class SettingsPage extends StatelessWidget {
   }
 
   void _showLanguageDialog(BuildContext context) {
-    final storage = GetStorageService();
     final currentLanguage = Get.locale?.languageCode ?? 'ar';
 
     showModalBottomSheet(
@@ -470,31 +468,42 @@ class SettingsPage extends StatelessWidget {
                         Navigator.pop(context);
 
                         if (finalLanguage != currentLanguage) {
-                          // Save language preference
-                          storage.write('selected_language', finalLanguage);
-
-                          // Update locale
-                          final newLocale = finalLanguage == 'en'
-                              ? const Locale('en')
-                              : const Locale('ar');
-                          Get.updateLocale(newLocale);
-                          // Update LocaleController to rebuild GetMaterialApp
+                          // Get the LocaleController and change language
                           final localeController = Get.find<LocaleController>();
-                          localeController.updateLocale(newLocale);
 
-                          // Force rebuild by accessing locale to trigger Obx
-                          final _ = localeController.locale.value;
+                          // Change language (this will trigger updates)
+                          localeController.changeLanguage(finalLanguage);
 
-                          // Show success message
-                          Future.delayed(const Duration(milliseconds: 300), () {
-                            Get.snackbar(
-                              'success'.tr,
-                              'language_changed'.tr,
-                              backgroundColor: Colors.black87,
-                              colorText: Colors.white,
-                              duration: const Duration(seconds: 2),
+                          // Force immediate app update to refresh all pages
+                          Get.forceAppUpdate();
+
+                          // Use Future.microtask to ensure update happens after current frame
+                          // This is especially important when switching to English
+                          Future.microtask(() {
+                            // Force another update to ensure all widgets rebuild
+                            Get.forceAppUpdate();
+                            localeController.update(['locale_builder']);
+                            localeController.update();
+
+                            // Additional update after a short delay to ensure English switch works
+                            Future.delayed(
+                              const Duration(milliseconds: 50),
+                              () {
+                                Get.forceAppUpdate();
+                                localeController.update(['locale_builder']);
+                                localeController.update();
+                              },
                             );
                           });
+
+                          // Show success message
+                          Get.snackbar(
+                            'success'.tr,
+                            'language_changed'.tr,
+                            backgroundColor: Colors.black87,
+                            colorText: Colors.white,
+                            duration: const Duration(seconds: 2),
+                          );
                         }
                       },
                       style: ElevatedButton.styleFrom(

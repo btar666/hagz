@@ -10,6 +10,7 @@ import '../../../bindings/doctor_profile_binding.dart';
 
 import '../../../service_layer/services/ratings_service.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import '../../../controller/locale_controller.dart';
 
 class TopRatedDoctorsPage extends StatefulWidget {
   const TopRatedDoctorsPage({super.key});
@@ -81,12 +82,16 @@ class _TopRatedDoctorsPageState extends State<TopRatedDoctorsPage> {
             child: const Icon(Icons.tune, color: Colors.white, size: 20),
           ),
         ),
-        title: MyText(
-          'الأطباء الأعلى تقييماً',
-          fontSize: 18.sp,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-          textAlign: TextAlign.center,
+        title: GetBuilder<LocaleController>(
+          builder: (localeController) {
+            return MyText(
+              'top_rated_doctors'.tr,
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+              textAlign: TextAlign.center,
+            );
+          },
         ),
         centerTitle: true,
         actions: [

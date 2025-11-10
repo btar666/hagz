@@ -5,13 +5,12 @@ import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
-import '../../widget/search_widget.dart';
-import '../home/search_page.dart';
-import '../../bindings/search_binding.dart';
 import '../../bindings/delegate_home_binding.dart';
 import '../../controller/delegate_home_controller.dart';
 import '../../controller/session_controller.dart';
+import '../../controller/locale_controller.dart';
 import 'add_visit_page.dart';
+import 'visit_details_page.dart';
 
 class DelegateHomePage extends StatelessWidget {
   const DelegateHomePage({super.key});
@@ -20,45 +19,49 @@ class DelegateHomePage extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-        ),
-        padding: EdgeInsets.all(24.w),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            MyText(
-              'اختر نوع الزيارة',
-              fontSize: 22.sp,
-              fontWeight: FontWeight.w900,
-              color: AppColors.textPrimary,
+      builder: (context) => GetBuilder<LocaleController>(
+        builder: (localeController) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
             ),
-            SizedBox(height: 24.h),
-            _buildTypeOption(
-              context,
-              title: 'طبيب',
-              icon: Icons.person,
-              type: 'doctor',
+            padding: EdgeInsets.all(24.w),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                MyText(
+                  'select_visit_type'.tr,
+                  fontSize: 22.sp,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
+                ),
+                SizedBox(height: 24.h),
+                _buildTypeOption(
+                  context,
+                  title: 'doctor'.tr,
+                  icon: Icons.person,
+                  type: 'doctor',
+                ),
+                SizedBox(height: 12.h),
+                _buildTypeOption(
+                  context,
+                  title: 'hospitals'.tr,
+                  icon: Icons.local_hospital,
+                  type: 'hospital',
+                ),
+                SizedBox(height: 12.h),
+                _buildTypeOption(
+                  context,
+                  title: 'medical_complex'.tr,
+                  icon: Icons.business,
+                  type: 'complex',
+                ),
+                SizedBox(height: 24.h),
+              ],
             ),
-            SizedBox(height: 12.h),
-            _buildTypeOption(
-              context,
-              title: 'مستشفى',
-              icon: Icons.local_hospital,
-              type: 'hospital',
-            ),
-            SizedBox(height: 12.h),
-            _buildTypeOption(
-              context,
-              title: 'مجمع طبي',
-              icon: Icons.business,
-              type: 'complex',
-            ),
-            SizedBox(height: 24.h),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -111,37 +114,54 @@ class DelegateHomePage extends StatelessWidget {
     final controller = Get.find<DelegateHomeController>();
     final sessionController = Get.find<SessionController>();
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.all(16.w),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Left avatar - User profile image
-                  Obx(() {
-                    final user = sessionController.currentUser.value;
-                    final imageUrl = user?.image;
-                    return Container(
-                      width: 56.w,
-                      height: 56.w,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                      child: ClipOval(
-                        child: imageUrl != null && imageUrl.isNotEmpty
-                            ? Image.network(
-                                imageUrl,
-                                width: 56.w,
-                                height: 56.w,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
+    // Wrap with GetBuilder to listen to locale changes
+    return GetBuilder<LocaleController>(
+      builder: (localeController) {
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(16.w),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Left avatar - User profile image
+                      Obx(() {
+                        final user = sessionController.currentUser.value;
+                        final imageUrl = user?.image;
+                        return Container(
+                          width: 56.w,
+                          height: 56.w,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: ClipOval(
+                            child: imageUrl != null && imageUrl.isNotEmpty
+                                ? Image.network(
+                                    imageUrl,
+                                    width: 56.w,
+                                    height: 56.w,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: 56.w,
+                                        height: 56.w,
+                                        color: AppColors.primary.withOpacity(
+                                          0.2,
+                                        ),
+                                        child: Icon(
+                                          Icons.person,
+                                          color: AppColors.primary,
+                                          size: 32.sp,
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : Container(
                                     width: 56.w,
                                     height: 56.w,
                                     color: AppColors.primary.withOpacity(0.2),
@@ -150,132 +170,171 @@ class DelegateHomePage extends StatelessWidget {
                                       color: AppColors.primary,
                                       size: 32.sp,
                                     ),
-                                  );
-                                },
-                              )
-                            : Container(
-                                width: 56.w,
-                                height: 56.w,
-                                color: AppColors.primary.withOpacity(0.2),
-                                child: Icon(
-                                  Icons.person,
-                                  color: AppColors.primary,
-                                  size: 32.sp,
+                                  ),
+                          ),
+                        );
+                      }),
+                      SizedBox(width: 12.w),
+                      // Search
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16.r),
+                          ),
+                          child: TextField(
+                            key: ValueKey(
+                              'search_${localeController.selectedLanguage.value}',
+                            ),
+                            controller: controller.searchController,
+                            onChanged: controller.updateSearch,
+                            decoration: InputDecoration(
+                              hintText: 'search_recent_visits'.tr,
+                              hintStyle: TextStyle(
+                                color: AppColors.textLight,
+                                fontSize: 16.sp,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16.r),
+                                borderSide: const BorderSide(
+                                  color: Colors.transparent,
                                 ),
                               ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16.r),
+                                borderSide: const BorderSide(
+                                  color: Colors.transparent,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16.r),
+                                borderSide: BorderSide(
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                              prefixIcon: Icon(
+                                Icons.search,
+                                color: AppColors.textLight,
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12.w,
+                              ),
+                            ),
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      // Add button
+                      GestureDetector(
+                        onTap: () => _showVisitTypeDialog(context),
+                        child: Container(
+                          width: 56.w,
+                          height: 56.w,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(16.r),
+                          ),
+                          child: const Icon(
+                            Icons.add,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  child: Row(
+                    children: [
+                      MyText(
+                        'recently_visited'.tr,
+                        fontSize: 22.sp,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                        textAlign: TextAlign.right,
+                      ),
+                      const Spacer(),
+                      Icon(
+                        Icons.tune,
+                        color: AppColors.textSecondary,
+                        size: 22.sp,
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: 24.h),
+                Expanded(
+                  child: Obx(() {
+                    if (controller.isLoading.value) {
+                      return Skeletonizer(
+                        enabled: true,
+                        child: ListView.separated(
+                          padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+                          itemBuilder: (_, i) => _VisitedCard(
+                            item: _VisitItem(
+                              title: 'loading'.tr,
+                              subtitle: '...',
+                              isSubscribed: false,
+                            ),
+                          ),
+                          separatorBuilder: (_, __) => SizedBox(height: 12.h),
+                          itemCount: 5,
+                        ),
+                      );
+                    }
+
+                    if (controller.recentVisits.isEmpty) {
+                      return Center(
+                        child: MyText(
+                          'no_recent_visits'.tr,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      );
+                    }
+
+                    return RefreshIndicator(
+                      onRefresh: controller.refresh,
+                      color: AppColors.primary,
+                      child: ListView.separated(
+                        padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+                        itemBuilder: (_, i) {
+                          final visit = controller.filteredRecentVisits[i];
+                          return GestureDetector(
+                            onTap: () {
+                              Get.to(
+                                () => const VisitDetailsPage(),
+                                arguments: visit,
+                              );
+                            },
+                            child: _VisitedCard(
+                              item: _VisitItem(
+                                title: visit['title'] as String,
+                                subtitle: visit['subtitle'] as String,
+                                isSubscribed: visit['isSubscribed'] as bool,
+                                visits: visit['visits'] as int?,
+                                reason: visit['reason'] as String?,
+                              ),
+                            ),
+                          );
+                        },
+                        separatorBuilder: (_, __) => SizedBox(height: 12.h),
+                        itemCount: controller.filteredRecentVisits.length,
                       ),
                     );
                   }),
-                  SizedBox(width: 12.w),
-                  // Search
-                  Expanded(
-                    child: SearchWidget(
-                      hint: 'ابحث عن طبيب أو مستشفى ..',
-                      readOnly: true,
-                      onTap: () => Get.to(
-                        () => const SearchPage(),
-                        binding: SearchBinding(),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  // Add button
-                  GestureDetector(
-                    onTap: () => _showVisitTypeDialog(context),
-                    child: Container(
-                      width: 56.w,
-                      height: 56.w,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(16.r),
-                      ),
-                      child: const Icon(
-                        Icons.add,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              child: Row(
-                children: [
-                  MyText(
-                    'تمت زيارتهم مؤخرًا',
-                    fontSize: 22.sp,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                    textAlign: TextAlign.right,
-                  ),
-                  const Spacer(),
-                  Icon(Icons.tune, color: AppColors.textSecondary, size: 22.sp),
-                ],
-              ),
-            ),
-
-            SizedBox(height: 12.h),
-
-            Expanded(
-              child: Obx(() {
-                if (controller.isLoading.value) {
-                  return Skeletonizer(
-                    enabled: true,
-                    child: ListView.separated(
-                      padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
-                      itemBuilder: (_, i) => _VisitedCard(
-                        item: _VisitItem(
-                          title: 'جاري التحميل',
-                          subtitle: '...',
-                          isSubscribed: false,
-                        ),
-                      ),
-                      separatorBuilder: (_, __) => SizedBox(height: 12.h),
-                      itemCount: 5,
-                    ),
-                  );
-                }
-
-                if (controller.recentVisits.isEmpty) {
-                  return Center(
-                    child: MyText(
-                      'لا توجد زيارات حديثة',
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                    ),
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: controller.refresh,
-                  color: AppColors.primary,
-                  child: ListView.separated(
-                    padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
-                    itemBuilder: (_, i) {
-                      final visit = controller.recentVisits[i];
-                      return _VisitedCard(
-                        item: _VisitItem(
-                          title: visit['title'] as String,
-                          subtitle: visit['subtitle'] as String,
-                          isSubscribed: visit['isSubscribed'] as bool,
-                          visits: visit['visits'] as int?,
-                          reason: visit['reason'] as String?,
-                        ),
-                      );
-                    },
-                    separatorBuilder: (_, __) => SizedBox(height: 12.h),
-                    itemCount: controller.recentVisits.length,
-                  ),
-                );
-              }),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -353,7 +412,7 @@ class _VisitedCard extends StatelessWidget {
                     ),
                     children: [
                       TextSpan(
-                        text: 'سبب عدم الاشتراك : ',
+                        text: 'unsubscription_reason'.tr,
                         style: const TextStyle(
                           color: Color(0xFFFF3B30),
                           fontWeight: FontWeight.w900,
@@ -394,7 +453,7 @@ class _StatusBadge extends StatelessWidget {
           borderRadius: BorderRadius.circular(16.r),
         ),
         child: MyText(
-          'مشترك',
+          'subscribed'.tr,
           fontSize: 16.sp,
           fontWeight: FontWeight.w900,
           color: const Color(0xFF2ECC71),
@@ -411,7 +470,7 @@ class _StatusBadge extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           MyText(
-            'غير مشترك',
+            'not_subscribed'.tr,
             fontSize: 16.sp,
             fontWeight: FontWeight.w900,
             color: const Color(0xFFFF3B30),
@@ -419,7 +478,7 @@ class _StatusBadge extends StatelessWidget {
           if (visits != null) ...[
             SizedBox(height: 2.h),
             MyText(
-              'زيارات $visits',
+              'visits_count'.tr.replaceAll('{visits}', visits.toString()),
               fontSize: 14.sp,
               fontWeight: FontWeight.w800,
               color: AppColors.textSecondary,

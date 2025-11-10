@@ -24,6 +24,7 @@ import '../../model/hospital_model.dart';
 import '../../bindings/chats_binding.dart';
 import '../../bindings/doctor_profile_binding.dart';
 import '../../controller/session_controller.dart';
+import '../../controller/locale_controller.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -91,20 +92,24 @@ class HomePage extends StatelessWidget {
 
                     // Search bar (expanded to take remaining space)
                     Expanded(
-                      child: SearchWidget(
-                        hint: 'ابحث عن طبيب أو مستشفى...',
-                        readOnly: true,
-                        onTap: () {
-                          final i = controller.homeTabIndex.value;
-                          final String mode = i == 0
-                              ? 'doctors'
-                              : i == 1
-                              ? 'hospitals'
-                              : 'complexes';
-                          Get.to(
-                            () => const SearchPage(),
-                            arguments: {'mode': mode},
-                            binding: SearchBinding(),
+                      child: GetBuilder<LocaleController>(
+                        builder: (localeController) {
+                          return SearchWidget(
+                            hint: 'search_doctor_hospital'.tr,
+                            readOnly: true,
+                            onTap: () {
+                              final i = controller.homeTabIndex.value;
+                              final String mode = i == 0
+                                  ? 'doctors'
+                                  : i == 1
+                                  ? 'hospitals'
+                                  : 'complexes';
+                              Get.to(
+                                () => const SearchPage(),
+                                arguments: {'mode': mode},
+                                binding: SearchBinding(),
+                              );
+                            },
                           );
                         },
                       ),
@@ -244,56 +249,72 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildTabHeader() {
-    return Row(
-      children: [
-        MyText(
-          'الكل',
-          fontSize: 18.sp,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-          textAlign: TextAlign.start,
-        ),
-        const Spacer(),
-        GestureDetector(
-          onTap: () async {
-            final result = await Get.dialog(const DoctorsFilterDialog());
-            if (result is Map) {
-              Get.find<HomeController>().applyFilters(
-                result['region'] as String,
-                result['alpha'] as String,
-              );
-            }
-          },
-          child: Icon(Icons.tune, color: AppColors.textSecondary, size: 24.sp),
-        ),
-      ],
+    return GetBuilder<LocaleController>(
+      builder: (localeController) {
+        return Row(
+          children: [
+            MyText(
+              'all'.tr,
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+              textAlign: TextAlign.start,
+            ),
+            const Spacer(),
+            GestureDetector(
+              onTap: () async {
+                final result = await Get.dialog(const DoctorsFilterDialog());
+                if (result is Map) {
+                  Get.find<HomeController>().applyFilters(
+                    result['region'] as String,
+                    result['alpha'] as String,
+                  );
+                }
+              },
+              child: Icon(
+                Icons.tune,
+                color: AppColors.textSecondary,
+                size: 24.sp,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildHospitalTabHeader() {
-    return Row(
-      children: [
-        MyText(
-          'الكل',
-          fontSize: 18.sp,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-          textAlign: TextAlign.start,
-        ),
-        const Spacer(),
-        GestureDetector(
-          onTap: () async {
-            final result = await Get.dialog(const HospitalsFilterDialog());
-            if (result is Map) {
-              Get.find<HospitalsController>().applyFilters(
-                result['city'] as String,
-                '',
-              );
-            }
-          },
-          child: Icon(Icons.tune, color: AppColors.textSecondary, size: 24.sp),
-        ),
-      ],
+    return GetBuilder<LocaleController>(
+      builder: (localeController) {
+        return Row(
+          children: [
+            MyText(
+              'all'.tr,
+              fontSize: 18.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+              textAlign: TextAlign.start,
+            ),
+            const Spacer(),
+            GestureDetector(
+              onTap: () async {
+                final result = await Get.dialog(const HospitalsFilterDialog());
+                if (result is Map) {
+                  Get.find<HospitalsController>().applyFilters(
+                    result['city'] as String,
+                    '',
+                  );
+                }
+              },
+              child: Icon(
+                Icons.tune,
+                color: AppColors.textSecondary,
+                size: 24.sp,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -317,11 +338,15 @@ class HomePage extends StatelessWidget {
                   color: AppColors.textSecondary,
                 ),
                 SizedBox(height: 16.h),
-                MyText(
-                  'لا يوجد أطباء',
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textSecondary,
+                GetBuilder<LocaleController>(
+                  builder: (localeController) {
+                    return MyText(
+                      'no_doctors'.tr,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textSecondary,
+                    );
+                  },
                 ),
               ],
             ),
@@ -388,11 +413,15 @@ class HomePage extends StatelessWidget {
                   color: AppColors.textSecondary,
                 ),
                 SizedBox(height: 16.h),
-                MyText(
-                  'لا يوجد مستشفيات',
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textSecondary,
+                GetBuilder<LocaleController>(
+                  builder: (localeController) {
+                    return MyText(
+                      'no_hospitals'.tr,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textSecondary,
+                    );
+                  },
                 ),
               ],
             ),
@@ -459,11 +488,15 @@ class HomePage extends StatelessWidget {
                   color: AppColors.textSecondary,
                 ),
                 SizedBox(height: 16.h),
-                MyText(
-                  'لا يوجد مجمعات طبية',
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textSecondary,
+                GetBuilder<LocaleController>(
+                  builder: (localeController) {
+                    return MyText(
+                      'no_medical_centers'.tr,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textSecondary,
+                    );
+                  },
                 ),
               ],
             ),
@@ -801,76 +834,80 @@ class HomePage extends StatelessWidget {
   // Widget _buildHospitalSkeletonCard() { return SizedBox.shrink(); }
 
   Widget _buildTopRatedDoctorsSection(HomeController home) {
-    return Obx(() {
-      final items = home.topRatedDoctors;
-      final isLoading = home.isLoadingTopRated.value;
+    return GetBuilder<LocaleController>(
+      builder: (localeController) {
+        return Obx(() {
+          final items = home.topRatedDoctors;
+          final isLoading = home.isLoadingTopRated.value;
 
-      // إخفاء القسم تماماً إذا لم يكن هناك تحميل ولا بيانات
-      if (!isLoading && items.isEmpty) return const SizedBox.shrink();
+          // إخفاء القسم تماماً إذا لم يكن هناك تحميل ولا بيانات
+          if (!isLoading && items.isEmpty) return const SizedBox.shrink();
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GestureDetector(
-            onTap: () => Get.to(
-              () => const TopRatedDoctorsPage(),
-              binding: BindingsBuilder(() {
-                // TopRatedDoctorsPage لا يحتاج controller خاص
-              }),
-            ),
-            child: Container(
-              padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 4.w),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: MyText(
-                      'الأطباء الأعلى تقييماً',
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                      textAlign: TextAlign.start,
-                    ),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GestureDetector(
+                onTap: () => Get.to(
+                  () => const TopRatedDoctorsPage(),
+                  binding: BindingsBuilder(() {
+                    // TopRatedDoctorsPage لا يحتاج controller خاص
+                  }),
+                ),
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 4.w),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8.r),
                   ),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    color: AppColors.textSecondary,
-                    size: 16.sp,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: MyText(
+                          'top_rated_doctors'.tr,
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                          textAlign: TextAlign.start,
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        color: AppColors.textSecondary,
+                        size: 16.sp,
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
-          SizedBox(height: 16.h),
-          SizedBox(
-            height: 197.h,
-            child: Skeletonizer(
-              enabled: isLoading,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.zero,
-                physics: const BouncingScrollPhysics(),
-                itemCount: isLoading ? 4 : items.length,
-                separatorBuilder: (context, index) => SizedBox(width: 12.w),
-                itemBuilder: (context, index) {
-                  final item = isLoading
-                      ? {'doctorId': '', 'name': '—', 'specialty': ''}
-                      : items[index];
-                  return SizedBox(
-                    width: 137.w,
-                    height: 197.h,
-                    child: _buildTopRatedDoctorCardFromItem(item),
-                  );
-                },
+              SizedBox(height: 16.h),
+              SizedBox(
+                height: 197.h,
+                child: Skeletonizer(
+                  enabled: isLoading,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: EdgeInsets.zero,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: isLoading ? 4 : items.length,
+                    separatorBuilder: (context, index) => SizedBox(width: 12.w),
+                    itemBuilder: (context, index) {
+                      final item = isLoading
+                          ? {'doctorId': '', 'name': '—', 'specialty': ''}
+                          : items[index];
+                      return SizedBox(
+                        width: 137.w,
+                        height: 197.h,
+                        child: _buildTopRatedDoctorCardFromItem(item),
+                      );
+                    },
+                  ),
+                ),
               ),
-            ),
-          ),
-        ],
-      );
-    });
+            ],
+          );
+        });
+      },
+    );
   }
 }
 
@@ -970,47 +1007,55 @@ Widget _buildTopRatedDoctorCardFromItem(Map<String, dynamic> item) {
 }
 
 Widget _buildBottomTabs(MainController controller) {
-  final List<String> tabLabels = ['أطباء', 'مستشفيات', 'مجمعات'];
+  return GetBuilder<LocaleController>(
+    builder: (localeController) {
+      final List<String> tabLabels = [
+        'doctors_tab'.tr,
+        'hospitals_tab'.tr,
+        'complexes_tab'.tr,
+      ];
 
-  return Obx(
-    () => Container(
-      height: 50.h,
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF), // أبيض
-        borderRadius: BorderRadius.circular(25.r),
-      ),
-      child: Row(
-        children: List.generate(3, (index) {
-          final isSelected = controller.homeTabIndex.value == index;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => controller.changeHomeTab(index),
-              child: Container(
-                height: 50.h,
-                decoration: isSelected
-                    ? BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(25.r),
-                      )
-                    : null,
-                child: Center(
-                  child: MyText(
-                    tabLabels[index],
-                    fontFamily: 'Expo Arabic',
-                    fontWeight: FontWeight.w600, // SemiBold
-                    fontSize: 16.sp,
-                    height: 1.0, // line-height: 100%
-                    letterSpacing: 0, // letter-spacing: 0%
-                    color: isSelected ? Colors.white : AppColors.primary,
-                    textAlign: TextAlign.right,
+      return Obx(
+        () => Container(
+          height: 50.h,
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFFFFF), // أبيض
+            borderRadius: BorderRadius.circular(25.r),
+          ),
+          child: Row(
+            children: List.generate(3, (index) {
+              final isSelected = controller.homeTabIndex.value == index;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => controller.changeHomeTab(index),
+                  child: Container(
+                    height: 50.h,
+                    decoration: isSelected
+                        ? BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(25.r),
+                          )
+                        : null,
+                    child: Center(
+                      child: MyText(
+                        tabLabels[index],
+                        fontFamily: 'Expo Arabic',
+                        fontWeight: FontWeight.w600, // SemiBold
+                        fontSize: 16.sp,
+                        height: 1.0, // line-height: 100%
+                        letterSpacing: 0, // letter-spacing: 0%
+                        color: isSelected ? Colors.white : AppColors.primary,
+                        textAlign: TextAlign.right,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          );
-        }),
-      ),
-    ),
+              );
+            }),
+          ),
+        ),
+      );
+    },
   );
 }
 

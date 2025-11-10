@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
+import '../../controller/locale_controller.dart';
 import 'chat_details_page.dart';
 import '../../controller/chat_controller.dart';
 import '../../controller/session_controller.dart';
@@ -31,11 +32,15 @@ class ChatsPage extends StatelessWidget {
         backgroundColor: const Color(0xFFF4FEFF),
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: MyText(
-          'المحادثات',
-          fontSize: 22.sp,
-          fontWeight: FontWeight.w900,
-          color: AppColors.textPrimary,
+        title: GetBuilder<LocaleController>(
+          builder: (localeController) {
+            return MyText(
+              'conversations'.tr,
+              fontSize: 22.sp,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
+            );
+          },
         ),
         centerTitle: true,
         leading: isSecretary
@@ -58,7 +63,7 @@ class ChatsPage extends StatelessWidget {
           itemBuilder: (_, i) {
             final item = list[i];
             // Extract name from conversation data (now enriched with participant info)
-            String name = 'محادثة';
+            String name = 'conversation'.tr;
 
             // First try otherParticipant (direct from API)
             if (item['otherParticipant'] is Map) {
@@ -70,15 +75,16 @@ class ChatsPage extends StatelessWidget {
             }
 
             // Second try the enriched participant name (added by controller)
-            if (name == 'محادثة' &&
+            final conversationText = 'conversation'.tr;
+            if (name == conversationText &&
                 item['participantName'] != null &&
                 item['participantName'].toString().isNotEmpty &&
-                item['participantName'].toString() != 'محادثة') {
+                item['participantName'].toString() != conversationText) {
               name = item['participantName'].toString();
             }
 
             // Third try to extract from participants array if exists
-            if (name == 'محادثة' &&
+            if (name == conversationText &&
                 item['participants'] is List &&
                 (item['participants'] as List).isNotEmpty) {
               final participants = item['participants'] as List;
@@ -107,14 +113,14 @@ class ChatsPage extends StatelessWidget {
             }
 
             // Final fallback to direct fields
-            if (name == 'محادثة') {
+            if (name == conversationText) {
               name =
                   (item['doctorName'] ??
                           item['userName'] ??
                           item['receiverName'] ??
                           item['senderName'] ??
                           item['name'] ??
-                          'محادثة')
+                          conversationText)
                       .toString();
             }
 

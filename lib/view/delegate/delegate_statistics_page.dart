@@ -5,6 +5,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
+import '../../controller/locale_controller.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import '../../controller/delegate_statistics_controller.dart';
 import 'package:intl/intl.dart';
@@ -26,67 +27,103 @@ class DelegateStatisticsPage extends StatelessWidget {
             padding: EdgeInsets.all(16.w),
             child: Obx(() {
               if (controller.isLoading.value) {
-                return Skeletonizer(
-                  enabled: true,
-                  child: Column(
-                    children: [
-                      _scoreCard(controller),
-                      SizedBox(height: 16.h),
-                      _donutSection(title: 'يومياً', dateText: '...', data: []),
-                      SizedBox(height: 12.h),
-                      _donutSection(
-                        title: 'اسبوعياً',
-                        dateText: '...',
-                        data: [],
+                return GetBuilder<LocaleController>(
+                  builder: (localeController) {
+                    return Skeletonizer(
+                      enabled: true,
+                      child: Column(
+                        children: [
+                          _scoreCard(controller),
+                          SizedBox(height: 16.h),
+                          _donutSection(
+                            title: 'daily_period'.tr,
+                            dateText: '...',
+                            data: [],
+                          ),
+                          SizedBox(height: 12.h),
+                          _donutSection(
+                            title: 'weekly_period'.tr,
+                            dateText: '...',
+                            data: [],
+                          ),
+                          SizedBox(height: 12.h),
+                          _donutSection(
+                            title: 'monthly_period'.tr,
+                            dateText: '...',
+                            data: [],
+                          ),
+                          SizedBox(height: 12.h),
+                          _barSection(
+                            title: 'yearly_period'.tr,
+                            dateText: '...',
+                            data: [],
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 12.h),
-                      _donutSection(title: 'شهرياً', dateText: '...', data: []),
-                      SizedBox(height: 12.h),
-                      _barSection(title: 'سنوياً', dateText: '...', data: []),
-                    ],
-                  ),
+                    );
+                  },
                 );
               }
 
               final now = DateTime.now();
               return Column(
                 children: [
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: MyText(
-                      'الاحصائيات',
-                      fontSize: 26.sp,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.textPrimary,
-                    ),
+                  GetBuilder<LocaleController>(
+                    builder: (localeController) {
+                      return Align(
+                        alignment: Alignment.centerRight,
+                        child: MyText(
+                          'statistics'.tr,
+                          fontSize: 26.sp,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary,
+                        ),
+                      );
+                    },
                   ),
                   SizedBox(height: 12.h),
 
                   _scoreCard(controller),
 
                   SizedBox(height: 16.h),
-                  _donutSection(
-                    title: 'يومياً',
-                    dateText: DateFormat('yyyy , M , d').format(now),
-                    data: _extractDonutData(controller.stats['daily']),
+                  GetBuilder<LocaleController>(
+                    builder: (localeController) {
+                      return _donutSection(
+                        title: 'daily_period'.tr,
+                        dateText: DateFormat('yyyy , M , d').format(now),
+                        data: _extractDonutData(controller.stats['daily']),
+                      );
+                    },
                   ),
                   SizedBox(height: 12.h),
-                  _donutSection(
-                    title: 'اسبوعياً',
-                    dateText: DateFormat('yyyy , M').format(now),
-                    data: _extractDonutData(controller.stats['weekly']),
+                  GetBuilder<LocaleController>(
+                    builder: (localeController) {
+                      return _donutSection(
+                        title: 'weekly_period'.tr,
+                        dateText: DateFormat('yyyy , M').format(now),
+                        data: _extractDonutData(controller.stats['weekly']),
+                      );
+                    },
                   ),
                   SizedBox(height: 12.h),
-                  _donutSection(
-                    title: 'شهرياً',
-                    dateText: DateFormat('yyyy , M').format(now),
-                    data: _extractDonutData(controller.stats['monthly']),
+                  GetBuilder<LocaleController>(
+                    builder: (localeController) {
+                      return _donutSection(
+                        title: 'monthly_period'.tr,
+                        dateText: DateFormat('yyyy , M').format(now),
+                        data: _extractDonutData(controller.stats['monthly']),
+                      );
+                    },
                   ),
                   SizedBox(height: 12.h),
-                  _barSection(
-                    title: 'سنوياً',
-                    dateText: DateFormat('yyyy').format(now),
-                    data: _extractBarData(controller.stats['yearly']),
+                  GetBuilder<LocaleController>(
+                    builder: (localeController) {
+                      return _barSection(
+                        title: 'yearly_period'.tr,
+                        dateText: DateFormat('yyyy').format(now),
+                        data: _extractBarData(controller.stats['yearly']),
+                      );
+                    },
                   ),
                 ],
               );
@@ -99,32 +136,32 @@ class DelegateStatisticsPage extends StatelessWidget {
 
   List<_DonutData> _extractDonutData(Map<String, dynamic>? periodData) {
     if (periodData == null) {
-      return const [
-        _DonutData('مشترك', 0, Color(0xFF69C9D0)),
-        _DonutData('غير مشترك', 0, Color(0xFFF64535)),
-        _DonutData('اشتراك بعد رفض', 0, Color(0xFFFFE02E)),
-        _DonutData('اشتراك ملغي', 0, Color(0xFF616E7C)),
+      return [
+        _DonutData('subscribed'.tr, 0, const Color(0xFF69C9D0)),
+        _DonutData('not_subscribed'.tr, 0, const Color(0xFFF64535)),
+        _DonutData('subscribed_after_rejection'.tr, 0, const Color(0xFFFFE02E)),
+        _DonutData('cancelled_subscription'.tr, 0, const Color(0xFF616E7C)),
       ];
     }
 
     return [
       _DonutData(
-        'مشترك',
+        'subscribed'.tr,
         periodData['subscribed'] as int? ?? 0,
         const Color(0xFF69C9D0),
       ),
       _DonutData(
-        'غير مشترك',
+        'not_subscribed'.tr,
         periodData['notSubscribed'] as int? ?? 0,
         const Color(0xFFF64535),
       ),
       _DonutData(
-        'اشتراك بعد رفض',
+        'subscribed_after_rejection'.tr,
         periodData['subscribedAfterRejection'] as int? ?? 0,
         const Color(0xFFFFE02E),
       ),
       _DonutData(
-        'اشتراك ملغي',
+        'cancelled_subscription'.tr,
         periodData['cancelledSubscription'] as int? ?? 0,
         const Color(0xFF616E7C),
       ),
@@ -169,13 +206,20 @@ Widget _scoreCard(DelegateStatisticsController controller) {
         Row(
           children: [
             Expanded(
-              child: Obx(
-                () => MyText(
-                  'النقاط الحالية : ${controller.currentPoints.value} نقطة',
-                  fontSize: 22.sp,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.textPrimary,
-                ),
+              child: GetBuilder<LocaleController>(
+                builder: (localeController) {
+                  return Obx(
+                    () => MyText(
+                      'current_points'.tr.replaceAll(
+                        '{points}',
+                        controller.currentPoints.value.toString(),
+                      ),
+                      fontSize: 22.sp,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.textPrimary,
+                    ),
+                  );
+                },
               ),
             ),
             const Icon(Icons.auto_awesome, color: AppColors.primary),
@@ -199,10 +243,13 @@ Widget _scoreCard(DelegateStatisticsController controller) {
 
               if (index < fullStars) {
                 state = _StarState.full;
-                label = 'مكتمل';
+                label = 'completed'.tr;
               } else if (index == halfStarIndex) {
                 state = _StarState.half;
-                label = 'متبقي ${50 - remainder}';
+                label = 'remaining'.tr.replaceAll(
+                  '{points}',
+                  (50 - remainder).toString(),
+                );
               } else {
                 state = _StarState.empty;
                 label = '0';
@@ -227,11 +274,15 @@ Widget _scoreCard(DelegateStatisticsController controller) {
               const Icon(Icons.diamond, color: Color(0xFFFFA000)),
               SizedBox(width: 8.w),
               Expanded(
-                child: MyText(
-                  'لكل نجمة 50 نقطة .',
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+                child: GetBuilder<LocaleController>(
+                  builder: (localeController) {
+                    return MyText(
+                      'per_star_points'.tr,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    );
+                  },
                 ),
               ),
             ],
@@ -352,37 +403,41 @@ Widget _donutSection({
   return _statCard(
     title: title,
     dateText: dateText,
-    child: SfCircularChart(
-      series: <DoughnutSeries<_DonutData, String>>[
-        DoughnutSeries<_DonutData, String>(
-          dataSource: data,
-          xValueMapper: (d, _) => d.label,
-          yValueMapper: (d, _) => d.value,
-          pointColorMapper: (d, _) => d.color,
-          innerRadius: '62%',
-          radius: '70%',
-        ),
-      ],
-      annotations: <CircularChartAnnotation>[
-        CircularChartAnnotation(
-          widget: Container(
-            width: 64.w,
-            height: 64.w,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color(0xFFF4FEFF),
+    child: GetBuilder<LocaleController>(
+      builder: (localeController) {
+        return SfCircularChart(
+          series: <DoughnutSeries<_DonutData, String>>[
+            DoughnutSeries<_DonutData, String>(
+              dataSource: data,
+              xValueMapper: (d, _) => d.label,
+              yValueMapper: (d, _) => d.value,
+              pointColorMapper: (d, _) => d.color,
+              innerRadius: '62%',
+              radius: '70%',
             ),
-            alignment: Alignment.center,
-            child: MyText(
-              '$total\nزيارة',
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w900,
-              color: AppColors.textPrimary,
-              textAlign: TextAlign.center,
+          ],
+          annotations: <CircularChartAnnotation>[
+            CircularChartAnnotation(
+              widget: Container(
+                width: 64.w,
+                height: 64.w,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0xFFF4FEFF),
+                ),
+                alignment: Alignment.center,
+                child: MyText(
+                  '$total\n${'visit'.tr}',
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     ),
   );
 }
@@ -401,48 +456,55 @@ Widget _barSection({
   return _statCard(
     title: title,
     dateText: dateText,
-    child: SizedBox(
-      height: 300.h,
-      child: SfCartesianChart(
-        plotAreaBorderWidth: 0,
-        primaryXAxis: CategoryAxis(
-          interval: 1,
-          edgeLabelPlacement: EdgeLabelPlacement.shift,
-          labelStyle: TextStyle(fontSize: 10.sp),
-        ),
-        primaryYAxis: NumericAxis(
-          opposedPosition: true,
-          minimum: 0,
-          labelStyle: TextStyle(fontSize: 10.sp),
-        ),
-        legend: Legend(
-          isVisible: true,
-          position: LegendPosition.bottom,
-          textStyle: TextStyle(fontSize: 12.sp, color: AppColors.textPrimary),
-        ),
-        series: <CartesianSeries<dynamic, String>>[
-          ColumnSeries<_BarData, String>(
-            name: 'المشترك',
-            dataSource: completed,
-            xValueMapper: (d, _) => d.label,
-            yValueMapper: (d, _) => d.value,
-            color: const Color(0xFF69C9D0),
-            width: 0.35,
-            spacing: 0.1,
-            borderRadius: BorderRadius.circular(6.r),
+    child: GetBuilder<LocaleController>(
+      builder: (localeController) {
+        return SizedBox(
+          height: 300.h,
+          child: SfCartesianChart(
+            plotAreaBorderWidth: 0,
+            primaryXAxis: CategoryAxis(
+              interval: 1,
+              edgeLabelPlacement: EdgeLabelPlacement.shift,
+              labelStyle: TextStyle(fontSize: 10.sp),
+            ),
+            primaryYAxis: NumericAxis(
+              opposedPosition: true,
+              minimum: 0,
+              labelStyle: TextStyle(fontSize: 10.sp),
+            ),
+            legend: Legend(
+              isVisible: true,
+              position: LegendPosition.bottom,
+              textStyle: TextStyle(
+                fontSize: 12.sp,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            series: <CartesianSeries<dynamic, String>>[
+              ColumnSeries<_BarData, String>(
+                name: 'subscribed'.tr,
+                dataSource: completed,
+                xValueMapper: (d, _) => d.label,
+                yValueMapper: (d, _) => d.value,
+                color: const Color(0xFF69C9D0),
+                width: 0.35,
+                spacing: 0.1,
+                borderRadius: BorderRadius.circular(6.r),
+              ),
+              ColumnSeries<_BarData, String>(
+                name: 'not_subscribed'.tr,
+                dataSource: cancelled,
+                xValueMapper: (d, _) => d.label,
+                yValueMapper: (d, _) => d.value,
+                color: const Color(0xFFF64535),
+                width: 0.35,
+                spacing: 0.1,
+                borderRadius: BorderRadius.circular(6.r),
+              ),
+            ],
           ),
-          ColumnSeries<_BarData, String>(
-            name: 'غير مشترك',
-            dataSource: cancelled,
-            xValueMapper: (d, _) => d.label,
-            yValueMapper: (d, _) => d.value,
-            color: const Color(0xFFF64535),
-            width: 0.35,
-            spacing: 0.1,
-            borderRadius: BorderRadius.circular(6.r),
-          ),
-        ],
-      ),
+        );
+      },
     ),
   );
 }

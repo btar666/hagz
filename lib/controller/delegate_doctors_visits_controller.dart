@@ -54,6 +54,11 @@ class DelegateDoctorsVisitsController extends GetxController {
                 'isSubscribed': item['visitStatus']?.toString() == 'مشترك',
                 'visits': item['visitCount'] as int?,
                 'reason': item['nonSubscriptionReason']?.toString(),
+                'address': item['doctorAddress']?.toString() ?? '',
+                'phone': item['doctorPhone']?.toString() ?? '',
+                'governorate': item['governorate']?.toString() ?? '',
+                'district': item['district']?.toString() ?? '',
+                'notes': item['notes']?.toString() ?? '',
               };
             })
             .toList();
