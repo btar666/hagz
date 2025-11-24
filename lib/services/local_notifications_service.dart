@@ -5,7 +5,8 @@ class LocalNotificationsService {
   LocalNotificationsService._internal();
 
   //Singleton instance
-  static final LocalNotificationsService _instance = LocalNotificationsService._internal();
+  static final LocalNotificationsService _instance =
+      LocalNotificationsService._internal();
 
   //Factory constructor to return singleton instance
   factory LocalNotificationsService.instance() => _instance;
@@ -14,7 +15,9 @@ class LocalNotificationsService {
   late FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin;
 
   //Android-specific initialization settings using app launcher icon
-  final _androidInitializationSettings = const AndroidInitializationSettings('@mipmap/ic_launcher');
+  final _androidInitializationSettings = const AndroidInitializationSettings(
+    '@mipmap/ic_launcher',
+  );
 
   //iOS-specific initialization settings with permission requests
   final _iosInitializationSettings = const DarwinInitializationSettings(
@@ -54,15 +57,19 @@ class LocalNotificationsService {
     );
 
     // Initialize plugin with settings and callback for notification taps
-    await _flutterLocalNotificationsPlugin.initialize(initializationSettings,
-        onDidReceiveNotificationResponse: (NotificationResponse response) {
-      // Handle notification tap in foreground
-      print('Foreground notification has been tapped: ${response.payload}');
-    });
+    await _flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        // Handle notification tap in foreground
+        print('Foreground notification has been tapped: ${response.payload}');
+      },
+    );
 
     // Create Android notification channel
     await _flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(_androidChannel);
 
     // Mark initialization as complete
