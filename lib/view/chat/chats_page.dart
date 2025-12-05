@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
@@ -16,15 +17,23 @@ class ChatsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final ChatController ctrl = Get.find<ChatController>();
     final session = Get.find<SessionController>();
-    final currentUserId = session.currentUser.value?.id ?? '';
-    // Load conversations on first build
+    
+    // إعادة تحميل المحادثات عند الدخول للصفحة (مع debounce)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!ctrl.isLoadingConversations.value && ctrl.conversations.isEmpty) {
-        ctrl.loadConversations();
-      }
+      // استخدام delay صغير لضمان أن الصفحة أصبحت مرئية
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (!ctrl.isLoadingConversations.value) {
+          // إعادة التحميل في كل مرة يتم الدخول للصفحة
+          ctrl.loadConversations(forceReload: true);
+        }
+      });
     });
 
-    final isSecretary = session.role.value == 'secretary';
+    // Use Obx to reactively update UI when user or conversations change
+    return Obx(() {
+      final currentUserId = session.currentUser.value?.id ?? '';
+      final userRole = session.role.value;
+      final isSecretary = userRole == 'secretary';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
@@ -55,14 +64,29 @@ class ChatsPage extends StatelessWidget {
       ),
       body: Obx(() {
         final list = ctrl.conversations;
-        if (ctrl.isLoadingConversations.value && list.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
+        final isLoading = ctrl.isLoadingConversations.value;
+        
+        // Show skeleton loader when loading and list is empty
+        if (isLoading && list.isEmpty) {
+          return Skeletonizer(
+            enabled: true,
+            child: ListView.separated(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+              itemBuilder: (_, i) {
+                return _buildSkeletonConversationItem();
+              },
+              separatorBuilder: (_, __) =>
+                  Divider(color: AppColors.divider, height: 1),
+              itemCount: 5,
+            ),
+          );
         }
+        
         return ListView.separated(
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
           itemBuilder: (_, i) {
             final item = list[i];
-            final currentRole = session.role.value;
+            final currentRole = userRole;
             
             // Extract name from conversation data (always show OTHER participant, not current user)
             String name = 'conversation'.tr;
@@ -407,6 +431,69 @@ class ChatsPage extends StatelessWidget {
           itemCount: list.length,
         );
       }),
+    );
+    });
+  }
+
+  // Build skeleton conversation item for loading state
+  Widget _buildSkeletonConversationItem() {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 14.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Skeleton image at the right
+          CircleAvatar(
+            radius: 28.r,
+            backgroundColor: Colors.white,
+            child: ClipOval(
+              child: Container(
+                width: 56.w,
+                height: 56.w,
+                color: Colors.grey[300],
+              ),
+            ),
+          ),
+          SizedBox(width: 12.w),
+          // Skeleton name + last message
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Skeleton name
+                Container(
+                  height: 20.h,
+                  width: 120.w,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(4.r),
+                  ),
+                ),
+                SizedBox(height: 6.h),
+                // Skeleton last message
+                Container(
+                  height: 16.h,
+                  width: 200.w,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(4.r),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 12.w),
+          // Skeleton arrow at the end (left)
+          Container(
+            width: 24.w,
+            height: 24.h,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              shape: BoxShape.circle,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

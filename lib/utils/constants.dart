@@ -14,6 +14,15 @@ class ApiConstants {
   static String unfollowUser(String userId) => '$baseUrl/api/users/$userId/follow';
   // Get followers count: GET /api/users/{userId}/followers/count
   static String getFollowersCount(String userId) => '$baseUrl/api/users/$userId/followers/count';
+  // Get followers list: GET /api/users/{userId}/followers
+  static String getFollowers(String userId, {int? page, int? limit}) {
+    String url = '$baseUrl/api/users/$userId/followers';
+    List<String> params = [];
+    if (page != null) params.add('page=$page');
+    if (limit != null) params.add('limit=$limit');
+    if (params.isNotEmpty) url += '?${params.join('&')}';
+    return url;
+  }
   static const String hospitals = '$baseUrl/api/hospitals/';
   static const String uploads = '$baseUrl/api/uploads/';
   static const String sliders = '$baseUrl/api/sliders/';

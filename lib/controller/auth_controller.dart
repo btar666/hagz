@@ -83,6 +83,11 @@ class AuthController extends GetxController {
           );
           return;
         }
+        // Update role based on API response to ensure it matches the actual user type
+        if (internalType.isNotEmpty) {
+          _session.setRole(internalType);
+          print('✅ Updated role to: $internalType based on API userType: $serverUserType');
+        }
         // Persist token and user model if available
         _session.setToken(token?.toString());
         try {
@@ -189,6 +194,12 @@ class AuthController extends GetxController {
             buttonText: 'حسناً',
           );
           return;
+        }
+
+        // Update role based on API response to ensure it matches the actual user type
+        if (internalType.isNotEmpty) {
+          _session.setRole(internalType);
+          print('✅ Updated role to: $internalType based on API userType: $serverUserType');
         }
 
         if (token != null) {

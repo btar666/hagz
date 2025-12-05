@@ -80,16 +80,72 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
   Future<void> _loadFollowersCount() async {
     try {
       final res = await _userService.getFollowersCount(widget.doctorId);
+      print('📊 FOLLOWERS COUNT RESPONSE: $res');
+
       if (res['ok'] == true && res['data'] != null) {
-        final count = res['data']['count'] ?? res['data'];
-        if (count is int) {
-          followersCount.value = count;
-        } else if (count is String) {
-          followersCount.value = int.tryParse(count) ?? 0;
+        final data = res['data'];
+        int count = 0;
+
+        // Handle different response structures
+        if (data is Map<String, dynamic>) {
+          // Try data.data.followersCount first (based on API response structure)
+          if (data['data'] != null && data['data'] is Map) {
+            final innerData = data['data'] as Map<String, dynamic>;
+            if (innerData['followersCount'] != null) {
+              final countValue = innerData['followersCount'];
+              if (countValue is int) {
+                count = countValue;
+              } else if (countValue is String) {
+                count = int.tryParse(countValue) ?? 0;
+              } else if (countValue is num) {
+                count = countValue.toInt();
+              }
+            } else if (innerData['count'] != null) {
+              final countValue = innerData['count'];
+              if (countValue is int) {
+                count = countValue;
+              } else if (countValue is String) {
+                count = int.tryParse(countValue) ?? 0;
+              } else if (countValue is num) {
+                count = countValue.toInt();
+              }
+            }
+          } else if (data['followersCount'] != null) {
+            final countValue = data['followersCount'];
+            if (countValue is int) {
+              count = countValue;
+            } else if (countValue is String) {
+              count = int.tryParse(countValue) ?? 0;
+            } else if (countValue is num) {
+              count = countValue.toInt();
+            }
+          } else if (data['count'] != null) {
+            final countValue = data['count'];
+            if (countValue is int) {
+              count = countValue;
+            } else if (countValue is String) {
+              count = int.tryParse(countValue) ?? 0;
+            } else if (countValue is num) {
+              count = countValue.toInt();
+            }
+          }
+        } else if (data is int) {
+          count = data;
+        } else if (data is String) {
+          count = int.tryParse(data) ?? 0;
+        } else if (data is num) {
+          count = data.toInt();
         }
+
+        followersCount.value = count;
+        print('📊 Parsed followers count: $count');
+      } else {
+        print('⚠️ Followers count response not OK or data is null');
+        followersCount.value = 0;
       }
     } catch (e) {
       print('❌ Error loading followers count: $e');
+      followersCount.value = 0;
     }
   }
 
@@ -100,9 +156,17 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
       isFollowing.value = false;
       return;
     }
-    // Note: This assumes we need an endpoint to check follow status
-    // For now, we'll set it to false and update it when user follows/unfollows
-    // If API provides this, we can add a method here
+
+    try {
+      final isFollowingStatus = await _userService.checkFollowStatus(
+        widget.doctorId,
+      );
+      isFollowing.value = isFollowingStatus;
+      print('✅ Follow status checked: $isFollowingStatus');
+    } catch (e) {
+      print('❌ Error checking follow status: $e');
+      isFollowing.value = false;
+    }
   }
 
   Future<void> _toggleFollow() async {
@@ -845,26 +909,92 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(Icons.location_on, color: AppColors.primary, size: 20.r),
-            SizedBox(width: 8.w),
-            Expanded(
-              child: Obx(() {
-                final session = Get.find<SessionController>();
-                final user = session.currentUser.value;
-                final address = user?.address ?? controller.doctorAddress.value;
+        Obx(() {
+          final session = Get.find<SessionController>();
+          final user = session.currentUser.value;
+          final combinedAddress =
+              user?.address ?? controller.doctorAddress.value;
 
-                return MyText(
-                  address.isNotEmpty ? address : 'العنوان غير محدد',
-                  fontSize: 14.sp,
-                  color: AppColors.textSecondary,
-                  textAlign: TextAlign.right,
-                );
-              }),
-            ),
-          ],
-        ),
+          // فصل العنوان عن رابط جوجل ماب
+          final parsed = controller.parseAddressAndLink(combinedAddress);
+          final addressText = parsed['address'] ?? '';
+          final mapLink = parsed['mapLink'] ?? '';
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // عرض العنوان المكتوب
+              Row(
+                children: [
+                  Icon(Icons.location_on, color: AppColors.primary, size: 20.r),
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: MyText(
+                      addressText.isNotEmpty ? addressText : 'العنوان غير محدد',
+                      fontSize: 14.sp,
+                      color: AppColors.textSecondary,
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                ],
+              ),
+              // عرض رابط جوجل ماب إذا كان موجوداً
+              if (mapLink.isNotEmpty) ...[
+                SizedBox(height: 12.h),
+                GestureDetector(
+                  onTap: () async {
+                    try {
+                      final uri = Uri.parse(mapLink);
+                      final launched = await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
+
+                      if (!launched) {
+                        // محاولة فتح الرابط بطريقة أخرى
+                        try {
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.platformDefault,
+                          );
+                        } catch (_) {
+                          Get.snackbar(
+                            'خطأ',
+                            'لا يمكن فتح رابط جوجل ماب',
+                            backgroundColor: Colors.red,
+                            colorText: Colors.white,
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      Get.snackbar(
+                        'خطأ',
+                        'رابط جوجل ماب غير صحيح: $e',
+                        backgroundColor: Colors.red,
+                        colorText: Colors.white,
+                      );
+                    }
+                  },
+                  child: Row(
+                    children: [
+                      Icon(Icons.map, color: AppColors.primary, size: 18.r),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: MyText(
+                          'عرض على الخريطة',
+                          fontSize: 14.sp,
+                          color: AppColors.primary,
+                          textAlign: TextAlign.right,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          );
+        }),
       ],
     );
   }

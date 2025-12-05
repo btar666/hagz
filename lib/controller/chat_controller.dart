@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:get/get.dart';
 import '../service_layer/services/chat_service.dart';
 import '../service_layer/services/user_service.dart';
@@ -10,6 +11,23 @@ class ChatController extends GetxController {
   // Conversations list
   var conversations = <Map<String, dynamic>>[].obs;
   var isLoadingConversations = false.obs;
+  
+  late SessionController _sessionController;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _sessionController = Get.find<SessionController>();
+    
+    // Watch for user changes and reload conversations
+    ever(_sessionController.currentUser, (user) {
+      final currentUserId = user?.id ?? '';
+      if (currentUserId.isNotEmpty && currentUserId != lastUserId.value) {
+        print('🔄 User changed detected! Reloading conversations...');
+        loadConversations(forceReload: true);
+      }
+    });
+  }
 
   // Current conversation/messages
   var currentConversationId = ''.obs;
@@ -24,14 +42,50 @@ class ChatController extends GetxController {
   // Cache for user images (userId -> imageUrl)
   final Map<String, String> _userImageCache = {};
   final Map<String, bool> _loadingUserImages = {};
+  
+  // Track current user ID to detect user changes
+  var lastUserId = ''.obs;
+  
+  // Track last load time to prevent rapid reloads
+  DateTime _lastLoadTime = DateTime(2000);
 
   /// Load all conversations
-  Future<void> loadConversations() async {
+  Future<void> loadConversations({bool forceReload = false}) async {
+    // Prevent rapid reloads (debounce: minimum 1 second between loads)
+    final now = DateTime.now();
+    if (!forceReload && now.difference(_lastLoadTime).inSeconds < 1) {
+      print('⏭️ Skipping reload: too soon since last load (${now.difference(_lastLoadTime).inSeconds}s ago)');
+      return;
+    }
+    
     isLoadingConversations.value = true;
+    _lastLoadTime = now;
+    
     try {
       final SessionController session = Get.find<SessionController>();
       final currentUser = session.currentUser.value;
       final userRole = session.role.value;
+      final currentUserId = currentUser?.id ?? '';
+
+      print('🔍 Loading conversations...');
+      print('   Current User ID: $currentUserId');
+      print('   Current User Name: ${currentUser?.name ?? 'null'}');
+      print('   Current User Type (from API): ${currentUser?.userType ?? 'null'}');
+      print('   Session Role: $userRole');
+      print('   Last User ID: ${lastUserId.value}');
+      print('   Force Reload: $forceReload');
+
+      // Check if user has changed
+      final userChanged = currentUserId.isNotEmpty && currentUserId != lastUserId.value;
+      if (userChanged) {
+        print('🔄 User changed! Clearing conversations and reloading...');
+        conversations.clear();
+        messages.clear();
+        currentConversationId.value = '';
+        receiverId.value = '';
+        receiverName.value = '';
+        lastUserId.value = currentUserId;
+      }
 
       // For secretary, load conversations with associated doctor
       if (userRole == 'secretary' &&
@@ -52,28 +106,42 @@ class ChatController extends GetxController {
             convList = data.cast<Map<String, dynamic>>();
           }
 
+          print('📋 Loaded ${convList.length} conversations from API (before filtering)');
+
           // Extract participant names for each conversation
           await _enrichConversationsWithNames(convList);
 
           // Filter conversations based on user role
           if (userRole == 'user') {
             // For users/patients: show only conversations with doctors (not secretaries)
+            final beforeFilter = convList.length;
             convList = convList.where((conv) {
-              return _isConversationWithType(conv, currentUser?.id ?? '', 'doctor');
+              final isWithDoctor = _isConversationWithType(conv, currentUser?.id ?? '', 'doctor');
+              if (!isWithDoctor) {
+                print('   ⏭️ Filtered out conversation: ${conv['_id']} (not with doctor)');
+              }
+              return isWithDoctor;
             }).toList();
             
-            print('✅ Filtered conversations for user: ${convList.length} doctor conversations');
+            print('✅ Filtered conversations for user: $beforeFilter -> ${convList.length} doctor conversations');
           } else if (userRole == 'doctor') {
             // For doctors: show only conversations with patients/users (not other doctors or secretaries)
+            final beforeFilter = convList.length;
             convList = convList.where((conv) {
-              return _isConversationWithType(conv, currentUser?.id ?? '', 'user');
+              final isWithUser = _isConversationWithType(conv, currentUser?.id ?? '', 'user');
+              if (!isWithUser) {
+                print('   ⏭️ Filtered out conversation: ${conv['_id']} (not with user)');
+              }
+              return isWithUser;
             }).toList();
             
-            print('✅ Filtered conversations for doctor: ${convList.length} patient conversations');
+            print('✅ Filtered conversations for doctor: $beforeFilter -> ${convList.length} patient conversations');
           }
           // For secretary: already handled by _loadSecretaryConversations above
 
           conversations.value = convList;
+        } else {
+          print('❌ Failed to load conversations: ${res['data']}');
         }
       }
     } finally {
@@ -353,15 +421,19 @@ class ChatController extends GetxController {
   }
 
   /// Send a message
-  Future<bool> sendMessage(String content) async {
+  /// [content] is optional if [imageFile] is provided
+  /// [imageFile] is optional - if provided, message will be sent with image
+  Future<bool> sendMessage(String content, {File? imageFile}) async {
     print('=== DEBUG: SendMessage Called ===');
     print('Content: $content');
+    print('Has Image: ${imageFile != null}');
     print('Receiver ID: ${receiverId.value}');
     print('Receiver Name: ${receiverName.value}');
     print('Current Conversation ID: ${currentConversationId.value}');
 
-    if (content.trim().isEmpty) {
-      print('ERROR: Content is empty');
+    // Content is optional if image is provided
+    if (content.trim().isEmpty && imageFile == null) {
+      print('ERROR: Both content and image are empty');
       return false;
     }
 
@@ -395,6 +467,11 @@ class ChatController extends GetxController {
       'createdAt': DateTime.now().toIso8601String(),
       'sending': true, // Flag to show sending state
     };
+    // Add image path if provided (for local preview)
+    if (imageFile != null) {
+      tempMessage['image'] = imageFile.path;
+      tempMessage['imageLocal'] = true; // Flag to indicate local image
+    }
     messages.add(tempMessage);
 
     try {
@@ -402,16 +479,34 @@ class ChatController extends GetxController {
       final SessionController session = Get.find<SessionController>();
       final Map<String, dynamic> res;
 
-      if (session.role.value == 'secretary') {
-        res = await _service.sendSecretaryMessage(
-          receiverId: receiverId.value,
-          content: content.trim(),
-        );
+      if (imageFile != null) {
+        // Send message with image
+        if (session.role.value == 'secretary') {
+          res = await _service.sendSecretaryMessageWithImage(
+            receiverId: receiverId.value,
+            imageFile: imageFile,
+            content: content.trim().isNotEmpty ? content.trim() : null,
+          );
+        } else {
+          res = await _service.sendMessageWithImage(
+            receiverId: receiverId.value,
+            imageFile: imageFile,
+            content: content.trim().isNotEmpty ? content.trim() : null,
+          );
+        }
       } else {
-        res = await _service.sendMessage(
-          receiverId: receiverId.value,
-          content: content.trim(),
-        );
+        // Send text-only message
+        if (session.role.value == 'secretary') {
+          res = await _service.sendSecretaryMessage(
+            receiverId: receiverId.value,
+            content: content.trim(),
+          );
+        } else {
+          res = await _service.sendMessage(
+            receiverId: receiverId.value,
+            content: content.trim(),
+          );
+        }
       }
 
       if (res['ok'] == true) {
@@ -421,7 +516,7 @@ class ChatController extends GetxController {
         // Add the real message from server response if available
         if (res['data'] != null && res['data']['data'] != null) {
           final newMessage = res['data']['data'];
-          messages.add({
+          final messageData = {
             '_id': newMessage['_id']?.toString() ?? '',
             'content': newMessage['content']?.toString() ?? content.trim(),
             'sender': 'me',
@@ -429,12 +524,20 @@ class ChatController extends GetxController {
             'createdAt':
                 newMessage['createdAt']?.toString() ??
                 DateTime.now().toIso8601String(),
-          });
+          };
+          // Add image URL if present
+          if (newMessage['image'] != null) {
+            messageData['image'] = newMessage['image'].toString();
+          }
+          messages.add(messageData);
         } else {
           // If no message data returned, keep temp message but mark as sent
           messages.removeWhere((m) => m['_id'] == tempMessage['_id']);
           tempMessage['_id'] = 'sent_${DateTime.now().millisecondsSinceEpoch}';
           tempMessage.remove('sending');
+          tempMessage.remove('imageLocal');
+          // If we have a local image, we'll need to wait for server response
+          // For now, keep the local path
           messages.add(tempMessage);
         }
         return true;
@@ -444,6 +547,7 @@ class ChatController extends GetxController {
         return false;
       }
     } catch (e) {
+      print('❌ Error sending message: $e');
       // Remove temp message on error
       messages.removeWhere((m) => m['_id'] == tempMessage['_id']);
       return false;

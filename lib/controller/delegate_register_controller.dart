@@ -19,6 +19,7 @@ class DelegateRegisterController extends GetxController {
   final passwordCtrl = TextEditingController();
   final cityCtrl = TextEditingController();
   final addressCtrl = TextEditingController();
+  final regionCtrl = TextEditingController(); // المنطقة
   final companyCtrl = TextEditingController();
   final certificateCtrl = TextEditingController();
 
@@ -59,6 +60,7 @@ class DelegateRegisterController extends GetxController {
     passwordCtrl.dispose();
     cityCtrl.dispose();
     addressCtrl.dispose();
+    regionCtrl.dispose();
     companyCtrl.dispose();
     certificateCtrl.dispose();
     super.onClose();
@@ -139,22 +141,82 @@ class DelegateRegisterController extends GetxController {
       final authService = AuthService();
       final session = Get.find<SessionController>();
 
+      // Prepare registration data
+      final registrationData = {
+        'name': nameCtrl.text.trim(),
+        'phone': phoneCtrl.text.trim(),
+        'password': passwordCtrl.text.trim(),
+        'gender': genderIndex.value == 0 ? 'ذكر' : 'أنثى',
+        'age': int.parse(selectedAge.value!),
+        'city': selectedCity.value!,
+        'region': regionCtrl.text.trim(), // المنطقة
+        'userType': 'Representative',
+        'company': companyCtrl.text.trim(),
+        'deviceToken': '',
+        'image': profileImageUrl.value ?? '',
+        'address': addressCtrl.text.trim(),
+        'certificate': certificateCtrl.text.trim(),
+        'idFrontImage': idFrontImageUrl.value ?? '',
+        'idBackImage': idBackImageUrl.value ?? '',
+      };
+
+      // Print registration data (without password for security)
+      print('📋 ========== DELEGATE REGISTRATION REQUEST ==========');
+      print('📋 Name: ${registrationData['name']}');
+      print('📋 Phone: ${registrationData['phone']}');
+      print('📋 Password: [HIDDEN]');
+      print('📋 Gender: ${registrationData['gender']}');
+      print('📋 Age: ${registrationData['age']}');
+      print('📋 City: ${registrationData['city']}');
+      print('📋 Region: ${registrationData['region']}');
+      print('📋 UserType: ${registrationData['userType']}');
+      print('📋 Company: ${registrationData['company']}');
+      print('📋 Address: ${registrationData['address']}');
+      print('📋 Certificate: ${registrationData['certificate']}');
+      print('📋 Profile Image: ${registrationData['image']}');
+      print('📋 ID Front Image: ${registrationData['idFrontImage']}');
+      print('📋 ID Back Image: ${registrationData['idBackImage']}');
+      print('📋 ===================================================');
+
       final res = await authService.registerUser(
-        name: nameCtrl.text.trim(),
-        phone: phoneCtrl.text.trim(),
-        password: passwordCtrl.text.trim(),
-        gender: genderIndex.value == 0 ? 'ذكر' : 'أنثى',
-        age: int.parse(selectedAge.value!),
-        city: selectedCity.value!,
-        userType: 'Representative',
-        company: companyCtrl.text.trim(),
-        deviceToken: '',
-        image: profileImageUrl.value ?? '',
-        address: addressCtrl.text.trim(),
-        certificate: certificateCtrl.text.trim(),
-        idFrontImage: idFrontImageUrl.value ?? '',
-        idBackImage: idBackImageUrl.value ?? '',
+        name: registrationData['name'] as String,
+        phone: registrationData['phone'] as String,
+        password: registrationData['password'] as String,
+        gender: registrationData['gender'] as String,
+        age: registrationData['age'] as int,
+        city: registrationData['city'] as String,
+        region: registrationData['region'] as String,
+        userType: registrationData['userType'] as String,
+        company: registrationData['company'] as String,
+        deviceToken: registrationData['deviceToken'] as String,
+        image: registrationData['image'] as String,
+        address: registrationData['address'] as String,
+        certificate: registrationData['certificate'] as String,
+        idFrontImage: registrationData['idFrontImage'] as String,
+        idBackImage: registrationData['idBackImage'] as String,
       );
+
+      // Print API response
+      print('📥 ========== DELEGATE REGISTRATION RESPONSE ==========');
+      print('📥 Status Code: ${res['statusCode'] ?? 'N/A'}');
+      print('📥 OK: ${res['ok']}');
+      print('📥 Full Response: ${res.toString()}');
+      if (res['data'] != null) {
+        print('📥 Response Data: ${res['data']}');
+        if (res['data'] is Map) {
+          final data = res['data'] as Map;
+          print('📥 Status: ${data['status']}');
+          print('📥 Code: ${data['code']}');
+          print('📥 Message: ${data['message']}');
+          if (data['data'] != null) {
+            print('📥 Response Data.data: ${data['data']}');
+          }
+        }
+      }
+      if (res['error'] != null) {
+        print('📥 Error: ${res['error']}');
+      }
+      print('📥 ===================================================');
 
       LoadingDialog.hide();
 

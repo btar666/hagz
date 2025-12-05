@@ -1600,11 +1600,15 @@ class DoctorProfileManagePage extends StatelessWidget {
     DoctorProfileController controller,
     TextEditingController addressCtrl,
   ) {
-    // تحميل العنوان الحالي عند فتح القسم
+    final TextEditingController mapLinkCtrl = TextEditingController();
+
+    // تحميل العنوان والرابط الحاليين عند فتح القسم
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = Get.find<SessionController>().currentUser.value;
       if (user != null && user.address.isNotEmpty) {
-        addressCtrl.text = user.address;
+        final parsed = controller.parseAddressAndLink(user.address);
+        addressCtrl.text = parsed['address'] ?? '';
+        mapLinkCtrl.text = parsed['mapLink'] ?? '';
       }
     });
 
@@ -1649,6 +1653,45 @@ class DoctorProfileManagePage extends StatelessWidget {
           ),
         ),
         SizedBox(height: 16.h),
+        // رابط جوجل ماب
+        MyText(
+          'رابط جوجل ماب (اختياري)',
+          fontSize: 16.sp,
+          fontWeight: FontWeight.w800,
+          color: AppColors.textPrimary,
+          textAlign: TextAlign.right,
+        ),
+        SizedBox(height: 8.h),
+        Container(
+          height: 60.h,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: AppColors.divider, width: 1),
+          ),
+          child: TextField(
+            controller: mapLinkCtrl,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+            ),
+            decoration: InputDecoration(
+              hintText: 'https://maps.google.com/...',
+              hintStyle: TextStyle(
+                fontSize: 16.sp,
+                color: AppColors.textSecondary,
+              ),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16.w,
+                vertical: 16.h,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(height: 16.h),
         SizedBox(
           height: 50.h,
           child: ElevatedButton(
@@ -1662,6 +1705,7 @@ class DoctorProfileManagePage extends StatelessWidget {
 
               final result = await controller.updateDoctorAddress(
                 addressCtrl.text.trim(),
+                mapLink: mapLinkCtrl.text.trim(),
               );
 
               LoadingDialog.hide();

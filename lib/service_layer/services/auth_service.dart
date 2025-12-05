@@ -43,6 +43,7 @@ class AuthService {
     String deviceToken = '',
     String image = '',
     String address = '',
+    String region = '', // المنطقة
     String certificate = '',
     String idFrontImage = '',
     String idBackImage = '',
@@ -61,10 +62,22 @@ class AuthService {
       if (deviceToken.isNotEmpty) 'deviceToken': deviceToken,
       if (image.isNotEmpty) 'image': image,
       if (address.isNotEmpty) 'address': address,
+      if (region.isNotEmpty) 'region': region, // المنطقة
       if (certificate.isNotEmpty) 'certificate': certificate,
       if (idFrontImage.isNotEmpty) 'idFrontImage': idFrontImage,
       if (idBackImage.isNotEmpty) 'idBackImage': idBackImage,
     };
+
+    // Print API request details
+    print('🌐 ========== API REGISTER USER REQUEST ==========');
+    print('🌐 URL: $uri');
+    print('🌐 Method: POST');
+    print('🌐 Headers: Content-Type: application/json, Accept: application/json');
+    print('🌐 Payload (without password):');
+    final payloadForLog = Map<String, dynamic>.from(payload);
+    payloadForLog['password'] = '[HIDDEN]';
+    print('🌐 ${jsonEncode(payloadForLog)}');
+    print('🌐 ================================================');
 
     final response = await http.post(
       uri,
@@ -75,12 +88,20 @@ class AuthService {
       body: jsonEncode(payload),
     );
 
+    // Print API response details
+    print('🌐 ========== API REGISTER USER RESPONSE ==========');
+    print('🌐 Status Code: ${response.statusCode}');
+    print('🌐 Response Headers: ${response.headers}');
+    print('🌐 Response Body: ${response.body}');
+    print('🌐 ================================================');
+
     final decoded = _decodeBody(response.bodyBytes);
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return {'ok': true, 'data': decoded};
+      return {'ok': true, 'statusCode': response.statusCode, 'data': decoded};
     }
     return {
       'ok': false,
+      'statusCode': response.statusCode,
       'error': decoded['message'] ?? 'فشل إنشاء الحساب',
       'data': decoded,
     };

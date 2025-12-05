@@ -56,6 +56,8 @@ class DelegateRegisterPage extends StatelessWidget {
                 SizedBox(height: 16.h),
                 _buildAddressField(controller),
                 SizedBox(height: 16.h),
+                _buildRegionField(controller),
+                SizedBox(height: 16.h),
                 _buildAgeCityRow(controller),
                 SizedBox(height: 16.h),
                 _buildGenderSelector(controller),
@@ -259,6 +261,34 @@ class DelegateRegisterPage extends StatelessWidget {
             _roundedField(
               controller: c.addressCtrl,
               hint: 'enter_address'.tr,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? 'field_required'.tr : null,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildRegionField(DelegateRegisterController c) {
+    return GetBuilder<LocaleController>(
+      builder: (localeController) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: MyText(
+                'المنطقة',
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            _roundedField(
+              controller: c.regionCtrl,
+              hint: 'أدخل المنطقة',
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'field_required'.tr : null,
             ),
