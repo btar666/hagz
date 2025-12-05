@@ -95,10 +95,11 @@ class ChatDetailsPage extends StatelessWidget {
                     }
                   }
 
-                  // For secretary role: show doctor and secretary messages on right, patient on left
+                  // Handle message display based on user role
                   final currentRole = session.role.value;
+                  
                   if (currentRole == 'secretary') {
-                    // If it's from current user (secretary), show on right
+                    // For secretary: show doctor and secretary messages on right, patient on left
                     if (isMe) {
                       isMe = true;
                     } else {
@@ -115,6 +116,27 @@ class ChatDetailsPage extends StatelessWidget {
                       isMe =
                           (senderRole == 'doctor' || senderRole == 'secretary');
                     }
+                  } else if (currentRole == 'user' || currentRole == 'doctor') {
+                    // For patients/users: show secretary messages as if from doctor (left side)
+                    // For doctors: show secretary messages on right side with their messages
+                    if (!isMe) {
+                      final sender = m['sender'];
+                      String? senderRole;
+                      if (sender is Map) {
+                        senderRole = sender['userType']
+                            ?.toString()
+                            .toLowerCase();
+                      }
+                      
+                      // If sender is secretary and current user is patient, show as doctor message (left)
+                      if (senderRole == 'secretary' && currentRole == 'user') {
+                        isMe = false; // Show on left (as doctor)
+                      }
+                      // If sender is secretary and current user is doctor, show as own message (right)
+                      else if (senderRole == 'secretary' && currentRole == 'doctor') {
+                        isMe = true; // Show on right (as own team)
+                      }
+                    }
                   }
 
                   print(
@@ -130,68 +152,53 @@ class ChatDetailsPage extends StatelessWidget {
             padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 16.h),
             child: Row(
               children: [
-                Obx(
-                  () => GestureDetector(
-                    onTap: ctrl.isSendingMessage.value
-                        ? null
-                        : () async {
-                            final text = _msgCtrl.text.trim();
-                            if (text.isEmpty) {
-                              Get.snackbar(
-                                'رسالة فارغة',
-                                'يرجى كتابة رسالة قبل الإرسال',
-                                backgroundColor: AppColors.warning,
-                                colorText: Colors.white,
-                                duration: const Duration(seconds: 2),
-                              );
-                              return;
-                            }
+                GestureDetector(
+                  onTap: () async {
+                    final text = _msgCtrl.text.trim();
+                    if (text.isEmpty) {
+                      Get.snackbar(
+                        'رسالة فارغة',
+                        'يرجى كتابة رسالة قبل الإرسال',
+                        backgroundColor: AppColors.warning,
+                        colorText: Colors.white,
+                        duration: const Duration(seconds: 2),
+                      );
+                      return;
+                    }
 
-                            // Check if receiverId is set
-                            if (ctrl.receiverId.value.isEmpty) {
-                              Get.snackbar(
-                                'خطأ',
-                                'لا يمكن إرسال الرسالة، المستلم غير محدد',
-                                backgroundColor: const Color(0xFFFF3B30),
-                                colorText: Colors.white,
-                                duration: const Duration(seconds: 3),
-                              );
-                              return;
-                            }
+                    // Check if receiverId is set
+                    if (ctrl.receiverId.value.isEmpty) {
+                      Get.snackbar(
+                        'خطأ',
+                        'لا يمكن إرسال الرسالة، المستلم غير محدد',
+                        backgroundColor: const Color(0xFFFF3B30),
+                        colorText: Colors.white,
+                        duration: const Duration(seconds: 3),
+                      );
+                      return;
+                    }
 
-                            final ok = await ctrl.sendMessage(text);
-                            if (ok) {
-                              _msgCtrl.clear();
-                            } else {
-                              Get.snackbar(
-                                'فشل الإرسال',
-                                'تعذر إرسال الرسالة، يرجى المحاولة مرة أخرى',
-                                backgroundColor: const Color(0xFFFF3B30),
-                                colorText: Colors.white,
-                                duration: const Duration(seconds: 3),
-                              );
-                            }
-                          },
-                    child: Container(
-                      width: 56.w,
-                      height: 56.w,
-                      decoration: BoxDecoration(
-                        color: ctrl.isSendingMessage.value
-                            ? AppColors.primary.withOpacity(0.6)
-                            : AppColors.primary,
-                        borderRadius: BorderRadius.circular(14.r),
-                      ),
-                      child: ctrl.isSendingMessage.value
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Icon(Icons.send, color: Colors.white),
+                    final ok = await ctrl.sendMessage(text);
+                    if (ok) {
+                      _msgCtrl.clear();
+                    } else {
+                      Get.snackbar(
+                        'فشل الإرسال',
+                        'تعذر إرسال الرسالة، يرجى المحاولة مرة أخرى',
+                        backgroundColor: const Color(0xFFFF3B30),
+                        colorText: Colors.white,
+                        duration: const Duration(seconds: 3),
+                      );
+                    }
+                  },
+                  child: Container(
+                    width: 56.w,
+                    height: 56.w,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(14.r),
                     ),
+                    child: const Icon(Icons.send, color: Colors.white),
                   ),
                 ),
                 SizedBox(width: 12.w),

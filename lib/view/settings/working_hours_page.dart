@@ -16,6 +16,30 @@ class WorkingHoursPage extends StatelessWidget {
 
   final WorkingHoursController controller = Get.put(WorkingHoursController());
 
+  /// تحويل الوقت من 24 ساعة إلى 12 ساعة
+  String _convertTo12Hour(String time24) {
+    try {
+      // تحليل الوقت (مثل "14:00" أو "09:30")
+      final parts = time24.split(':');
+      if (parts.length < 2) return time24;
+      
+      final hour = int.tryParse(parts[0]) ?? 0;
+      final minute = parts[1];
+      
+      if (hour == 0) {
+        return '12:$minute ص';
+      } else if (hour < 12) {
+        return '$hour:$minute ص';
+      } else if (hour == 12) {
+        return '12:$minute م';
+      } else {
+        return '${hour - 12}:$minute م';
+      }
+    } catch (e) {
+      return time24;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -277,7 +301,9 @@ class WorkingHoursPage extends StatelessWidget {
               textAlign: TextAlign.right,
             ),
             subtitle: MyText(
-              isWorking ? '${day['startTime']} - ${day['endTime']}' : 'holiday_label'.tr,
+              isWorking 
+                  ? '${_convertTo12Hour(day['startTime'])} - ${_convertTo12Hour(day['endTime'])}'
+                  : 'holiday_label'.tr,
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
               color: AppColors.textSecondary,
@@ -356,7 +382,7 @@ class WorkingHoursPage extends StatelessWidget {
                   ),
                   SizedBox(width: 8.w),
                   MyText(
-                    value,
+                    _convertTo12Hour(value),
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary,
@@ -394,6 +420,7 @@ class WorkingHoursPage extends StatelessWidget {
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
                   onPressed: () {
@@ -409,14 +436,27 @@ class WorkingHoursPage extends StatelessWidget {
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
-                SizedBox(width: 12.w),
-                MyText(
-                  '$duration دقيقة',
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+                SizedBox(width: 8.w),
+                Flexible(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      MyText(
+                        '$duration',
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                      MyText(
+                        'دقيقة',
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ],
+                  ),
                 ),
-                SizedBox(width: 12.w),
+                SizedBox(width: 8.w),
                 IconButton(
                   onPressed: () {
                     if (duration < 120) {

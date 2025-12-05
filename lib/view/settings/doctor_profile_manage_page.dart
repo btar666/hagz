@@ -37,6 +37,7 @@ class DoctorProfileManagePage extends StatelessWidget {
     if (userId != null && userId.isNotEmpty) {
       controller.loadDoctorPricing(userId);
       controller.loadRatingsCount(userId);
+      controller.loadFollowersCount(userId);
 
       // Load calendar for current month
       controller.loadDoctorCalendar(doctorId: userId);
@@ -233,6 +234,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  // Rating badge
                   Positioned(
                     bottom: 16.h,
                     left: 16.w,
@@ -263,6 +265,40 @@ class DoctorProfileManagePage extends StatelessWidget {
                             size: 16,
                           ),
                         ],
+                      ),
+                    ),
+                  ),
+                  // Followers count badge
+                  Positioned(
+                    bottom: 16.h,
+                    right: 16.w,
+                    child: Obx(
+                      () => Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 6.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(20.r),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            MyText(
+                              '${controller.followersCount.value} متابع',
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                            SizedBox(width: 4.w),
+                            const Icon(
+                              Icons.people,
+                              color: AppColors.primary,
+                              size: 16,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -769,7 +805,6 @@ class DoctorProfileManagePage extends StatelessWidget {
   }
 
   Widget _buildSectionsList() {
-    final List<String> remaining = ['الحوالات المالية'];
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -784,7 +819,6 @@ class DoctorProfileManagePage extends StatelessWidget {
           _pricingManageTile(),
           _availabilityManageTile(),
           _casesManageTile(),
-          for (final title in remaining) _sectionTile(title),
         ],
       ),
     );
@@ -2682,30 +2716,6 @@ class DoctorProfileManagePage extends StatelessWidget {
                 ),
               );
             }),
-        ],
-      ),
-    );
-  }
-
-  Widget _sectionTile(String title) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.divider)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: MyText(
-              title,
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-              textAlign: TextAlign.right,
-            ),
-          ),
-          SizedBox(width: 8.w),
-          const Icon(Icons.expand_more, color: AppColors.textSecondary),
         ],
       ),
     );

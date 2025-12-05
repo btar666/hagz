@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../widget/my_text.dart';
 import 'appointment_datetime_page.dart';
+import '../../controller/session_controller.dart';
 
 class PatientRegistrationPage extends StatefulWidget {
   final String doctorId;
@@ -95,6 +96,36 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
   final TextEditingController _phoneController = TextEditingController();
   String _selectedGender = 'أنثى';
   int? _selectedAge;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // ملء الحقول تلقائياً إذا كان المستخدم من نوع User
+    final session = Get.find<SessionController>();
+    final currentUser = session.currentUser.value;
+    
+    if (currentUser != null && currentUser.userType == 'User') {
+      // ملء الاسم
+      _nameController.text = currentUser.name;
+      
+      // ملء العمر
+      if (currentUser.age > 0) {
+        _selectedAge = currentUser.age;
+      }
+      
+      // ملء الجنس (تحويل من صيغة السيرفر إلى صيغة الصفحة)
+      final gender = currentUser.gender.toLowerCase();
+      if (gender.contains('ذكر') || gender.contains('male') || gender.contains('رجل')) {
+        _selectedGender = 'ذكر';
+      } else if (gender.contains('أنث') || gender.contains('female') || gender.contains('انث')) {
+        _selectedGender = 'أنثى';
+      }
+      
+      // ملء رقم الهاتف
+      _phoneController.text = currentUser.phone;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

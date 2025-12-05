@@ -5,6 +5,7 @@ import '../utils/app_colors.dart';
 import '../widget/my_text.dart';
 import '../view/main_page.dart';
 import '../controller/session_controller.dart';
+import '../controller/main_controller.dart';
 import '../service_layer/services/auth_service.dart';
 import '../service_layer/services/user_service.dart';
 import '../model/user_model.dart';
@@ -101,6 +102,13 @@ class AuthController extends GetxController {
         } catch (_) {
           // ignore parse errors silently
         }
+        
+        // إعادة تعيين الصفحة إلى الرئيسية (index 0)
+        if (Get.isRegistered<MainController>()) {
+          final mainController = Get.find<MainController>();
+          mainController.currentIndex.value = 0;
+        }
+        
         Get.offAll(() => const MainPage());
       } else {
         LoadingDialog.hide();
@@ -206,6 +214,13 @@ class AuthController extends GetxController {
           // ignore: avoid_print
           print('REGISTER USER PARSE ERROR: $e');
         }
+        
+        // إعادة تعيين الصفحة إلى الرئيسية (index 0)
+        if (Get.isRegistered<MainController>()) {
+          final mainController = Get.find<MainController>();
+          mainController.currentIndex.value = 0;
+        }
+        
         Get.offAll(() => const MainPage());
       } else {
         LoadingDialog.hide();

@@ -186,4 +186,44 @@ class UserService {
     final res = await _api.put(ApiConstants.userInfo, body);
     return res;
   }
+
+  /// Follow a user
+  /// POST /api/users/{userId}/follow
+  /// Requires authentication
+  Future<Map<String, dynamic>> followUser(String userId) async {
+    print('👥 FOLLOW USER REQUEST: userId=$userId');
+    print('👥 Token: ${_session.token.value}');
+
+    final url = ApiConstants.followUser(userId);
+    final res = await _api.post(url, {});
+
+    print('👥 FOLLOW USER RESPONSE: $res');
+    return res;
+  }
+
+  /// Unfollow a user
+  /// DELETE /api/users/{userId}/follow
+  /// Requires authentication
+  Future<Map<String, dynamic>> unfollowUser(String userId) async {
+    print('👥 UNFOLLOW USER REQUEST: userId=$userId');
+    print('👥 Token: ${_session.token.value}');
+
+    final url = ApiConstants.unfollowUser(userId);
+    final res = await _api.delete(url);
+
+    print('👥 UNFOLLOW USER RESPONSE: $res');
+    return res;
+  }
+
+  /// Get followers count for a user
+  /// GET /api/users/{userId}/followers/count
+  Future<Map<String, dynamic>> getFollowersCount(String userId) async {
+    print('👥 GET FOLLOWERS COUNT REQUEST: userId=$userId');
+
+    final url = ApiConstants.getFollowersCount(userId);
+    final res = await _api.get(url);
+
+    print('👥 GET FOLLOWERS COUNT RESPONSE: $res');
+    return res;
+  }
 }

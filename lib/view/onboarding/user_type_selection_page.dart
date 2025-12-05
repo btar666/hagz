@@ -22,9 +22,21 @@ class _UserTypeSelectionPageState extends State<UserTypeSelectionPage> {
     'secretary_type'.tr,
     'delegate_type'.tr,
   ];
-  int _selectedIndex = 1; // default like screenshot: Doctor selected
+  int? _selectedIndex; // لا توجد قيمة افتراضية - المستخدم يجب أن يختار
 
   void _onNext() {
+    // التحقق من أن المستخدم اختار نوعاً
+    if (_selectedIndex == null) {
+      Get.snackbar(
+        'error'.tr,
+        'please_select_user_type'.tr,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+      );
+      return;
+    }
+
     final session = Get.find<SessionController>();
     switch (_selectedIndex) {
       case 0:
@@ -157,9 +169,10 @@ class _UserTypeSelectionPageState extends State<UserTypeSelectionPage> {
                         height: 56.h,
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _onNext,
+                          onPressed: _selectedIndex != null ? _onNext : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
+                            disabledBackgroundColor: AppColors.textLight,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(22.r),
                             ),
@@ -175,7 +188,9 @@ class _UserTypeSelectionPageState extends State<UserTypeSelectionPage> {
                                     'next'.tr,
                                     fontSize: 22.sp,
                                     fontWeight: FontWeight.w900,
-                                    color: Colors.white,
+                                    color: _selectedIndex != null
+                                        ? Colors.white
+                                        : Colors.white70,
                                   );
                                 },
                               ),

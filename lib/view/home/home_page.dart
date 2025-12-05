@@ -25,6 +25,8 @@ import '../../bindings/chats_binding.dart';
 import '../../bindings/doctor_profile_binding.dart';
 import '../../controller/session_controller.dart';
 import '../../controller/locale_controller.dart';
+import '../settings/doctor_profile_manage_page.dart';
+import '../../controller/doctor_profile_manage_controller.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -120,10 +122,37 @@ class HomePage extends StatelessWidget {
                     Obx(() {
                       final session = Get.find<SessionController>();
                       final user = session.currentUser.value;
-                      final String img = user?.image ?? '';
-                      final String gender = (user?.gender ?? '').toLowerCase();
                       final String type = (user?.userType ?? '')
                           .toString(); // 'User' | 'Doctor' | 'Secretary' | 'Representative'
+                      final bool isDoctor = type == 'Doctor';
+
+                      // للمستخدم العادي والأنواع الأخرى (Secretary, Delegate): صورة medicine_icon.jpg غير قابلة للنقر
+                      if (!isDoctor) {
+                        return Container(
+                          width: 48.w,
+                          height: 48.w,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.primary,
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Image.asset(
+                            'assets/icons/home/medicine_icon.jpg',
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.medical_services,
+                                color: Colors.white,
+                                size: 28,
+                              );
+                            },
+                          ),
+                        );
+                      }
+
+                      // للدكتور فقط: صورة الحساب
+                      final String img = user?.image ?? '';
+                      final String gender = (user?.gender ?? '').toLowerCase();
                       String? fallbackAsset;
                       if (img.isEmpty) {
                         final isFemale =
@@ -138,31 +167,12 @@ class HomePage extends StatelessWidget {
                               : 'assets/icons/home/person_man.png';
                         }
                       }
-                      return Container(
-                        width: 48.w,
-                        height: 48.w,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.primary,
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: img.isNotEmpty
-                            ? Image.network(
-                                img,
-                                fit: BoxFit.cover,
-                                errorBuilder: (c, e, s) =>
-                                    (fallbackAsset != null
-                                    ? Image.asset(
-                                        fallbackAsset,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : const Icon(
-                                        Icons.person,
-                                        color: Colors.white,
-                                        size: 28,
-                                      )),
-                              )
-                            : (fallbackAsset != null
+
+                      Widget avatarContent = img.isNotEmpty
+                          ? Image.network(
+                              img,
+                              fit: BoxFit.cover,
+                              errorBuilder: (c, e, s) => (fallbackAsset != null
                                   ? Image.asset(
                                       fallbackAsset,
                                       fit: BoxFit.cover,
@@ -172,7 +182,43 @@ class HomePage extends StatelessWidget {
                                       color: Colors.white,
                                       size: 28,
                                     )),
+                            )
+                          : (fallbackAsset != null
+                                ? Image.asset(fallbackAsset, fit: BoxFit.cover)
+                                : const Icon(
+                                    Icons.person,
+                                    color: Colors.white,
+                                    size: 28,
+                                  ));
+
+                      final avatarContainer = Container(
+                        width: 48.w,
+                        height: 48.w,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primary,
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: avatarContent,
                       );
+
+                      // للدكتور: جعل الصورة قابلة للنقر
+                      if (isDoctor) {
+                        return GestureDetector(
+                          onTap: () {
+                            Get.to(
+                              () => const DoctorProfileManagePage(),
+                              binding: BindingsBuilder(() {
+                                Get.put(DoctorProfileManageController());
+                              }),
+                            );
+                          },
+                          child: avatarContainer,
+                        );
+                      }
+
+                      // للأنواع الأخرى: بدون تفاعل
+                      return avatarContainer;
                     }),
                   ],
                 ),
@@ -234,9 +280,15 @@ class HomePage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Fixed bottom tab selector
+                  // Fixed bottom tab selector - بدون خلفية لجعل المساحة شفافة
                   Container(
-                    padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 20.h),
+                    padding: EdgeInsets.fromLTRB(
+                      20.w,
+                      0,
+                      20.w,
+                      8.h,
+                    ), // تقليل المسافة السفلية من 20.h إلى 8.h
+                    // بدون color property - المساحة ستكون شفافة تماماً
                     child: _buildBottomTabs(controller),
                   ),
                 ],
@@ -251,36 +303,65 @@ class HomePage extends StatelessWidget {
   Widget _buildTabHeader() {
     return GetBuilder<LocaleController>(
       builder: (localeController) {
-        return Row(
-          children: [
-            MyText(
-              'all'.tr,
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-              textAlign: TextAlign.start,
-            ),
-            const Spacer(),
-            GestureDetector(
-              onTap: () async {
-                final result = await Get.dialog(const DoctorsFilterDialog());
-                if (result is Map) {
-                  Get.find<HomeController>().applyFilters(
-                    result['region'] as String,
-                    result['alpha'] as String,
-                  );
-                }
-              },
-              child: Icon(
-                Icons.tune,
-                color: AppColors.textSecondary,
-                size: 24.sp,
+        final homeController = Get.find<HomeController>();
+        return Obx(() {
+          // تحديد النص المعروض بناءً على الفلاتر المطبقة
+          String displayText = 'all'.tr; // القيمة الافتراضية
+
+          if (homeController.selectedCity.value.isNotEmpty) {
+            // إذا كانت هناك محافظة محددة، اعرضها
+            displayText = homeController.selectedCity.value;
+          } else if (homeController.sortOrder.value.isNotEmpty) {
+            // إذا كان هناك ترتيب أبجدي فقط، اعرضه
+            displayText = homeController.sortOrder.value;
+          }
+
+          // التحقق من وجود فلتر مطبق
+          final hasFilter =
+              homeController.selectedCity.value.isNotEmpty ||
+              homeController.sortOrder.value.isNotEmpty;
+
+          return Row(
+            children: [
+              MyText(
+                displayText,
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+                textAlign: TextAlign.start,
               ),
-            ),
-          ],
-        );
+              const Spacer(),
+              GestureDetector(
+                onTap: () {
+                  if (hasFilter) {
+                    // إلغاء الفلتر
+                    homeController.clearFilters();
+                  } else {
+                    // فتح نافذة الفلتر
+                    _openFilterDialog();
+                  }
+                },
+                child: Icon(
+                  hasFilter ? Icons.close : Icons.tune,
+                  color: hasFilter ? AppColors.error : AppColors.textSecondary,
+                  size: 24.sp,
+                ),
+              ),
+            ],
+          );
+        });
       },
     );
+  }
+
+  void _openFilterDialog() async {
+    final result = await Get.dialog(const DoctorsFilterDialog());
+    if (result is Map) {
+      Get.find<HomeController>().applyFilters(
+        result['region'] as String,
+        result['alpha'] as String,
+      );
+    }
   }
 
   Widget _buildHospitalTabHeader() {
@@ -624,7 +705,7 @@ class HomePage extends StatelessWidget {
               flightShuttleBuilder: (ctx, anim, dir, from, to) => to.widget,
               child: MyText(
                 name,
-                fontSize: 15.sp,
+                fontSize: 13.sp,
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -864,7 +945,7 @@ class HomePage extends StatelessWidget {
                       Expanded(
                         child: MyText(
                           'top_rated_doctors'.tr,
-                          fontSize: 18.sp,
+                          fontSize: 16.sp,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
                           textAlign: TextAlign.start,
@@ -989,7 +1070,12 @@ Widget _buildTopRatedDoctorCardFromItem(Map<String, dynamic> item) {
             ),
           ),
           SizedBox(height: 8.h),
-          MyText(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+          MyText(
+            name,
+            fontSize: 13.sp,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           SizedBox(height: 6.h),
           SpecializationText(
             specializationId: specialty.isEmpty ? null : specialty,
@@ -1017,10 +1103,18 @@ Widget _buildBottomTabs(MainController controller) {
 
       return Obx(
         () => Container(
-          height: 50.h,
+          height: 47.h,
           decoration: BoxDecoration(
             color: const Color(0xFFFFFFFF), // أبيض
             borderRadius: BorderRadius.circular(25.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1), // ظل خفيف
+                blurRadius: 10,
+                offset: const Offset(0, -2), // ظل من الأعلى لإعطاء تأثير العوم
+                spreadRadius: 0,
+              ),
+            ],
           ),
           child: Row(
             children: List.generate(3, (index) {

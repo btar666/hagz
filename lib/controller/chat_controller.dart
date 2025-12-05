@@ -55,6 +55,24 @@ class ChatController extends GetxController {
           // Extract participant names for each conversation
           await _enrichConversationsWithNames(convList);
 
+          // Filter conversations based on user role
+          if (userRole == 'user') {
+            // For users/patients: show only conversations with doctors (not secretaries)
+            convList = convList.where((conv) {
+              return _isConversationWithType(conv, currentUser?.id ?? '', 'doctor');
+            }).toList();
+            
+            print('✅ Filtered conversations for user: ${convList.length} doctor conversations');
+          } else if (userRole == 'doctor') {
+            // For doctors: show only conversations with patients/users (not other doctors or secretaries)
+            convList = convList.where((conv) {
+              return _isConversationWithType(conv, currentUser?.id ?? '', 'user');
+            }).toList();
+            
+            print('✅ Filtered conversations for doctor: ${convList.length} patient conversations');
+          }
+          // For secretary: already handled by _loadSecretaryConversations above
+
           conversations.value = convList;
         }
       }
@@ -713,5 +731,38 @@ class ChatController extends GetxController {
     }
 
     print('=== DEBUG: Finished enriching conversations ===');
+  }
+
+  /// Check if conversation is with a specific user type
+  bool _isConversationWithType(
+    Map<String, dynamic> conv,
+    String currentUserId,
+    String targetUserType,
+  ) {
+    // Check otherParticipant
+    if (conv['otherParticipant'] is Map) {
+      final otherParticipant = conv['otherParticipant'] as Map;
+      final userType = otherParticipant['userType']?.toString().toLowerCase() ?? '';
+      return userType == targetUserType.toLowerCase();
+    }
+    
+    // Check participants array
+    if (conv['participants'] is List) {
+      final participants = conv['participants'] as List;
+      for (var participant in participants) {
+        if (participant is Map) {
+          final participantId = participant['_id']?.toString() ?? 
+                               participant['id']?.toString() ?? '';
+          // Skip current user
+          if (participantId.isNotEmpty && participantId != currentUserId) {
+            final participantType = participant['userType']?.toString().toLowerCase() ?? '';
+            return participantType == targetUserType.toLowerCase();
+          }
+        }
+      }
+    }
+    
+    // If we can't determine, exclude it to be safe
+    return false;
   }
 }

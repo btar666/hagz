@@ -9,6 +9,7 @@ import '../../service_layer/services/specialization_service.dart';
 import '../../model/specialization_model.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../controller/locale_controller.dart';
+import '../../utils/app_colors.dart';
 
 class SpecialtiesPage extends StatefulWidget {
   const SpecialtiesPage({Key? key}) : super(key: key);
@@ -195,15 +196,14 @@ class _SpecialtiesPageState extends State<SpecialtiesPage> {
   Widget _buildHeader() {
     return GetBuilder<LocaleController>(
       builder: (localeController) {
-        return Container(
-          padding: EdgeInsets.only(top: 50.h, bottom: 30.h),
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 17.h),
           child: Center(
             child: MyText(
               'specialties'.tr,
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-              textAlign: TextAlign.center,
+              fontSize: 22.sp,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimary,
             ),
           ),
         );
@@ -215,7 +215,7 @@ class _SpecialtiesPageState extends State<SpecialtiesPage> {
     return GetBuilder<LocaleController>(
       builder: (localeController) {
         return Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 15.h),
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 5.h),
           child: Container(
             height: 48.h,
             decoration: BoxDecoration(
@@ -530,7 +530,7 @@ class _SpecialtiesPageState extends State<SpecialtiesPage> {
               child: Icon(
                 Icons.medical_services,
                 color: isSelected ? Colors.white : const Color(0xFF7FC8D6),
-                size: 20.r,
+                size: 28.r,
               ),
             ),
 

@@ -8,11 +8,14 @@ class LocaleController extends GetxController {
 
   final RxString selectedLanguage = RxString('ar');
 
-  LocaleController() {
+  @override
+  void onInit() {
+    super.onInit();
     final storage = GetStorageService();
     final saved = storage.read<String>('selected_language') ?? 'ar';
     selectedLanguage.value = saved;
-    _setLocale(saved);
+    // فقط تحديث Get.locale بدون updateLocale لتجنب setState أثناء البناء
+    Get.locale = saved == 'en' ? const Locale('en') : const Locale('ar');
   }
 
   void _setLocale(String languageCode) {

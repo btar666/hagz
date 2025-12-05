@@ -8,6 +8,12 @@ class ApiConstants {
   static const String changePassword = '$baseUrl/api/users/change-password';
   static const String doctors = '$baseUrl/api/users/doctors/';
   static const String filterDoctors = '$baseUrl/api/users/filter';
+  // Follow user: POST /api/users/{userId}/follow
+  static String followUser(String userId) => '$baseUrl/api/users/$userId/follow';
+  // Unfollow user: DELETE /api/users/{userId}/follow
+  static String unfollowUser(String userId) => '$baseUrl/api/users/$userId/follow';
+  // Get followers count: GET /api/users/{userId}/followers/count
+  static String getFollowersCount(String userId) => '$baseUrl/api/users/$userId/followers/count';
   static const String hospitals = '$baseUrl/api/hospitals/';
   static const String uploads = '$baseUrl/api/uploads/';
   static const String sliders = '$baseUrl/api/sliders/';

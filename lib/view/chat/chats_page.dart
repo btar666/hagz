@@ -62,15 +62,23 @@ class ChatsPage extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
           itemBuilder: (_, i) {
             final item = list[i];
-            // Extract name from conversation data (now enriched with participant info)
+            final currentRole = session.role.value;
+            
+            // Extract name from conversation data (always show OTHER participant, not current user)
             String name = 'conversation'.tr;
 
-            // First try otherParticipant (direct from API)
+            print('=== Processing Conversation $i ===');
+            print('Current User Role: $currentRole');
+            print('Current User ID: $currentUserId');
+
+            // First try otherParticipant (direct from API - this is the most reliable)
             if (item['otherParticipant'] is Map) {
               final otherParticipant = item['otherParticipant'] as Map;
               final otherName = otherParticipant['name']?.toString() ?? '';
+              final otherId = otherParticipant['_id']?.toString() ?? '';
               if (otherName.isNotEmpty) {
                 name = otherName;
+                print('✅ Found otherParticipant: $name (ID: $otherId)');
               }
             }
 
@@ -81,6 +89,7 @@ class ChatsPage extends StatelessWidget {
                 item['participantName'].toString().isNotEmpty &&
                 item['participantName'].toString() != conversationText) {
               name = item['participantName'].toString();
+              print('✅ Found participantName: $name');
             }
 
             // Third try to extract from participants array if exists
@@ -88,8 +97,7 @@ class ChatsPage extends StatelessWidget {
                 item['participants'] is List &&
                 (item['participants'] as List).isNotEmpty) {
               final participants = item['participants'] as List;
-              final SessionController session = Get.find<SessionController>();
-              final currentUserId = session.currentUser.value?.id ?? '';
+              print('🔍 Searching in participants array (${participants.length} participants)');
 
               for (var participant in participants) {
                 if (participant is Map) {
@@ -97,16 +105,20 @@ class ChatsPage extends StatelessWidget {
                       participant['_id']?.toString() ??
                       participant['id']?.toString() ??
                       '';
+                  final participantName =
+                      participant['name']?.toString() ??
+                      participant['fullName']?.toString() ??
+                      '';
+                  
+                  // IMPORTANT: Get the participant who is NOT the current user
                   if (participantId.isNotEmpty &&
-                      participantId != currentUserId) {
-                    final participantName =
-                        participant['name']?.toString() ??
-                        participant['fullName']?.toString() ??
-                        '';
-                    if (participantName.isNotEmpty) {
-                      name = participantName;
-                      break;
-                    }
+                      participantId != currentUserId &&
+                      participantName.isNotEmpty) {
+                    name = participantName;
+                    print('✅ Found OTHER participant in array: $name (ID: $participantId)');
+                    break;
+                  } else if (participantId == currentUserId) {
+                    print('⏭️ Skipping current user: $participantName (ID: $participantId)');
                   }
                 }
               }
@@ -122,6 +134,37 @@ class ChatsPage extends StatelessWidget {
                           item['name'] ??
                           conversationText)
                       .toString();
+            }
+
+            // Verify we're not showing current user's own name
+            final currentUserName = session.currentUser.value?.name ?? '';
+            if (name == currentUserName && name != conversationText) {
+              // If the name matches current user, try to get the other participant's name
+              print('⚠️ Warning: Showing current user name ($name), trying to find other participant');
+              
+              // Try harder to find the other participant
+              if (item['participants'] is List) {
+                final participants = item['participants'] as List;
+                for (var participant in participants) {
+                  if (participant is Map) {
+                    final participantId =
+                        participant['_id']?.toString() ??
+                        participant['id']?.toString() ??
+                        '';
+                    final participantName =
+                        participant['name']?.toString() ?? '';
+                    
+                    // Get the participant who is NOT the current user
+                    if (participantId.isNotEmpty &&
+                        participantId != currentUserId &&
+                        participantName.isNotEmpty) {
+                      name = participantName;
+                      print('✅ Found other participant: $name (ID: $participantId)');
+                      break;
+                    }
+                  }
+                }
+              }
             }
 
             // Handle lastMessage type safely - it could be a Map or String
@@ -255,9 +298,18 @@ class ChatsPage extends StatelessWidget {
                 }
 
                 // Use the name extracted from messages if available, otherwise fallback
-                final finalName = ctrl.receiverName.value.isNotEmpty
+                String finalName = ctrl.receiverName.value.isNotEmpty
                     ? ctrl.receiverName.value
                     : name;
+                
+                // Final check: don't show current user's name
+                final currentUserName = session.currentUser.value?.name ?? '';
+                if (finalName == currentUserName) {
+                  // If still showing current user name, use generic "محادثة"
+                  finalName = 'conversation'.tr;
+                  print('⚠️ Warning: Still showing current user name, using generic name');
+                }
+                
                 print('Final name for chat: $finalName');
 
                 Get.to(() => ChatDetailsPage(title: finalName));

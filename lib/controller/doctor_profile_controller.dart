@@ -99,6 +99,8 @@ class DoctorProfileController extends GetxController {
 
   // Ratings summary for doctor profile
   var ratingsCount = 0.obs;
+  // Followers count
+  var followersCount = 0.obs;
 
   // Sample treated cases
   var treatedCases = <Map<String, String>>[].obs;
@@ -738,6 +740,8 @@ class DoctorProfileController extends GetxController {
         instagram.value = social['instagram']?.toString() ?? '';
         whatsapp.value = social['whatsapp']?.toString() ?? '';
         facebook.value = social['facebook']?.toString() ?? '';
+        // Load phone number
+        doctorPhone.value = obj?['phone']?.toString() ?? '';
         // robust image parsing across possible keys
         String parsedImage = '';
         for (final k in [
@@ -778,6 +782,26 @@ class DoctorProfileController extends GetxController {
       }
     } catch (_) {
       // ignore
+    }
+  }
+
+  /// جلب عدد المتابعين للطبيب
+  Future<void> loadFollowersCount(String doctorId) async {
+    if (doctorId.isEmpty) return;
+    try {
+      final res = await _userService.getFollowersCount(doctorId);
+      if (res['ok'] == true && res['data'] != null) {
+        final count = res['data']['count'] ?? res['data'];
+        if (count is int) {
+          followersCount.value = count;
+        } else if (count is String) {
+          followersCount.value = int.tryParse(count) ?? 0;
+        } else {
+          followersCount.value = 0;
+        }
+      }
+    } catch (e) {
+      print('❌ Error loading followers count: $e');
     }
   }
 

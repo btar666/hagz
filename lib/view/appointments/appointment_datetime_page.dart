@@ -103,6 +103,30 @@ class _AppointmentDateTimePageState extends State<AppointmentDateTimePage> {
   DateTime selectedDate = DateTime.now();
   String? selectedTime;
 
+  /// تحويل الوقت من 24 ساعة إلى 12 ساعة
+  String _convertTo12Hour(String time24) {
+    try {
+      // تحليل الوقت (مثل "14:00" أو "09:30")
+      final parts = time24.split(':');
+      if (parts.length < 2) return time24;
+      
+      final hour = int.tryParse(parts[0]) ?? 0;
+      final minute = parts[1];
+      
+      if (hour == 0) {
+        return '12:$minute ص';
+      } else if (hour < 12) {
+        return '$hour:$minute ص';
+      } else if (hour == 12) {
+        return '12:$minute م';
+      } else {
+        return '${hour - 12}:$minute م';
+      }
+    } catch (e) {
+      return time24;
+    }
+  }
+
   final List<String> weekDays = [
     'أحد',
     'اثنين',
@@ -158,6 +182,7 @@ class _AppointmentDateTimePageState extends State<AppointmentDateTimePage> {
                   child: Column(
                     children: [
                       SizedBox(height: 40.h),
+                      // Container للتاريخ
                       Container(
                         padding: EdgeInsets.all(24.w),
                         decoration: BoxDecoration(
@@ -171,13 +196,24 @@ class _AppointmentDateTimePageState extends State<AppointmentDateTimePage> {
                             ),
                           ],
                         ),
-                        child: Column(
-                          children: [
-                            _buildDateSelector(),
-                            SizedBox(height: 30.h),
-                            _buildTimeSelector(),
+                        child: _buildDateSelector(),
+                      ),
+                      SizedBox(height: 30.h),
+                      // Container للوقت
+                      Container(
+                        padding: EdgeInsets.all(24.w),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(28.r),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x267FC8D6),
+                              blurRadius: 35,
+                              offset: Offset(0, 20),
+                            ),
                           ],
                         ),
+                        child: _buildTimeSelector(),
                       ),
                       SizedBox(height: 30.h),
                       _buildEarlyArrivalNote(),
@@ -563,7 +599,7 @@ class _AppointmentDateTimePageState extends State<AppointmentDateTimePage> {
                             ),
                             child: Center(
                               child: MyText(
-                                '$slot ص',
+                                _convertTo12Hour(slot),
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w600,
                                 color: isSelected
