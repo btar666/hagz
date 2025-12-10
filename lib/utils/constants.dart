@@ -8,6 +8,25 @@ class ApiConstants {
   static const String changePassword = '$baseUrl/api/users/change-password';
   static const String doctors = '$baseUrl/api/users/doctors/';
   static const String filterDoctors = '$baseUrl/api/users/filter';
+  // Follow user: POST /api/users/{userId}/follow
+  static String followUser(String userId) =>
+      '$baseUrl/api/users/$userId/follow';
+  // Unfollow user: DELETE /api/users/{userId}/follow
+  static String unfollowUser(String userId) =>
+      '$baseUrl/api/users/$userId/follow';
+  // Get followers count: GET /api/users/{userId}/followers/count
+  static String getFollowersCount(String userId) =>
+      '$baseUrl/api/users/$userId/followers/count';
+  // Get followers list: GET /api/users/{userId}/followers
+  static String getFollowers(String userId, {int? page, int? limit}) {
+    String url = '$baseUrl/api/users/$userId/followers';
+    List<String> params = [];
+    if (page != null) params.add('page=$page');
+    if (limit != null) params.add('limit=$limit');
+    if (params.isNotEmpty) url += '?${params.join('&')}';
+    return url;
+  }
+
   static const String hospitals = '$baseUrl/api/hospitals/';
   static const String uploads = '$baseUrl/api/uploads/';
   static const String sliders = '$baseUrl/api/sliders/';
@@ -59,4 +78,7 @@ class ApiConstants {
   static const String representatives = '$baseUrl/api/representatives';
   // About
   static const String about = '$baseUrl/api/about';
+  // Districts
+  static String getDistrictsByCity(String city) =>
+      '$baseUrl/api/districts/city/${Uri.encodeComponent(city)}/active';
 }

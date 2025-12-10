@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widget/my_text.dart';
@@ -95,10 +97,11 @@ class ChatDetailsPage extends StatelessWidget {
                     }
                   }
 
-                  // For secretary role: show doctor and secretary messages on right, patient on left
+                  // Handle message display based on user role
                   final currentRole = session.role.value;
+                  
                   if (currentRole == 'secretary') {
-                    // If it's from current user (secretary), show on right
+                    // For secretary: show doctor and secretary messages on right, patient on left
                     if (isMe) {
                       isMe = true;
                     } else {
@@ -115,13 +118,45 @@ class ChatDetailsPage extends StatelessWidget {
                       isMe =
                           (senderRole == 'doctor' || senderRole == 'secretary');
                     }
+                  } else if (currentRole == 'user' || currentRole == 'doctor') {
+                    // For patients/users: show secretary messages as if from doctor (left side)
+                    // For doctors: show secretary messages on right side with their messages
+                    if (!isMe) {
+                      final sender = m['sender'];
+                      String? senderRole;
+                      if (sender is Map) {
+                        senderRole = sender['userType']
+                            ?.toString()
+                            .toLowerCase();
+                      }
+                      
+                      // If sender is secretary and current user is patient, show as doctor message (left)
+                      if (senderRole == 'secretary' && currentRole == 'user') {
+                        isMe = false; // Show on left (as doctor)
+                      }
+                      // If sender is secretary and current user is doctor, show as own message (right)
+                      else if (senderRole == 'secretary' && currentRole == 'doctor') {
+                        isMe = true; // Show on right (as own team)
+                      }
+                    }
                   }
 
                   print(
                     'Message $i: "$text", isMe: $isMe, sender: ${m['sender']}, currentUserId: $currentUserId',
                   );
 
-                  return _bubble(text, isMe: isMe);
+                  // Get image URL if present
+                  final imageUrl = m['image']?.toString();
+                  final imageLocal = m['imageLocal'] == true;
+                  final imagePath = imageLocal ? m['image']?.toString() : null;
+
+                  return _bubble(
+                    text,
+                    isMe: isMe,
+                    imageUrl: imageUrl,
+                    imagePath: imagePath,
+                    isLocalImage: imageLocal,
+                  );
                 },
               );
             }),
@@ -130,68 +165,54 @@ class ChatDetailsPage extends StatelessWidget {
             padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 16.h),
             child: Row(
               children: [
-                Obx(
-                  () => GestureDetector(
-                    onTap: ctrl.isSendingMessage.value
-                        ? null
-                        : () async {
-                            final text = _msgCtrl.text.trim();
-                            if (text.isEmpty) {
-                              Get.snackbar(
-                                'رسالة فارغة',
-                                'يرجى كتابة رسالة قبل الإرسال',
-                                backgroundColor: AppColors.warning,
-                                colorText: Colors.white,
-                                duration: const Duration(seconds: 2),
-                              );
-                              return;
-                            }
+                // Send button
+                GestureDetector(
+                  onTap: () async {
+                    final text = _msgCtrl.text.trim();
+                    if (text.isEmpty) {
+                      Get.snackbar(
+                        'رسالة فارغة',
+                        'يرجى كتابة رسالة قبل الإرسال',
+                        backgroundColor: AppColors.warning,
+                        colorText: Colors.white,
+                        duration: const Duration(seconds: 2),
+                      );
+                      return;
+                    }
 
-                            // Check if receiverId is set
-                            if (ctrl.receiverId.value.isEmpty) {
-                              Get.snackbar(
-                                'خطأ',
-                                'لا يمكن إرسال الرسالة، المستلم غير محدد',
-                                backgroundColor: const Color(0xFFFF3B30),
-                                colorText: Colors.white,
-                                duration: const Duration(seconds: 3),
-                              );
-                              return;
-                            }
+                    // Check if receiverId is set
+                    if (ctrl.receiverId.value.isEmpty) {
+                      Get.snackbar(
+                        'خطأ',
+                        'لا يمكن إرسال الرسالة، المستلم غير محدد',
+                        backgroundColor: const Color(0xFFFF3B30),
+                        colorText: Colors.white,
+                        duration: const Duration(seconds: 3),
+                      );
+                      return;
+                    }
 
-                            final ok = await ctrl.sendMessage(text);
-                            if (ok) {
-                              _msgCtrl.clear();
-                            } else {
-                              Get.snackbar(
-                                'فشل الإرسال',
-                                'تعذر إرسال الرسالة، يرجى المحاولة مرة أخرى',
-                                backgroundColor: const Color(0xFFFF3B30),
-                                colorText: Colors.white,
-                                duration: const Duration(seconds: 3),
-                              );
-                            }
-                          },
-                    child: Container(
-                      width: 56.w,
-                      height: 56.w,
-                      decoration: BoxDecoration(
-                        color: ctrl.isSendingMessage.value
-                            ? AppColors.primary.withOpacity(0.6)
-                            : AppColors.primary,
-                        borderRadius: BorderRadius.circular(14.r),
-                      ),
-                      child: ctrl.isSendingMessage.value
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Icon(Icons.send, color: Colors.white),
+                    final ok = await ctrl.sendMessage(text);
+                    if (ok) {
+                      _msgCtrl.clear();
+                    } else {
+                      Get.snackbar(
+                        'فشل الإرسال',
+                        'تعذر إرسال الرسالة، يرجى المحاولة مرة أخرى',
+                        backgroundColor: const Color(0xFFFF3B30),
+                        colorText: Colors.white,
+                        duration: const Duration(seconds: 3),
+                      );
+                    }
+                  },
+                  child: Container(
+                    width: 56.w,
+                    height: 56.w,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(14.r),
                     ),
+                    child: const Icon(Icons.send, color: Colors.white),
                   ),
                 ),
                 SizedBox(width: 12.w),
@@ -206,12 +227,70 @@ class ChatDetailsPage extends StatelessWidget {
                     child: TextField(
                       controller: _msgCtrl,
                       textAlign: TextAlign.right,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: 'اكتب رسالتك',
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 12,
+                        ),
+                        suffixIcon: Padding(
+                          padding: EdgeInsets.all(8.w),
+                          child: GestureDetector(
+                            onTap: () async {
+                              // Check if receiverId is set
+                              if (ctrl.receiverId.value.isEmpty) {
+                                Get.snackbar(
+                                  'خطأ',
+                                  'لا يمكن إرسال الرسالة، المستلم غير محدد',
+                                  backgroundColor: const Color(0xFFFF3B30),
+                                  colorText: Colors.white,
+                                  duration: const Duration(seconds: 3),
+                                );
+                                return;
+                              }
+
+                              final ImagePicker picker = ImagePicker();
+                              final XFile? picked = await picker.pickImage(
+                                source: ImageSource.gallery,
+                                imageQuality: 85,
+                              );
+
+                              if (picked != null) {
+                                final imageFile = File(picked.path);
+                                final text = _msgCtrl.text.trim();
+                                final ok = await ctrl.sendMessage(text, imageFile: imageFile);
+                                if (ok) {
+                                  _msgCtrl.clear();
+                                } else {
+                                  Get.snackbar(
+                                    'فشل الإرسال',
+                                    'تعذر إرسال الصورة، يرجى المحاولة مرة أخرى',
+                                    backgroundColor: const Color(0xFFFF3B30),
+                                    colorText: Colors.white,
+                                    duration: const Duration(seconds: 3),
+                                  );
+                                }
+                              }
+                            },
+                            child: Container(
+                              width: 40.w,
+                              height: 40.w,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12.r),
+                                border: Border.all(
+                                  color: AppColors.primary.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.image,
+                                color: AppColors.primary,
+                                size: 22.sp,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -225,12 +304,20 @@ class ChatDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _bubble(String text, {required bool isMe}) {
+  Widget _bubble(
+    String text, {
+    required bool isMe,
+    String? imageUrl,
+    String? imagePath,
+    bool isLocalImage = false,
+  }) {
+    final hasImage = imageUrl != null || imagePath != null;
+    final hasText = text.isNotEmpty;
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: EdgeInsets.symmetric(vertical: 6.h),
-        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
         constraints: BoxConstraints(maxWidth: 0.78.sw),
         decoration: BoxDecoration(
           color: isMe ? const Color(0xFF7CC7D0) : Colors.white,
@@ -242,12 +329,143 @@ class ChatDetailsPage extends StatelessWidget {
           ),
           border: isMe ? null : Border.all(color: AppColors.divider),
         ),
-        child: MyText(
-          text,
-          fontSize: 18.sp,
-          fontWeight: FontWeight.w800,
-          color: isMe ? Colors.white : AppColors.textSecondary,
-          textAlign: TextAlign.right,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            // Image
+            if (hasImage)
+              GestureDetector(
+                onTap: () {
+                  // Show full screen image preview
+                  Get.dialog(
+                    Dialog(
+                      backgroundColor: Colors.transparent,
+                      insetPadding: EdgeInsets.zero,
+                      child: Stack(
+                        children: [
+                          Center(
+                            child: InteractiveViewer(
+                              child: isLocalImage && imagePath != null
+                                  ? Image.file(
+                                      File(imagePath),
+                                      fit: BoxFit.contain,
+                                    )
+                                  : imageUrl != null
+                                      ? Image.network(
+                                          imageUrl,
+                                          fit: BoxFit.contain,
+                                          loadingBuilder: (context, child, loadingProgress) {
+                                            if (loadingProgress == null) return child;
+                                            return Center(
+                                              child: CircularProgressIndicator(
+                                                value: loadingProgress.expectedTotalBytes != null
+                                                    ? loadingProgress.cumulativeBytesLoaded /
+                                                        loadingProgress.expectedTotalBytes!
+                                                    : null,
+                                              ),
+                                            );
+                                          },
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return Container(
+                                              padding: EdgeInsets.all(20.w),
+                                              child: const Icon(
+                                                Icons.error_outline,
+                                                color: Colors.white,
+                                                size: 48,
+                                              ),
+                                            );
+                                          },
+                                        )
+                                      : const SizedBox(),
+                            ),
+                          ),
+                          Positioned(
+                            top: 40.h,
+                            right: 20.w,
+                            child: IconButton(
+                              onPressed: () => Get.back(),
+                              icon: const Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 32,
+                              ),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.black54,
+                                shape: const CircleBorder(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+                  child: ClipRRect(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(18.r),
+                    topRight: Radius.circular(18.r),
+                    bottomLeft: hasText ? Radius.zero : Radius.circular(isMe ? 18.r : 4.r),
+                    bottomRight: hasText ? Radius.zero : Radius.circular(isMe ? 4.r : 18.r),
+                  ),
+                  child: isLocalImage && imagePath != null
+                      ? Image.file(
+                          File(imagePath),
+                          fit: BoxFit.cover,
+                          height: 200.h,
+                          width: 200.w,
+                        )
+                      : imageUrl != null
+                          ? Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              height: 200.h,
+                              width: 200.w,
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Container(
+                                  height: 200.h,
+                                  color: Colors.grey[300],
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      value: loadingProgress.expectedTotalBytes != null
+                                          ? loadingProgress.cumulativeBytesLoaded /
+                                              loadingProgress.expectedTotalBytes!
+                                          : null,
+                                    ),
+                                  ),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  height: 200.h,
+                                  color: Colors.grey[300],
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.error_outline,
+                                      color: Colors.grey,
+                                      size: 48,
+                                    ),
+                                  ),
+                                );
+                              },
+                            )
+                          : const SizedBox(),
+                ),
+              ),
+            // Text
+            if (hasText)
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+                child: MyText(
+                  text,
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w800,
+                  color: isMe ? Colors.white : AppColors.textSecondary,
+                  textAlign: TextAlign.right,
+                ),
+              ),
+          ],
         ),
       ),
     );

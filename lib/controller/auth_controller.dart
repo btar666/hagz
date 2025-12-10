@@ -5,8 +5,10 @@ import '../utils/app_colors.dart';
 import '../widget/my_text.dart';
 import '../view/main_page.dart';
 import '../controller/session_controller.dart';
+import '../controller/main_controller.dart';
 import '../service_layer/services/auth_service.dart';
 import '../service_layer/services/user_service.dart';
+import '../service_layer/services/districts_service.dart';
 import '../model/user_model.dart';
 import '../service_layer/services/device_token_service.dart';
 import '../widget/loading_dialog.dart';
@@ -32,6 +34,11 @@ class AuthController extends GetxController {
   final RxString gender = ''.obs; // 'ذكر' | 'أنثى'
   final RxInt age = 18.obs; // default
   final RxString imageUrl = ''.obs;
+  
+  // District (المنطقة)
+  var selectedRegionId = Rxn<String>(); // ID المنطقة المختارة
+  var districts = <Map<String, String>>[].obs; // [{id: "...", name: "..."}, ...]
+  var loadingDistricts = false.obs;
 
   String _mapApiUserTypeToInternal(String? apiUserType) {
     switch (apiUserType) {
@@ -82,6 +89,11 @@ class AuthController extends GetxController {
           );
           return;
         }
+        // Update role based on API response to ensure it matches the actual user type
+        if (internalType.isNotEmpty) {
+          _session.setRole(internalType);
+          print('✅ Updated role to: $internalType based on API userType: $serverUserType');
+        }
         // Persist token and user model if available
         _session.setToken(token?.toString());
         try {
@@ -101,6 +113,13 @@ class AuthController extends GetxController {
         } catch (_) {
           // ignore parse errors silently
         }
+        
+        // إعادة تعيين الصفحة إلى الرئيسية (index 0)
+        if (Get.isRegistered<MainController>()) {
+          final mainController = Get.find<MainController>();
+          mainController.currentIndex.value = 0;
+        }
+        
         Get.offAll(() => const MainPage());
       } else {
         LoadingDialog.hide();
@@ -140,6 +159,10 @@ class AuthController extends GetxController {
       _showSnack('يرجى إكمال جميع الحقول');
       return;
     }
+    if (selectedRegionId.value == null || selectedRegionId.value!.isEmpty) {
+      _showSnack('يرجى اختيار المنطقة');
+      return;
+    }
     isLoading.value = true;
     await LoadingDialog.show(message: 'جاري إنشاء الحساب...');
     try {
@@ -151,6 +174,7 @@ class AuthController extends GetxController {
         gender: gender.value,
         age: age.value,
         city: cityCtrl.text.trim(),
+        district: selectedRegionId.value ?? '', // ID المنطقة
         userType: _session.apiUserType, // 'User' | 'Doctor'
         specializationId: _session.role.value == 'doctor'
             ? specializationId.value
@@ -183,6 +207,12 @@ class AuthController extends GetxController {
           return;
         }
 
+        // Update role based on API response to ensure it matches the actual user type
+        if (internalType.isNotEmpty) {
+          _session.setRole(internalType);
+          print('✅ Updated role to: $internalType based on API userType: $serverUserType');
+        }
+
         if (token != null) {
           _session.setToken(token.toString());
         }
@@ -206,6 +236,13 @@ class AuthController extends GetxController {
           // ignore: avoid_print
           print('REGISTER USER PARSE ERROR: $e');
         }
+        
+        // إعادة تعيين الصفحة إلى الرئيسية (index 0)
+        if (Get.isRegistered<MainController>()) {
+          final mainController = Get.find<MainController>();
+          mainController.currentIndex.value = 0;
+        }
+        
         Get.offAll(() => const MainPage());
       } else {
         LoadingDialog.hide();
@@ -231,6 +268,63 @@ class AuthController extends GetxController {
     } finally {
       LoadingDialog.hide();
       isLoading.value = false;
+    }
+  }
+
+  /// جلب المناطق حسب المدينة
+  Future<void> loadDistricts(String city) async {
+    if (city.isEmpty) {
+      districts.clear();
+      selectedRegionId.value = null;
+      return;
+    }
+
+    try {
+      loadingDistricts.value = true;
+      districts.clear();
+      selectedRegionId.value = null;
+
+      final districtsService = DistrictsService();
+      final res = await districtsService.getDistrictsByCity(city: city);
+
+      if (res['ok'] == true && res['data'] != null) {
+        final responseData = res['data'];
+        
+        // التحقق من بنية الاستجابة
+        if (responseData is Map<String, dynamic> && 
+            responseData['status'] == true && 
+            responseData['data'] is List) {
+          final List<dynamic> dataList = responseData['data'] as List<dynamic>;
+          
+          // استخراج id و name للمناطق
+          final List<Map<String, String>> districtList = dataList
+              .map((item) {
+                if (item is Map<String, dynamic> && 
+                    item['_id'] != null && 
+                    item['name'] != null) {
+                  return {
+                    'id': item['_id'].toString(),
+                    'name': item['name'].toString(),
+                  };
+                }
+                return null;
+              })
+              .where((district) => district != null)
+              .cast<Map<String, String>>()
+              .toList();
+          
+          districts.value = districtList;
+          print('📍 Loaded ${districtList.length} districts for city: $city');
+        }
+      } else {
+        print('📍 Failed to load districts: ${res['error'] ?? 'Unknown error'}');
+        districts.clear();
+      }
+    } catch (e) {
+      print('📍 Error loading districts: $e');
+      districts.clear();
+    } finally {
+      loadingDistricts.value = false;
     }
   }
 

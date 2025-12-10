@@ -402,6 +402,14 @@ class _RegisterPageState extends State<RegisterPage> {
                                       _selectedCity = v;
                                       _cityCtrl.text = v ?? '';
                                     });
+                                    // تحميل المناطق عند تغيير المحافظة
+                                    final auth = Get.find<AuthController>();
+                                    if (v != null && v.isNotEmpty) {
+                                      auth.loadDistricts(v);
+                                    } else {
+                                      auth.districts.clear();
+                                      auth.selectedRegionId.value = null;
+                                    }
                                   },
                                 ),
                               ),
@@ -412,6 +420,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ],
                 ),
+
+                SizedBox(height: 16.h),
+                _buildRegionField(),
 
                 SizedBox(height: 16.h),
                 Builder(
@@ -460,6 +471,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               ? 'male'.tr
                               : 'female'.tr;
                           auth.age.value = int.tryParse(_age ?? '18') ?? 18;
+                          // المنطقة يتم تعيينها تلقائياً من auth.selectedRegion
                           // If user didn't pick an image, upload gender-based default
                           if ((_imageUrl == null || _imageUrl!.isEmpty)) {
                             final isFemale =
@@ -967,6 +979,245 @@ class _RegisterPageState extends State<RegisterPage> {
     } finally {
       setState(() => _uploadingImage = false);
     }
+  }
+
+  Widget _buildRegionField() {
+    final auth = Get.find<AuthController>();
+    return GetBuilder<LocaleController>(
+      builder: (localeController) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: MyText(
+                'المنطقة',
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+                textAlign: TextAlign.right,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              child: Obx(
+                () {
+                  // إذا لم يتم اختيار المحافظة
+                  if (_selectedCity == null || _selectedCity!.isEmpty) {
+                    return DropdownButtonFormField<String>(
+                      key: ValueKey(
+                        'region_dropdown_${localeController.selectedLanguage.value}',
+                      ),
+                      value: null,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 16.h,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(
+                            color: AppColors.textLight,
+                            width: 1,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(
+                            color: AppColors.primary,
+                            width: 1,
+                          ),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(color: Colors.red, width: 1),
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(color: Colors.red, width: 1),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(
+                            color: AppColors.textLight,
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      hint: MyText(
+                        'اختر المحافظة أولاً',
+                        fontSize: 14.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                      items: [],
+                      onChanged: null,
+                      validator: (value) => (value == null || value.isEmpty)
+                          ? 'field_required'.tr
+                          : null,
+                    );
+                  }
+
+                  // إذا كان يتم تحميل المناطق
+                  if (auth.loadingDistricts.value) {
+                    return DropdownButtonFormField<String>(
+                      key: ValueKey(
+                        'region_dropdown_${localeController.selectedLanguage.value}',
+                      ),
+                      value: null,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 16.h,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(
+                            color: AppColors.textLight,
+                            width: 1,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(
+                            color: AppColors.primary,
+                            width: 1,
+                          ),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(color: Colors.red, width: 1),
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(color: Colors.red, width: 1),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(
+                            color: AppColors.textLight,
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      hint: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 16.w,
+                            height: 16.w,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          SizedBox(width: 8.w),
+                          MyText(
+                            'جاري التحميل...',
+                            fontSize: 14.sp,
+                            color: AppColors.textSecondary,
+                          ),
+                        ],
+                      ),
+                      items: [],
+                      onChanged: null,
+                      validator: (value) => (value == null || value.isEmpty)
+                          ? 'field_required'.tr
+                          : null,
+                    );
+                  }
+
+                  // القائمة المنسدلة العادية
+                  return DropdownButtonFormField<String>(
+                    key: ValueKey(
+                      'region_dropdown_${localeController.selectedLanguage.value}',
+                    ),
+                    value: auth.selectedRegionId.value,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 16.h,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                        borderSide: BorderSide(
+                          color: AppColors.textLight,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                        borderSide: BorderSide(
+                          color: AppColors.primary,
+                          width: 1,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                        borderSide: BorderSide(color: Colors.red, width: 1),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                        borderSide: BorderSide(color: Colors.red, width: 1),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                        borderSide: BorderSide(
+                          color: AppColors.textLight,
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    hint: MyText(
+                      'اختر المنطقة',
+                      fontSize: 14.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                    icon: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.textSecondary,
+                      size: 24.r,
+                    ),
+                    style: TextStyle(
+                      fontFamily: 'Expo Arabic',
+                      fontSize: 18.sp,
+                      color: AppColors.textPrimary,
+                    ),
+                    items: auth.districts
+                        .map(
+                          (district) => DropdownMenuItem<String>(
+                            value: district['id'],
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: MyText(
+                                district['name'] ?? '',
+                                fontSize: 14.sp,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) {
+                      auth.selectedRegionId.value = v;
+                    },
+                    validator: (value) => (value == null || value.isEmpty)
+                        ? 'field_required'.tr
+                        : null,
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<String?> _uploadAssetImage(String assetPath) async {

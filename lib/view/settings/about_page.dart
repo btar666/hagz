@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../controller/about_controller.dart';
 import '../../utils/app_colors.dart';
@@ -23,11 +22,10 @@ class AboutPage extends StatelessWidget {
           backgroundColor: Colors.transparent,
           elevation: 0,
           automaticallyImplyLeading: false,
-          leadingWidth: 80.w,
-          leading: Padding(
-            padding: EdgeInsets.only(left: 16.w),
-            child: const BackButtonWidget(),
-          ),
+          leadingWidth: 0,
+          actions: [
+            const BackButtonWidget(),
+          ],
           title: MyText(
             'about_app_title'.tr,
             fontSize: 18.sp,
@@ -175,74 +173,6 @@ class AboutPage extends StatelessWidget {
                             ],
                           ),
                         ),
-                        SizedBox(height: 24.h),
-
-                        // Support Section
-                        if (controller.supportLink.value.isNotEmpty)
-                          GestureDetector(
-                            onTap: () =>
-                                _openSupportLink(controller.supportLink.value),
-                            child: Container(
-                              padding: EdgeInsets.all(20.w),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20.r),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.shadow,
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 48.w,
-                                    height: 48.w,
-                                    decoration: BoxDecoration(
-                                      color: const Color(
-                                        0xFF25D366,
-                                      ).withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12.r),
-                                    ),
-                                    child: Icon(
-                                      Icons.help_outline,
-                                      color: const Color(0xFF25D366),
-                                      size: 24.sp,
-                                    ),
-                                  ),
-                                  SizedBox(width: 16.w),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        MyText(
-                                          'الدعم والمساعدة',
-                                          fontSize: 18.sp,
-                                          fontWeight: FontWeight.w900,
-                                          color: AppColors.textPrimary,
-                                        ),
-                                        SizedBox(height: 4.h),
-                                        MyText(
-                                          'تواصل معنا عبر واتساب',
-                                          fontSize: 14.sp,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.arrow_forward_ios,
-                                    color: AppColors.textSecondary,
-                                    size: 20.sp,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
                         SizedBox(height: 32.h),
                       ],
                     ),
@@ -253,26 +183,4 @@ class AboutPage extends StatelessWidget {
     );
   }
 
-  Future<void> _openSupportLink(String url) async {
-    try {
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        Get.snackbar(
-          'خطأ',
-          'لا يمكن فتح رابط الدعم',
-          backgroundColor: Colors.black87,
-          colorText: Colors.white,
-        );
-      }
-    } catch (e) {
-      Get.snackbar(
-        'خطأ',
-        'حدث خطأ أثناء فتح رابط الدعم',
-        backgroundColor: Colors.black87,
-        colorText: Colors.white,
-      );
-    }
-  }
 }

@@ -291,7 +291,7 @@ class SettingsPage extends StatelessWidget {
                 // Handle development team
               },
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 32.h),
 
             // Logout for all roles
             _buildSettingsItem(
@@ -308,7 +308,7 @@ class SettingsPage extends StatelessWidget {
                 );
               },
             ),
-            SizedBox(height: 32.h),
+            SizedBox(height: 16.h),
 
             // Delete account (red color)
             _buildSettingsItem(
@@ -356,7 +356,7 @@ class SettingsPage extends StatelessWidget {
                 color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10.r),
               ),
-              child: Icon(icon, color: color, size: 20.sp),
+              child: Icon(icon, color: color, size: 24.sp),
             ),
             SizedBox(width: 16.w),
 
@@ -443,7 +443,6 @@ class SettingsPage extends StatelessWidget {
                       context: context,
                       languageCode: 'ar',
                       languageName: 'العربية',
-                      flag: '🇸🇦',
                       isSelected: selectedLanguage == 'ar',
                       onTap: () {
                         selectedLanguageNotifier.value = 'ar';
@@ -454,7 +453,6 @@ class SettingsPage extends StatelessWidget {
                       context: context,
                       languageCode: 'en',
                       languageName: 'English',
-                      flag: '🇬🇧',
                       isSelected: selectedLanguage == 'en',
                       onTap: () {
                         selectedLanguageNotifier.value = 'en';
@@ -559,7 +557,6 @@ class SettingsPage extends StatelessWidget {
     required BuildContext context,
     required String languageCode,
     required String languageName,
-    required String flag,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
@@ -587,9 +584,6 @@ class SettingsPage extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Flag emoji
-            Text(flag, style: TextStyle(fontSize: 32.sp)),
-            SizedBox(width: 16.w),
             // Language name
             Expanded(
               child: Text(

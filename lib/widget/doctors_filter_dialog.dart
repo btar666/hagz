@@ -71,31 +71,66 @@ class DoctorsFilterDialog extends StatelessWidget {
               _alphaSelector(controller),
               SizedBox(height: 20.h),
 
-              // Apply button
-              SizedBox(
-                width: double.infinity,
-                height: 64.h,
-                child: ElevatedButton(
-                  onPressed: () => Get.back(
-                    result: {
-                      'region': controller.selectedRegion.value,
-                      'alpha': controller.alphaOrder.value,
-                    },
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(22.r),
+              // Apply and Cancel buttons
+              Row(
+                children: [
+                  // Cancel button
+                  Expanded(
+                    child: SizedBox(
+                      height: 64.h,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          // إلغاء الفلاتر وإغلاق النافذة
+                          controller.clearAll();
+                          Get.back(result: {
+                            'region': '',
+                            'alpha': '',
+                          });
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: AppColors.textSecondary, width: 1.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(22.r),
+                          ),
+                        ),
+                        child: MyText(
+                          'إلغاء',
+                          fontSize: 22.sp,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
                     ),
-                    elevation: 0,
                   ),
-                  child: MyText(
-                    'تصفية',
-                    fontSize: 22.sp,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
+                  SizedBox(width: 12.w),
+                  // Apply button
+                  Expanded(
+                    child: SizedBox(
+                      height: 64.h,
+                      child: ElevatedButton(
+                        onPressed: () => Get.back(
+                          result: {
+                            'region': controller.selectedRegion.value,
+                            'alpha': controller.alphaOrder.value,
+                          },
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(22.r),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: MyText(
+                          'تصفية',
+                          fontSize: 22.sp,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ],
           ),

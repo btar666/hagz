@@ -99,6 +99,8 @@ class DoctorProfileController extends GetxController {
 
   // Ratings summary for doctor profile
   var ratingsCount = 0.obs;
+  // Followers count
+  var followersCount = 0.obs;
 
   // Sample treated cases
   var treatedCases = <Map<String, String>>[].obs;
@@ -738,6 +740,8 @@ class DoctorProfileController extends GetxController {
         instagram.value = social['instagram']?.toString() ?? '';
         whatsapp.value = social['whatsapp']?.toString() ?? '';
         facebook.value = social['facebook']?.toString() ?? '';
+        // Load phone number
+        doctorPhone.value = obj?['phone']?.toString() ?? '';
         // robust image parsing across possible keys
         String parsedImage = '';
         for (final k in [
@@ -781,13 +785,122 @@ class DoctorProfileController extends GetxController {
     }
   }
 
-  /// تحديث عنوان الطبيب
-  Future<Map<String, dynamic>> updateDoctorAddress(String address) async {
+  /// جلب عدد المتابعين للطبيب
+  Future<void> loadFollowersCount(String doctorId) async {
+    if (doctorId.isEmpty) return;
+    try {
+      final res = await _userService.getFollowersCount(doctorId);
+      print('📊 FOLLOWERS COUNT RESPONSE (Manage): $res');
+
+      if (res['ok'] == true && res['data'] != null) {
+        final data = res['data'];
+        int count = 0;
+
+        // Handle different response structures
+        if (data is Map<String, dynamic>) {
+          // Try data.data.followersCount first (based on API response structure)
+          if (data['data'] != null && data['data'] is Map) {
+            final innerData = data['data'] as Map<String, dynamic>;
+            if (innerData['followersCount'] != null) {
+              final countValue = innerData['followersCount'];
+              if (countValue is int) {
+                count = countValue;
+              } else if (countValue is String) {
+                count = int.tryParse(countValue) ?? 0;
+              } else if (countValue is num) {
+                count = countValue.toInt();
+              }
+            } else if (innerData['count'] != null) {
+              final countValue = innerData['count'];
+              if (countValue is int) {
+                count = countValue;
+              } else if (countValue is String) {
+                count = int.tryParse(countValue) ?? 0;
+              } else if (countValue is num) {
+                count = countValue.toInt();
+              }
+            }
+          } else if (data['followersCount'] != null) {
+            final countValue = data['followersCount'];
+            if (countValue is int) {
+              count = countValue;
+            } else if (countValue is String) {
+              count = int.tryParse(countValue) ?? 0;
+            } else if (countValue is num) {
+              count = countValue.toInt();
+            }
+          } else if (data['count'] != null) {
+            final countValue = data['count'];
+            if (countValue is int) {
+              count = countValue;
+            } else if (countValue is String) {
+              count = int.tryParse(countValue) ?? 0;
+            } else if (countValue is num) {
+              count = countValue.toInt();
+            }
+          }
+        } else if (data is int) {
+          count = data;
+        } else if (data is String) {
+          count = int.tryParse(data) ?? 0;
+        } else if (data is num) {
+          count = data.toInt();
+        }
+
+        followersCount.value = count;
+        print('📊 Parsed followers count (Manage): $count');
+      } else {
+        print('⚠️ Followers count response not OK or data is null (Manage)');
+        followersCount.value = 0;
+      }
+    } catch (e) {
+      print('❌ Error loading followers count: $e');
+      followersCount.value = 0;
+    }
+  }
+
+  /// فصل العنوان عن رابط جوجل ماب
+  /// التنسيق: "العنوان|https://maps.google.com/..." أو "العنوان" فقط
+  Map<String, String> parseAddressAndLink(String combinedAddress) {
+    if (combinedAddress.isEmpty) {
+      return {'address': '', 'mapLink': ''};
+    }
+
+    final parts = combinedAddress.split('|');
+    if (parts.length == 2) {
+      return {'address': parts[0].trim(), 'mapLink': parts[1].trim()};
+    }
+
+    // إذا لم يكن هناك رابط، يعتبر كل النص عنوان
+    return {'address': combinedAddress.trim(), 'mapLink': ''};
+  }
+
+  /// دمج العنوان مع رابط جوجل ماب
+  /// التنسيق: "العنوان|https://maps.google.com/..." أو "العنوان" فقط
+  String combineAddressAndLink(String address, String mapLink) {
+    final cleanAddress = address.trim();
+    final cleanLink = mapLink.trim();
+
+    if (cleanLink.isEmpty) {
+      return cleanAddress;
+    }
+
+    return '$cleanAddress|$cleanLink';
+  }
+
+  /// تحديث عنوان الطبيب مع رابط جوجل ماب
+  Future<Map<String, dynamic>> updateDoctorAddress(
+    String address, {
+    String mapLink = '',
+  }) async {
     try {
       final user = _session.currentUser.value;
       if (user == null) {
         return {'ok': false, 'message': 'المستخدم غير مسجل'};
       }
+
+      // دمج العنوان مع رابط جوجل ماب
+      final combinedAddress = combineAddressAndLink(address, mapLink);
 
       final res = await _userService.updateUserInfo(
         name: user.name,
@@ -796,23 +909,26 @@ class DoctorProfileController extends GetxController {
         gender: user.gender,
         age: user.age,
         specializationId: user.specialization,
-        address: address,
+        address: combinedAddress,
       );
 
       if (res['ok'] == true) {
         // تحديث العنوان في القائمة المحلية
         if (addresses.isNotEmpty) {
-          addresses[0]['value'] = address;
+          addresses[0]['value'] = combinedAddress;
           addresses.refresh();
         } else {
-          addresses.add({'value': address, 'isLink': false});
+          addresses.add({'value': combinedAddress, 'isLink': false});
         }
 
         // تحديث المستخدم في الجلسة
-        final updatedUser = user.copyWith(address: address);
+        final updatedUser = user.copyWith(address: combinedAddress);
         _session.currentUser.value = updatedUser;
 
         print('[ADDRESS] Successfully updated address: $address');
+        if (mapLink.isNotEmpty) {
+          print('[ADDRESS] Google Maps link: $mapLink');
+        }
       } else {
         print('[ADDRESS] API returned error: ${res['message']}');
       }

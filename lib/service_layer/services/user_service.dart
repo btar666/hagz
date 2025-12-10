@@ -9,6 +9,22 @@ class UserService {
   final ApiRequest _api = ApiRequest();
   final SessionController _session = Get.find<SessionController>();
 
+  String _mapApiUserTypeToInternal(String? apiUserType) {
+    switch (apiUserType) {
+      case 'User':
+        return 'user';
+      case 'Doctor':
+        return 'doctor';
+      case 'Secretary':
+        return 'secretary';
+      case 'Representative':
+      case 'Delegate':
+        return 'delegate';
+      default:
+        return '';
+    }
+  }
+
   Future<Map<String, dynamic>> getUserInfo() async {
     print('📋 GET USER INFO REQUEST: ${ApiConstants.userInfo}');
     print('📋 Token: ${_session.token.value}');
@@ -26,6 +42,15 @@ class UserService {
         final user = UserModel.fromJson(userJson);
         _session.setCurrentUser(user);
         print('📋 USER MODEL CREATED: ${user.name} - ${user.id}');
+        
+        // Update role based on userType from user data
+        if (user.userType.isNotEmpty) {
+          final internalType = _mapApiUserTypeToInternal(user.userType);
+          if (internalType.isNotEmpty) {
+            _session.setRole(internalType);
+            print('✅ Updated role to: $internalType based on user.userType: ${user.userType}');
+          }
+        }
       } catch (e) {
         print('📋 ERROR PARSING USER: $e');
       }
@@ -185,5 +210,137 @@ class UserService {
     final body = {'image': imageUrl};
     final res = await _api.put(ApiConstants.userInfo, body);
     return res;
+  }
+
+  /// Follow a user
+  /// POST /api/users/{userId}/follow
+  /// Requires authentication
+  Future<Map<String, dynamic>> followUser(String userId) async {
+    print('👥 FOLLOW USER REQUEST: userId=$userId');
+    print('👥 Token: ${_session.token.value}');
+
+    final url = ApiConstants.followUser(userId);
+    final res = await _api.post(url, {});
+
+    print('👥 FOLLOW USER RESPONSE: $res');
+    return res;
+  }
+
+  /// Unfollow a user
+  /// DELETE /api/users/{userId}/follow
+  /// Requires authentication
+  Future<Map<String, dynamic>> unfollowUser(String userId) async {
+    print('👥 UNFOLLOW USER REQUEST: userId=$userId');
+    print('👥 Token: ${_session.token.value}');
+
+    final url = ApiConstants.unfollowUser(userId);
+    final res = await _api.delete(url);
+
+    print('👥 UNFOLLOW USER RESPONSE: $res');
+    return res;
+  }
+
+  /// Get followers count for a user
+  /// GET /api/users/{userId}/followers/count
+  Future<Map<String, dynamic>> getFollowersCount(String userId) async {
+    print('👥 GET FOLLOWERS COUNT REQUEST: userId=$userId');
+
+    final url = ApiConstants.getFollowersCount(userId);
+    final res = await _api.get(url);
+
+    print('👥 GET FOLLOWERS COUNT RESPONSE: $res');
+    return res;
+  }
+
+  /// Get followers list for a user
+  /// GET /api/users/{userId}/followers
+  Future<Map<String, dynamic>> getFollowers(String userId, {int? page, int? limit}) async {
+    print('👥 GET FOLLOWERS REQUEST: userId=$userId, page=$page, limit=$limit');
+
+    final url = ApiConstants.getFollowers(userId, page: page, limit: limit);
+    final res = await _api.get(url);
+
+    print('👥 GET FOLLOWERS RESPONSE: $res');
+    return res;
+  }
+
+  /// Check if current user is following a specific user
+  /// Uses the followers list to check if current user is in the list
+  Future<bool> checkFollowStatus(String targetUserId) async {
+    try {
+      final session = Get.find<SessionController>();
+      final currentUserId = session.currentUser.value?.id;
+      
+      if (currentUserId == null || currentUserId.isEmpty) {
+        return false;
+      }
+
+      // Get first page of followers (limit to 100 to check if current user is following)
+      final res = await getFollowers(targetUserId, page: 1, limit: 100);
+      
+      if (res['ok'] == true && res['data'] != null) {
+        final data = res['data'];
+        List<dynamic> followers = [];
+        
+        // Handle different response structures
+        if (data is Map<String, dynamic>) {
+          // Try data.data.followers first (based on API response structure)
+          if (data['data'] != null && data['data'] is Map) {
+            final innerData = data['data'] as Map<String, dynamic>;
+            if (innerData['followers'] is List) {
+              followers = innerData['followers'] as List<dynamic>;
+            } else if (innerData['data'] is List) {
+              followers = innerData['data'] as List<dynamic>;
+            }
+          } else if (data['followers'] is List) {
+            followers = data['followers'] as List<dynamic>;
+          } else if (data['data'] is List) {
+            followers = data['data'] as List<dynamic>;
+          }
+        } else if (data is List) {
+          followers = data;
+        }
+
+        print('🔍 Checking follow status: currentUserId=$currentUserId, followers count=${followers.length}');
+
+        // Check if current user is in the followers list
+        for (var follower in followers) {
+          if (follower is Map<String, dynamic>) {
+            // Handle structure: {user: {_id: ...}, followedAt: ...}
+            String? followerId;
+            if (follower['user'] != null && follower['user'] is Map) {
+              final user = follower['user'] as Map<String, dynamic>;
+              followerId = user['_id']?.toString() ?? 
+                          user['id']?.toString() ?? 
+                          user['userId']?.toString();
+            } else {
+              // Direct structure: {_id: ...}
+              followerId = follower['_id']?.toString() ?? 
+                          follower['id']?.toString() ?? 
+                          follower['userId']?.toString();
+            }
+            
+            print('🔍 Checking follower: $followerId');
+            if (followerId == currentUserId) {
+              print('✅ Found current user in followers list!');
+              return true;
+            }
+          } else if (follower.toString() == currentUserId) {
+            print('✅ Found current user in followers list (direct match)!');
+            return true;
+          }
+        }
+
+        // If not found in first page, check if there are more pages
+        // For now, we'll assume if not in first 100, then not following
+        // (This could be improved by checking all pages, but it's unlikely someone has >100 followers)
+        return false;
+      }
+      
+      return false;
+    } catch (e) {
+      print('❌ Error checking follow status: $e');
+      return false;
+    }
   }
 }

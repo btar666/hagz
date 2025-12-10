@@ -517,17 +517,6 @@ class HospitalDetailsPage extends StatelessWidget {
 
             SizedBox(height: 15.h),
 
-            // Contact section
-            MyText(
-              'للتواصل :',
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-              textAlign: TextAlign.center,
-            ),
-
-            SizedBox(height: 12.h),
-
             // Address
             Row(
               children: [

@@ -81,6 +81,9 @@ class MainController extends GetxController {
     super.onInit();
     // تهيئة banner controller
     bannerController = Get.put(BannerController());
+    
+    // التأكد من أن الصفحة الرئيسية هي الافتراضية دائماً عند فتح التطبيق
+    currentIndex.value = 0;
   }
 
   void _pulseNavLoading() async {

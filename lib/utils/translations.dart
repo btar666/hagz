@@ -448,6 +448,7 @@ class MyTranslations extends Translations {
 
       // About Page
       'about_app_title': 'حول التطبيق',
+      'please_select_user_type': 'يرجى اختيار نوع المستخدم',
     },
     'en': {
       // Settings
@@ -898,6 +899,7 @@ class MyTranslations extends Translations {
 
       // About Page
       'about_app_title': 'About App',
+      'please_select_user_type': 'Please select user type',
     },
   };
 }

@@ -17,7 +17,11 @@ import 'utils/translations.dart';
 import 'controller/session_controller.dart';
 import 'view/onboarding/onboarding_page.dart';
 import 'view/main_page.dart';
+import 'view/home/doctors/doctor_profile_page.dart';
+import 'bindings/doctor_profile_binding.dart';
 import 'service_layer/services/get_storage_service.dart';
+import 'package:app_links/app_links.dart';
+import 'dart:async';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -58,24 +62,26 @@ class MedicalApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Initialize LocaleController once
-    final localeController = Get.put(
-      LocaleController(),
-      permanent: true,
-    );
+    Get.put(LocaleController(), permanent: true);
 
     return ScreenUtilInit(
       designSize: const Size(393, 852),
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {
-        return GetBuilder<LocaleController>(
-          id: 'locale_builder',
-          builder: (controller) {
-            final locale = controller.selectedLanguage.value == 'en'
-                ? const Locale('en')
-                : const Locale('ar');
-            return GetMaterialApp(
-              key: ValueKey('app_${controller.selectedLanguage.value}'),
+        return Obx(() {
+          final localeController = Get.find<LocaleController>();
+          final locale = localeController.selectedLanguage.value == 'en'
+              ? const Locale('en')
+              : const Locale('ar');
+          // تحديث locale عند تغيير اللغة
+          if (Get.locale != locale) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Get.updateLocale(locale);
+            });
+          }
+          return GetMaterialApp(
+            key: ValueKey('app_${localeController.selectedLanguage.value}'),
             title: 'حجز - التطبيق الطبي',
             debugShowCheckedModeBanner: false,
             theme: ThemeData(
@@ -156,10 +162,29 @@ class MedicalApp extends StatelessWidget {
               Get.put(ChatController());
               // Global bindings for first home entry
               HomeBinding().dependencies();
+
+              // Initialize deep linking handler
+              _initDeepLinking();
             },
-            );
-          },
-        );
+            getPages: [
+              // Add named routes for deep linking
+              GetPage(
+                name: '/doctor/:id',
+                page: () {
+                  final id = Get.parameters['id'] ?? '';
+                  final name = Get.parameters['name'] ?? 'طبيب';
+                  final specialty = Get.parameters['specialty'] ?? '';
+                  return DoctorProfilePage(
+                    doctorId: id,
+                    doctorName: name,
+                    specializationId: specialty,
+                  );
+                },
+                binding: DoctorProfileBinding(),
+              ),
+            ],
+          );
+        });
       },
     );
   }
@@ -172,4 +197,105 @@ Widget _resolveStartPage() {
     return const MainPage();
   }
   return const OnboardingPage();
+}
+
+/// Initialize deep linking handler
+final AppLinks _appLinks = AppLinks();
+StreamSubscription<Uri>? _linkSubscription;
+
+void _initDeepLinking() async {
+  // Handle initial link if app was opened via deep link
+  try {
+    final initialUri = await _appLinks.getInitialLink();
+    if (initialUri != null) {
+      _handleDeepLink(link: initialUri.toString());
+    }
+  } catch (e) {
+    print('Error getting initial link: $e');
+  }
+
+  // Listen for deep links while app is running
+  _linkSubscription = _appLinks.uriLinkStream.listen(
+    (Uri uri) {
+      _handleDeepLink(link: uri.toString());
+    },
+    onError: (err) {
+      print('Error listening to link stream: $err');
+    },
+  );
+}
+
+/// Handle deep link
+void _handleDeepLink({String? link}) {
+  if (link == null || link.isEmpty) {
+    return;
+  }
+
+  print('🔗 Received deep link: $link');
+
+  try {
+    final uri = Uri.parse(link);
+    print(
+      '🔗 Parsed URI: scheme=${uri.scheme}, host=${uri.host}, path=${uri.path}',
+    );
+
+    // Handle both custom scheme and universal links
+    // Support: hagz://doctor/123 and https://hagz.app/doctor/123
+    if (uri.scheme == 'hagz' ||
+        (uri.scheme == 'https' &&
+            (uri.host == 'hagz.app' || uri.host.contains('hagz')))) {
+      // For custom scheme like hagz://doctor/123, pathSegments will be ['doctor', '123']
+      // For universal links like https://hagz.app/doctor/123, pathSegments will be ['doctor', '123']
+      final pathSegments = uri.pathSegments;
+      print('🔗 Path segments: $pathSegments');
+      print('🔗 Full path: ${uri.path}');
+
+      // Handle doctor profile link: hagz://doctor/123 or hagz://doctor/692448ea08542e21784b6f90
+      if (pathSegments.isNotEmpty &&
+          pathSegments[0] == 'doctor' &&
+          pathSegments.length > 1) {
+        final doctorId = pathSegments[1];
+        final doctorName = uri.queryParameters['name'] ?? 'طبيب';
+        final specialty = uri.queryParameters['specialty'] ?? '';
+
+        print('🔗 Opening doctor profile: id=$doctorId, name=$doctorName');
+
+        // Wait a bit for app to be ready, then navigate
+        Future.delayed(const Duration(milliseconds: 500), () {
+          try {
+            if (Get.isRegistered<MainController>()) {
+              Get.toNamed(
+                '/doctor/$doctorId',
+                parameters: {
+                  'id': doctorId,
+                  'name': doctorName,
+                  'specialty': specialty,
+                },
+              );
+            } else {
+              // If controllers not ready, store link and handle after init
+              Future.delayed(const Duration(seconds: 1), () {
+                Get.toNamed(
+                  '/doctor/$doctorId',
+                  parameters: {
+                    'id': doctorId,
+                    'name': doctorName,
+                    'specialty': specialty,
+                  },
+                );
+              });
+            }
+          } catch (e) {
+            print('❌ Error navigating to doctor profile: $e');
+          }
+        });
+      } else {
+        print('⚠️ Invalid deep link format. Expected: hagz://doctor/ID');
+      }
+    } else {
+      print('⚠️ Unknown scheme or host: ${uri.scheme}://${uri.host}');
+    }
+  } catch (e) {
+    print('❌ Error handling deep link: $e');
+  }
 }

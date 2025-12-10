@@ -30,40 +30,24 @@ class _SecretaryAllAppointmentsPageState
   // إضافة المتغيرات الجديدة
   int _selectedYear = DateTime.now().year;
 
-  List<String> get _monthNames {
-    return [
-      'january'.tr,
-      'february'.tr,
-      'march'.tr,
-      'april'.tr,
-      'may'.tr,
-      'june'.tr,
-      'july'.tr,
-      'august'.tr,
-      'september'.tr,
-      'october'.tr,
-      'november'.tr,
-      'december'.tr,
-    ];
+  // دالة للحصول على رقم الشهر كسلسلة
+  String _getMonthNumber(int month) {
+    return month.toString();
   }
 
   @override
   void initState() {
     super.initState();
-    // Initialize expanded months with translated text
-    _expandedMonths.add('this_month'.tr);
+    // Initialize expanded months with current month number
+    final currentMonth = DateTime.now().month;
+    _expandedMonths.add(_getMonthNumber(currentMonth));
   }
 
   @override
   Widget build(BuildContext context) {
     return GetBuilder<LocaleController>(
       builder: (localeController) {
-        // Update expanded months when language changes
-        if (!_expandedMonths.contains('this_month'.tr) &&
-            _expandedMonths.contains('هذا الشهر')) {
-          _expandedMonths.remove('هذا الشهر');
-          _expandedMonths.add('this_month'.tr);
-        }
+        // No need to update expanded months when language changes since we use numbers
 
         return Scaffold(
           backgroundColor: const Color(0xFFF4FEFF),
@@ -82,7 +66,7 @@ class _SecretaryAllAppointmentsPageState
               GestureDetector(
                 onTap: _showYearPicker,
                 child: Container(
-                  margin: EdgeInsets.only(right: 16.w),
+                  margin: EdgeInsets.only(right: 16.w, left: 16.w),
                   padding: EdgeInsets.symmetric(
                     horizontal: 12.w,
                     vertical: 6.h,
@@ -224,15 +208,13 @@ class _SecretaryAllAppointmentsPageState
                   if (_selectedYear == DateTime.now().year) {
                     // إذا كانت السنة الحالية، اعرض من الشهر الحالي إلى 1
                     for (int i = currentMonth; i >= 1; i--) {
-                      final monthKey = i == currentMonth
-                          ? 'this_month'.tr
-                          : _monthNames[i - 1];
+                      final monthKey = _getMonthNumber(i);
                       monthsToShow.add(monthKey);
                     }
                   } else {
                     // إذا كانت سنة أخرى، اعرض جميع الشهور من 12 إلى 1
                     for (int i = 12; i >= 1; i--) {
-                      monthsToShow.add(_monthNames[i - 1]);
+                      monthsToShow.add(_getMonthNumber(i));
                     }
                   }
 
@@ -565,19 +547,7 @@ class _SecretaryAllAppointmentsPageState
   }
 
   String _getMonthKey(DateTime date) {
-    if (date.year != _selectedYear) {
-      return _monthNames[date.month - 1];
-    }
-
-    final now = DateTime.now();
-    final thisMonth = DateTime(now.year, now.month);
-    final appointmentMonth = DateTime(date.year, date.month);
-
-    if (appointmentMonth.isAtSameMomentAs(thisMonth)) {
-      return 'this_month'.tr;
-    } else {
-      return _monthNames[date.month - 1];
-    }
+    return _getMonthNumber(date.month);
   }
 
   String _formatDate(DateTime date) {

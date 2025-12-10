@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
 import 'package:geocoding/geocoding.dart' as geo;
+import 'package:url_launcher/url_launcher.dart';
 import '../utils/app_colors.dart';
 import '../widget/my_text.dart';
 import '../service_layer/services/permission_service.dart';
@@ -122,6 +124,12 @@ class LocationPickerController extends GetxController {
       'longitude': selectedLocation.value.longitude,
       'address': selectedAddress.value,
     };
+  }
+
+  String getGoogleMapsLink() {
+    final lat = selectedLocation.value.latitude;
+    final lng = selectedLocation.value.longitude;
+    return 'https://www.google.com/maps?q=$lat,$lng';
   }
 }
 
@@ -338,6 +346,178 @@ class LocationPickerWidget extends StatelessWidget {
                               maxLines: 3,
                             ),
                           ),
+                  ),
+                  SizedBox(height: 16.h),
+                  // عرض رابط جوجل ماب
+                  Obx(
+                    () {
+                      // قراءة selectedLocation مباشرة لضمان التفاعل
+                      final location = controller.selectedLocation.value;
+                      final lat = location.latitude;
+                      final lng = location.longitude;
+                      final mapLink = 'https://www.google.com/maps?q=$lat,$lng';
+                      
+                      return Container(
+                        padding: EdgeInsets.all(16.w),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(
+                            color: AppColors.primary.withOpacity(0.3),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(8.w),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    borderRadius: BorderRadius.circular(8.r),
+                                  ),
+                                  child: Icon(
+                                    Icons.map,
+                                    color: Colors.white,
+                                    size: 20.sp,
+                                  ),
+                                ),
+                                SizedBox(width: 12.w),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      MyText(
+                                        'رابط جوجل ماب',
+                                        fontSize: 16.sp,
+                                        fontWeight: FontWeight.w900,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                      SizedBox(height: 4.h),
+                                      MyText(
+                                        'تم إنشاء الرابط تلقائياً',
+                                        fontSize: 12.sp,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 12.h),
+                            // عرض الرابط
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(12.w),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8.r),
+                                border: Border.all(color: AppColors.primary),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: MyText(
+                                      mapLink,
+                                      fontSize: 13.sp,
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w600,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 12.h),
+                            // أزرار الإجراءات
+                            Row(
+                              children: [
+                                // زر فتح في جوجل ماب
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () async {
+                                      try {
+                                        final uri = Uri.parse(mapLink);
+                                        final launched = await launchUrl(
+                                          uri,
+                                          mode: LaunchMode.externalApplication,
+                                        );
+                                        if (!launched) {
+                                          await launchUrl(
+                                            uri,
+                                            mode: LaunchMode.platformDefault,
+                                          );
+                                        }
+                                      } catch (e) {
+                                        Get.snackbar(
+                                          'خطأ',
+                                          'لا يمكن فتح رابط جوجل ماب',
+                                          backgroundColor: Colors.red,
+                                          colorText: Colors.white,
+                                        );
+                                      }
+                                    },
+                                    icon: Icon(
+                                      Icons.open_in_new,
+                                      color: Colors.white,
+                                      size: 18.sp,
+                                    ),
+                                    label: MyText(
+                                      'فتح في جوجل ماب',
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8.r),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 8.w),
+                                // زر نسخ
+                                Container(
+                                  width: 50.w,
+                                  height: 50.h,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8.r),
+                                    border: Border.all(color: AppColors.primary),
+                                  ),
+                                  child: IconButton(
+                                    onPressed: () {
+                                      Clipboard.setData(ClipboardData(text: mapLink));
+                                      Get.snackbar(
+                                        'تم النسخ',
+                                        'تم نسخ رابط جوجل ماب',
+                                        backgroundColor: AppColors.primary,
+                                        colorText: Colors.white,
+                                        duration: const Duration(seconds: 2),
+                                        icon: Icon(
+                                          Icons.check_circle,
+                                          color: Colors.white,
+                                        ),
+                                      );
+                                    },
+                                    icon: Icon(
+                                      Icons.copy,
+                                      color: AppColors.primary,
+                                      size: 22.sp,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                   SizedBox(height: 20.h),
                   // Confirm button

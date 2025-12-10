@@ -405,18 +405,10 @@ class _AppointmentConfirmationPageState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     MyText(
-                      'الدفع و وصل الحجز',
+                      'تأكيد الحجز',
                       fontSize: 24.sp,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF374151),
-                      textAlign: TextAlign.right,
-                    ),
-                    SizedBox(height: 6.h),
-                    MyText(
-                      'يتم الدفع باستخدام الفيزا كارت',
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xFF6B7280),
                       textAlign: TextAlign.right,
                     ),
                   ],
@@ -761,7 +753,7 @@ class _AppointmentConfirmationPageState
                         ),
                       )
                     : MyText(
-                        'تأكيد و دفع كلفة الحجز',
+                        'تأكيد الحجز',
                         fontSize: 20.sp,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,

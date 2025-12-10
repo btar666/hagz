@@ -280,7 +280,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           context: context,
                           languageCode: 'ar',
                           languageName: 'arabic_language'.tr,
-                          flag: '🇸🇦',
                           isSelected: selectedLanguage == 'ar',
                           onTap: () {
                             selectedLanguageNotifier.value = 'ar';
@@ -295,7 +294,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           context: context,
                           languageCode: 'en',
                           languageName: 'english_language'.tr,
-                          flag: '🇬🇧',
                           isSelected: selectedLanguage == 'en',
                           onTap: () {
                             selectedLanguageNotifier.value = 'en';
@@ -378,7 +376,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
     required BuildContext context,
     required String languageCode,
     required String languageName,
-    required String flag,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
@@ -406,9 +403,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
         ),
         child: Row(
           children: [
-            // Flag emoji
-            Text(flag, style: TextStyle(fontSize: 32.sp)),
-            SizedBox(width: 16.w),
             // Language name
             Expanded(
               child: Text(

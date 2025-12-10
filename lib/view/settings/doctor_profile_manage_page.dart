@@ -37,6 +37,7 @@ class DoctorProfileManagePage extends StatelessWidget {
     if (userId != null && userId.isNotEmpty) {
       controller.loadDoctorPricing(userId);
       controller.loadRatingsCount(userId);
+      controller.loadFollowersCount(userId);
 
       // Load calendar for current month
       controller.loadDoctorCalendar(doctorId: userId);
@@ -233,6 +234,7 @@ class DoctorProfileManagePage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  // Rating badge
                   Positioned(
                     bottom: 16.h,
                     left: 16.w,
@@ -263,6 +265,40 @@ class DoctorProfileManagePage extends StatelessWidget {
                             size: 16,
                           ),
                         ],
+                      ),
+                    ),
+                  ),
+                  // Followers count badge
+                  Positioned(
+                    bottom: 16.h,
+                    right: 16.w,
+                    child: Obx(
+                      () => Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 6.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(20.r),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            MyText(
+                              '${controller.followersCount.value} متابع',
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                            SizedBox(width: 4.w),
+                            const Icon(
+                              Icons.people,
+                              color: AppColors.primary,
+                              size: 16,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -769,7 +805,6 @@ class DoctorProfileManagePage extends StatelessWidget {
   }
 
   Widget _buildSectionsList() {
-    final List<String> remaining = ['الحوالات المالية'];
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -784,7 +819,6 @@ class DoctorProfileManagePage extends StatelessWidget {
           _pricingManageTile(),
           _availabilityManageTile(),
           _casesManageTile(),
-          for (final title in remaining) _sectionTile(title),
         ],
       ),
     );
@@ -1566,11 +1600,15 @@ class DoctorProfileManagePage extends StatelessWidget {
     DoctorProfileController controller,
     TextEditingController addressCtrl,
   ) {
-    // تحميل العنوان الحالي عند فتح القسم
+    final TextEditingController mapLinkCtrl = TextEditingController();
+
+    // تحميل العنوان والرابط الحاليين عند فتح القسم
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = Get.find<SessionController>().currentUser.value;
       if (user != null && user.address.isNotEmpty) {
-        addressCtrl.text = user.address;
+        final parsed = controller.parseAddressAndLink(user.address);
+        addressCtrl.text = parsed['address'] ?? '';
+        mapLinkCtrl.text = parsed['mapLink'] ?? '';
       }
     });
 
@@ -1615,6 +1653,45 @@ class DoctorProfileManagePage extends StatelessWidget {
           ),
         ),
         SizedBox(height: 16.h),
+        // رابط جوجل ماب
+        MyText(
+          'رابط جوجل ماب (اختياري)',
+          fontSize: 16.sp,
+          fontWeight: FontWeight.w800,
+          color: AppColors.textPrimary,
+          textAlign: TextAlign.right,
+        ),
+        SizedBox(height: 8.h),
+        Container(
+          height: 60.h,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: AppColors.divider, width: 1),
+          ),
+          child: TextField(
+            controller: mapLinkCtrl,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+            ),
+            decoration: InputDecoration(
+              hintText: 'https://maps.google.com/...',
+              hintStyle: TextStyle(
+                fontSize: 16.sp,
+                color: AppColors.textSecondary,
+              ),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16.w,
+                vertical: 16.h,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(height: 16.h),
         SizedBox(
           height: 50.h,
           child: ElevatedButton(
@@ -1628,6 +1705,7 @@ class DoctorProfileManagePage extends StatelessWidget {
 
               final result = await controller.updateDoctorAddress(
                 addressCtrl.text.trim(),
+                mapLink: mapLinkCtrl.text.trim(),
               );
 
               LoadingDialog.hide();
@@ -2682,30 +2760,6 @@ class DoctorProfileManagePage extends StatelessWidget {
                 ),
               );
             }),
-        ],
-      ),
-    );
-  }
-
-  Widget _sectionTile(String title) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.divider)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: MyText(
-              title,
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-              textAlign: TextAlign.right,
-            ),
-          ),
-          SizedBox(width: 8.w),
-          const Icon(Icons.expand_more, color: AppColors.textSecondary),
         ],
       ),
     );

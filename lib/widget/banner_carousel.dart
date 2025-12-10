@@ -93,7 +93,7 @@ class _BannerCarouselState extends State<BannerCarousel>
     BuildContext context,
   ) {
     return SizedBox(
-      height: 180.h, // الارتفاع الأصلي
+      height: 160.h, // تعديل الارتفاع إلى 160.h
       width: double.infinity,
       child: Stack(
         children: [
@@ -126,7 +126,7 @@ class _BannerCarouselState extends State<BannerCarousel>
           // النقاط داخل الصورة
           if (bannerController.activeBanners.length > 1)
             Positioned(
-              bottom: 20.h,
+              bottom: 12.h, // تقليل من 20.h إلى 12.h
               left: 0,
               right: 0,
               child: Center(child: _buildIndicators(bannerController)),
@@ -255,7 +255,7 @@ class _BannerCarouselState extends State<BannerCarousel>
   Widget _buildLoadingSkeleton(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 180.h, // نفس الارتفاع الأصلي
+      height: 160.h, // تعديل الارتفاع إلى 160.h
       margin: EdgeInsets.zero,
       decoration: BoxDecoration(
         color: Colors.grey[300],

@@ -34,7 +34,7 @@ class BottomNavigationWidget extends StatelessWidget {
                 Expanded(
                   child: _buildNavItem(
                     assetIconPath: 'assets/icons/home/Home Icon.png',
-                    label: 'الرئيسية',
+                    label: 'home'.tr,
                     index: 0,
                     isSelected: controller.currentIndex.value == 0,
                     onTap: () => controller.changeTab(0),
@@ -48,10 +48,10 @@ class BottomNavigationWidget extends StatelessWidget {
                         ? 'assets/icons/home/person_icon.png'
                         : 'assets/icons/home/Category Icon.png',
                     label: session.role.value == 'secretary'
-                        ? 'جميع المواعيد'
+                        ? 'all_appointments'.tr
                         : session.role.value == 'delegate'
-                        ? 'جميع الزيارات'
-                        : 'الاختصاصات',
+                        ? 'all_visits'.tr
+                        : 'specialties'.tr,
                     index: 1,
                     isSelected: controller.currentIndex.value == 1,
                     onTap: () => controller.changeTab(1),
@@ -62,7 +62,7 @@ class BottomNavigationWidget extends StatelessWidget {
                     child: _buildNavItem(
                       assetIconPath:
                           'assets/icons/home/statistics_page_icon.png',
-                      label: 'الاحصائيات',
+                      label: 'statistics'.tr,
                       index: 2,
                       isSelected: controller.currentIndex.value == 2,
                       onTap: () => controller.changeTab(2),
@@ -72,7 +72,7 @@ class BottomNavigationWidget extends StatelessWidget {
                   Expanded(
                     child: _buildNavItem(
                       assetIconPath: 'assets/icons/home/Message_Icon_2.png',
-                      label: 'المحادثات',
+                      label: 'chats'.tr,
                       index: 2,
                       isSelected: controller.currentIndex.value == 2,
                       onTap: () => controller.changeTab(2),
@@ -83,7 +83,7 @@ class BottomNavigationWidget extends StatelessWidget {
                     child: _buildNavItem(
                       assetIconPath:
                           'assets/icons/home/statistics_page_icon.png',
-                      label: 'الاحصائيات',
+                      label: 'statistics'.tr,
                       index: 2,
                       isSelected: controller.currentIndex.value == 2,
                       onTap: () => controller.changeTab(2),
@@ -92,7 +92,7 @@ class BottomNavigationWidget extends StatelessWidget {
                 Expanded(
                   child: _buildNavItem(
                     assetIconPath: 'assets/icons/home/Setting Icon.png',
-                    label: 'الإعدادات',
+                    label: 'settings'.tr,
                     index: session.role.value == 'doctor'
                         ? 3
                         : session.role.value == 'secretary'
@@ -150,11 +150,23 @@ class BottomNavigationWidget extends StatelessWidget {
               child: assetIconPath != null
                   ? Image.asset(
                       assetIconPath,
-                      width: 34,
-                      height: 34,
+                      width: 28,
+                      height: 28,
                       fit: BoxFit.contain,
                     )
-                  : Icon(icon, color: AppColors.bottomNavUnselected, size: 34),
+                  : Icon(icon, color: AppColors.bottomNavUnselected, size: 28),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

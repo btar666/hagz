@@ -12,13 +12,15 @@ import '../../../widget/status_dialog.dart';
 import '../../appointments/patient_registration_page.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/services.dart';
 import '../../chat/chat_details_page.dart';
 import '../../../bindings/chats_binding.dart';
 import '../../../utils/constants.dart';
 import '../../../widget/specialization_text.dart';
 import '../../../widget/back_button_widget.dart';
+import '../../../service_layer/services/user_service.dart';
 
-class DoctorProfilePage extends StatelessWidget {
+class DoctorProfilePage extends StatefulWidget {
   final String doctorId;
   final String doctorName;
   final String specializationId;
@@ -31,31 +33,197 @@ class DoctorProfilePage extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final controller = Get.put(DoctorProfileController());
-    // final session = Get.find<SessionController>();
+  State<DoctorProfilePage> createState() => _DoctorProfilePageState();
+}
 
+class _DoctorProfilePageState extends State<DoctorProfilePage> {
+  final RxBool isFollowing = false.obs;
+  final RxInt followersCount = 0.obs;
+  final RxBool isLoadingFollow = false.obs;
+  final UserService _userService = UserService();
+
+  @override
+  void initState() {
+    super.initState();
+    final controller = Get.put(DoctorProfileController());
     // Load opinions and read-only CV for this doctor
-    controller.loadOpinionsForTarget(doctorId);
-    controller.loadCvForUserId(doctorId);
-    controller.loadDoctorPricing(doctorId);
-    controller.loadDoctorSocial(doctorId);
-    controller.loadRatingsCount(doctorId);
+    controller.loadOpinionsForTarget(widget.doctorId);
+    controller.loadCvForUserId(widget.doctorId);
+    controller.loadDoctorPricing(widget.doctorId);
+    controller.loadDoctorSocial(widget.doctorId);
+    controller.loadRatingsCount(widget.doctorId);
+
+    // Load followers count and check follow status
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadFollowersCount();
+      _checkFollowStatus();
+    });
 
     // Load calendar for this doctor
     // Check if we need to load (different doctor or first time)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (controller.currentDoctorIdForCalendar.value != doctorId) {
-        print('📅 Loading calendar for doctor: $doctorId (${doctorName})');
+      if (controller.currentDoctorIdForCalendar.value != widget.doctorId) {
+        print(
+          '📅 Loading calendar for doctor: ${widget.doctorId} (${widget.doctorName})',
+        );
         // Reset calendar data for new doctor
         controller.dayStatuses.clear();
         controller.selectedMonth.value = DateTime.now();
         // Load calendar for this doctor
-        controller.loadDoctorCalendar(doctorId: doctorId);
+        controller.loadDoctorCalendar(doctorId: widget.doctorId);
       } else {
-        print('📅 Calendar already loaded for doctor: $doctorId');
+        print('📅 Calendar already loaded for doctor: ${widget.doctorId}');
       }
     });
+  }
+
+  Future<void> _loadFollowersCount() async {
+    try {
+      final res = await _userService.getFollowersCount(widget.doctorId);
+      print('📊 FOLLOWERS COUNT RESPONSE: $res');
+
+      if (res['ok'] == true && res['data'] != null) {
+        final data = res['data'];
+        int count = 0;
+
+        // Handle different response structures
+        if (data is Map<String, dynamic>) {
+          // Try data.data.followersCount first (based on API response structure)
+          if (data['data'] != null && data['data'] is Map) {
+            final innerData = data['data'] as Map<String, dynamic>;
+            if (innerData['followersCount'] != null) {
+              final countValue = innerData['followersCount'];
+              if (countValue is int) {
+                count = countValue;
+              } else if (countValue is String) {
+                count = int.tryParse(countValue) ?? 0;
+              } else if (countValue is num) {
+                count = countValue.toInt();
+              }
+            } else if (innerData['count'] != null) {
+              final countValue = innerData['count'];
+              if (countValue is int) {
+                count = countValue;
+              } else if (countValue is String) {
+                count = int.tryParse(countValue) ?? 0;
+              } else if (countValue is num) {
+                count = countValue.toInt();
+              }
+            }
+          } else if (data['followersCount'] != null) {
+            final countValue = data['followersCount'];
+            if (countValue is int) {
+              count = countValue;
+            } else if (countValue is String) {
+              count = int.tryParse(countValue) ?? 0;
+            } else if (countValue is num) {
+              count = countValue.toInt();
+            }
+          } else if (data['count'] != null) {
+            final countValue = data['count'];
+            if (countValue is int) {
+              count = countValue;
+            } else if (countValue is String) {
+              count = int.tryParse(countValue) ?? 0;
+            } else if (countValue is num) {
+              count = countValue.toInt();
+            }
+          }
+        } else if (data is int) {
+          count = data;
+        } else if (data is String) {
+          count = int.tryParse(data) ?? 0;
+        } else if (data is num) {
+          count = data.toInt();
+        }
+
+        followersCount.value = count;
+        print('📊 Parsed followers count: $count');
+      } else {
+        print('⚠️ Followers count response not OK or data is null');
+        followersCount.value = 0;
+      }
+    } catch (e) {
+      print('❌ Error loading followers count: $e');
+      followersCount.value = 0;
+    }
+  }
+
+  Future<void> _checkFollowStatus() async {
+    final session = Get.find<SessionController>();
+    final currentUserId = session.currentUser.value?.id;
+    if (currentUserId == null || currentUserId.isEmpty) {
+      isFollowing.value = false;
+      return;
+    }
+
+    try {
+      final isFollowingStatus = await _userService.checkFollowStatus(
+        widget.doctorId,
+      );
+      isFollowing.value = isFollowingStatus;
+      print('✅ Follow status checked: $isFollowingStatus');
+    } catch (e) {
+      print('❌ Error checking follow status: $e');
+      isFollowing.value = false;
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    final session = Get.find<SessionController>();
+    if (!session.isAuthenticated) {
+      Get.snackbar(
+        'غير مسجل دخول',
+        'يرجى تسجيل الدخول أولاً',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    isLoadingFollow.value = true;
+    try {
+      Map<String, dynamic> res;
+      if (isFollowing.value) {
+        res = await _userService.unfollowUser(widget.doctorId);
+      } else {
+        res = await _userService.followUser(widget.doctorId);
+      }
+
+      if (res['ok'] == true) {
+        isFollowing.value = !isFollowing.value;
+        // Update followers count
+        await _loadFollowersCount();
+        Get.snackbar(
+          isFollowing.value ? 'تمت المتابعة' : 'تم إلغاء المتابعة',
+          '',
+          backgroundColor: AppColors.primary,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 2),
+        );
+      } else {
+        Get.snackbar(
+          'خطأ',
+          res['data']?['message']?.toString() ?? 'حدث خطأ',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'خطأ',
+        'حدث خطأ غير متوقع: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      isLoadingFollow.value = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<DoctorProfileController>();
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -100,7 +268,7 @@ class DoctorProfilePage extends StatelessWidget {
 
   PreferredSizeWidget _buildAppBar() {
     final session = Get.find<SessionController>();
-    final isOwnProfile = session.currentUser.value?.id == doctorId;
+    final isOwnProfile = session.currentUser.value?.id == widget.doctorId;
 
     return AppBar(
       backgroundColor: Colors.transparent,
@@ -115,8 +283,8 @@ class DoctorProfilePage extends StatelessWidget {
                 child: GestureDetector(
                   onTap: () => Get.to(
                     () => ChatDetailsPage(
-                      title: doctorName,
-                      receiverId: doctorId,
+                      title: widget.doctorName,
+                      receiverId: widget.doctorId,
                     ),
                     binding: ChatsBinding(),
                   ),
@@ -190,7 +358,7 @@ class DoctorProfilePage extends StatelessWidget {
                 final img = controller.doctorImageUrl.value.trim();
                 final loading = controller.isLoadingSocial.value;
                 return Hero(
-                  tag: 'doctor-image-$doctorId',
+                  tag: 'doctor-image-${widget.doctorId}',
                   child: loading
                       ? Skeletonizer(
                           enabled: true,
@@ -252,6 +420,40 @@ class DoctorProfilePage extends StatelessWidget {
                   ),
                 ),
               ),
+              // Followers count badge
+              Positioned(
+                bottom: 16.h,
+                right: 16.w,
+                child: Obx(
+                  () => Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 6.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        MyText(
+                          '${followersCount.value} متابع',
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                        SizedBox(width: 4.w),
+                        const Icon(
+                          Icons.people,
+                          color: AppColors.primary,
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -260,15 +462,21 @@ class DoctorProfilePage extends StatelessWidget {
   }
 
   Widget _buildDoctorInfo() {
+    final session = Get.find<SessionController>();
+    final currentUser = session.currentUser.value;
+    final isOwnProfile = currentUser?.id == widget.doctorId;
+    // يظهر زر المتابعة لأي مستخدم (User أو Doctor) طالما أنه ليس هو نفسه الطبيب المعروض
+    final showFollowButton = !isOwnProfile && session.isAuthenticated;
+
     return Column(
       children: [
         // Name (centered)
         Center(
           child: Hero(
-            tag: 'doctor-name-$doctorId',
+            tag: 'doctor-name-${widget.doctorId}',
             flightShuttleBuilder: (ctx, anim, dir, from, to) => to.widget,
             child: MyText(
-              doctorName,
+              widget.doctorName,
               fontSize: 24.sp,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
@@ -278,12 +486,64 @@ class DoctorProfilePage extends StatelessWidget {
         ),
         SizedBox(height: 8.h),
         SpecializationText(
-          specializationId: specializationId,
+          specializationId: widget.specializationId,
           fontSize: 16.sp,
           fontWeight: FontWeight.w400,
           color: AppColors.textSecondary,
           textAlign: TextAlign.center,
         ),
+        // Follow/Unfollow button
+        if (showFollowButton) ...[
+          SizedBox(height: 16.h),
+          Obx(
+            () => GestureDetector(
+              onTap: isLoadingFollow.value ? null : _toggleFollow,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                decoration: BoxDecoration(
+                  color: isFollowing.value
+                      ? Colors.grey[300]
+                      : AppColors.primary,
+                  borderRadius: BorderRadius.circular(25.r),
+                ),
+                child: isLoadingFollow.value
+                    ? SizedBox(
+                        width: 20.w,
+                        height: 20.h,
+                        child: const CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isFollowing.value
+                                ? Icons.person_remove
+                                : Icons.person_add,
+                            color: isFollowing.value
+                                ? Colors.black87
+                                : Colors.white,
+                            size: 20,
+                          ),
+                          SizedBox(width: 8.w),
+                          MyText(
+                            isFollowing.value ? 'إلغاء متابعة' : 'متابعة',
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w600,
+                            color: isFollowing.value
+                                ? Colors.black87
+                                : Colors.white,
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -291,10 +551,19 @@ class DoctorProfilePage extends StatelessWidget {
   Widget _buildSocialMediaIcons() {
     final controller = Get.find<DoctorProfileController>();
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 60.w),
+      padding: EdgeInsets.symmetric(horizontal: 40.w),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
+          Obx(() {
+            final phone = controller.doctorPhone.value;
+            return _buildSocialIconImage(
+              'assets/icons/home/phone.png',
+              const Color.fromARGB(255, 182, 113, 103),
+              onTap: phone.trim().isEmpty ? null : () => _openPhone(phone),
+              fallbackIcon: Icons.phone,
+            );
+          }),
           Obx(() {
             final ig = controller.instagram.value;
             return _buildSocialIconImage(
@@ -319,6 +588,12 @@ class DoctorProfilePage extends StatelessWidget {
               onTap: fb.trim().isEmpty ? null : () => _openUrlIfAny(fb),
             );
           }),
+          _buildSocialIconImage(
+            'assets/icons/home/link.png',
+            const Color(0xFF6366F1),
+            onTap: () => _copyProfileLink(),
+            fallbackIcon: Icons.link,
+          ),
         ],
       ),
     );
@@ -340,6 +615,7 @@ class DoctorProfilePage extends StatelessWidget {
     String imagePath,
     Color color, {
     VoidCallback? onTap,
+    IconData? fallbackIcon,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -366,7 +642,11 @@ class DoctorProfilePage extends StatelessWidget {
               } else if (imagePath.contains('facebook')) {
                 return Icon(Icons.facebook, color: color, size: 28);
               } else if (imagePath.contains('phone')) {
-                return Icon(Icons.phone, color: color, size: 28);
+                return Icon(
+                  fallbackIcon ?? Icons.phone,
+                  color: color,
+                  size: 28,
+                );
               } else if (imagePath.contains('link')) {
                 return Icon(Icons.link, color: color, size: 28);
               }
@@ -446,17 +726,17 @@ class DoctorProfilePage extends StatelessWidget {
               onToggle: controller.toggleAvailabilityExpansion,
               content: _buildAvailabilityContent(controller),
               isFirst: false,
-              isLast: false,
-            ),
-            const Divider(height: 1, thickness: 1),
-            _buildExpandableSection(
-              title: 'طلب سيارة أجرة',
-              isExpanded: false.obs,
-              onToggle: () {},
-              content: _buildInsuranceContent(controller),
-              isFirst: false,
               isLast: true,
             ),
+            // const Divider(height: 1, thickness: 1),
+            // _buildExpandableSection(
+            //   title: 'طلب سيارة أجرة',
+            //   isExpanded: false.obs,
+            //   onToggle: () {},
+            //   content: _buildInsuranceContent(controller),
+            //   isFirst: false,
+            //   isLast: true,
+            // ),
           ],
         ),
       ),
@@ -577,41 +857,44 @@ class DoctorProfilePage extends StatelessWidget {
                 ),
               );
             }
-            return Directionality(
-              textDirection: TextDirection.rtl,
-              child: SizedBox(
-                height: 120.h,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  physics: images.length > 2
-                      ? const BouncingScrollPhysics()
-                      : const NeverScrollableScrollPhysics(),
-                  itemBuilder: (_, i) {
-                    final url = images[i];
-                    return GestureDetector(
-                      onTap: () => _openImage(url),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12.r),
-                        child: Image(
-                          image: _imageProvider(url),
-                          height: 120.h,
-                          width: 160.w,
-                          fit: BoxFit.cover,
-                          errorBuilder: (c, e, s) => Container(
-                            height: 120.h,
-                            width: 160.w,
-                            color: Colors.grey[200],
-                            child: const Icon(
-                              Icons.broken_image,
-                              color: Colors.grey,
+            return Center(
+              child: Directionality(
+                textDirection: TextDirection.rtl,
+                child: SizedBox(
+                  height: 180.h,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    shrinkWrap: true,
+                    physics: images.length > 2
+                        ? const BouncingScrollPhysics()
+                        : const NeverScrollableScrollPhysics(),
+                    itemBuilder: (_, i) {
+                      final url = images[i];
+                      return GestureDetector(
+                        onTap: () => _openImage(url),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12.r),
+                          child: Image(
+                            image: _imageProvider(url),
+                            height: 180.h,
+                            width: 240.w,
+                            fit: BoxFit.cover,
+                            errorBuilder: (c, e, s) => Container(
+                              height: 180.h,
+                              width: 240.w,
+                              color: Colors.grey[200],
+                              child: const Icon(
+                                Icons.broken_image,
+                                color: Colors.grey,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                  separatorBuilder: (_, __) => SizedBox(width: 10.w),
-                  itemCount: images.length,
+                      );
+                    },
+                    separatorBuilder: (_, __) => SizedBox(width: 10.w),
+                    itemCount: images.length,
+                  ),
                 ),
               ),
             );
@@ -626,26 +909,92 @@ class DoctorProfilePage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(Icons.location_on, color: AppColors.primary, size: 20.r),
-            SizedBox(width: 8.w),
-            Expanded(
-              child: Obx(() {
-                final session = Get.find<SessionController>();
-                final user = session.currentUser.value;
-                final address = user?.address ?? controller.doctorAddress.value;
+        Obx(() {
+          final session = Get.find<SessionController>();
+          final user = session.currentUser.value;
+          final combinedAddress =
+              user?.address ?? controller.doctorAddress.value;
 
-                return MyText(
-                  address.isNotEmpty ? address : 'العنوان غير محدد',
-                  fontSize: 14.sp,
-                  color: AppColors.textSecondary,
-                  textAlign: TextAlign.right,
-                );
-              }),
-            ),
-          ],
-        ),
+          // فصل العنوان عن رابط جوجل ماب
+          final parsed = controller.parseAddressAndLink(combinedAddress);
+          final addressText = parsed['address'] ?? '';
+          final mapLink = parsed['mapLink'] ?? '';
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // عرض العنوان المكتوب
+              Row(
+                children: [
+                  Icon(Icons.location_on, color: AppColors.primary, size: 20.r),
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: MyText(
+                      addressText.isNotEmpty ? addressText : 'العنوان غير محدد',
+                      fontSize: 14.sp,
+                      color: AppColors.textSecondary,
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                ],
+              ),
+              // عرض رابط جوجل ماب إذا كان موجوداً
+              if (mapLink.isNotEmpty) ...[
+                SizedBox(height: 12.h),
+                GestureDetector(
+                  onTap: () async {
+                    try {
+                      final uri = Uri.parse(mapLink);
+                      final launched = await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
+
+                      if (!launched) {
+                        // محاولة فتح الرابط بطريقة أخرى
+                        try {
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.platformDefault,
+                          );
+                        } catch (_) {
+                          Get.snackbar(
+                            'خطأ',
+                            'لا يمكن فتح رابط جوجل ماب',
+                            backgroundColor: Colors.red,
+                            colorText: Colors.white,
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      Get.snackbar(
+                        'خطأ',
+                        'رابط جوجل ماب غير صحيح: $e',
+                        backgroundColor: Colors.red,
+                        colorText: Colors.white,
+                      );
+                    }
+                  },
+                  child: Row(
+                    children: [
+                      Icon(Icons.map, color: AppColors.primary, size: 18.r),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: MyText(
+                          'عرض على الخريطة',
+                          fontSize: 14.sp,
+                          color: AppColors.primary,
+                          textAlign: TextAlign.right,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          );
+        }),
       ],
     );
   }
@@ -826,7 +1175,7 @@ class DoctorProfilePage extends StatelessWidget {
                           final service = OpinionService();
                           final res = await service.addOpinion(
                             userId: userId,
-                            targetId: doctorId,
+                            targetId: widget.doctorId,
                             targetModel: 'User',
                             comment: text,
                           );
@@ -994,7 +1343,7 @@ class DoctorProfilePage extends StatelessWidget {
     // جلب الحالات عند عرض هذا القسم
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!controller.isLoadingCases.value && controller.apiCases.isEmpty) {
-        controller.loadDoctorCases(doctorId);
+        controller.loadDoctorCases(widget.doctorId);
       }
     });
 
@@ -1232,14 +1581,6 @@ class DoctorProfilePage extends StatelessWidget {
   }
 
   Widget _buildAvailabilityContent(DoctorProfileController controller) {
-    final DateTime month = controller.selectedMonth.value;
-    final int year = month.year;
-    final int m = month.month;
-    final DateTime firstDay = DateTime(year, m, 1);
-    final int startIndex = firstDay.weekday % 7; // 0 => Sunday
-    final int daysInMonth = DateTime(year, m + 1, 0).day;
-    final int total = ((startIndex + daysInMonth + 6) ~/ 7) * 7;
-
     final weekNames = [
       'أحد',
       'اثنين',
@@ -1272,8 +1613,16 @@ class DoctorProfilePage extends StatelessWidget {
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
 
-    return Obx(
-      () => controller.isLoadingCalendar.value
+    return Obx(() {
+      final DateTime month = controller.selectedMonth.value;
+      final int year = month.year;
+      final int m = month.month;
+      final DateTime firstDay = DateTime(year, m, 1);
+      final int startIndex = firstDay.weekday % 7; // 0 => Sunday
+      final int daysInMonth = DateTime(year, m + 1, 0).day;
+      final int total = ((startIndex + daysInMonth + 6) ~/ 7) * 7;
+
+      return controller.isLoadingCalendar.value
           ? Skeletonizer(
               enabled: true,
               child: Column(
@@ -1292,58 +1641,42 @@ class DoctorProfilePage extends StatelessWidget {
               children: [
                 // Month header
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Row(
-                      children: [
-                        InkWell(
-                          onTap: controller.prevMonth,
-                          child: const Icon(
-                            Icons.chevron_right,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        SizedBox(width: 4.w),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 10.w,
-                            vertical: 6.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12.r),
-                            border: Border.all(color: AppColors.divider),
-                          ),
-                          child: Row(
-                            children: [
-                              MyText(
-                                '$year, $m',
-                                fontSize: 16.sp,
-                                color: AppColors.textPrimary,
-                              ),
-                              const Icon(
-                                Icons.expand_more,
-                                color: AppColors.textSecondary,
-                                size: 18,
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(width: 4.w),
-                        InkWell(
-                          onTap: controller.nextMonth,
-                          child: const Icon(
-                            Icons.chevron_left,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
+                    InkWell(
+                      onTap: controller.nextMonth,
+                      child: Icon(
+                        Icons.chevron_left,
+                        color: AppColors.textSecondary,
+                        size: 32.sp,
+                      ),
                     ),
-                    MyText(
-                      'هذا الشهر',
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.textPrimary,
+                    SizedBox(width: 12.w),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 8.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(color: AppColors.divider),
+                      ),
+                      child: MyText(
+                        '$year / $m',
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    InkWell(
+                      onTap: controller.prevMonth,
+                      child: Icon(
+                        Icons.chevron_right,
+                        color: AppColors.textSecondary,
+                        size: 32.sp,
+                      ),
                     ),
                   ],
                 ),
@@ -1366,49 +1699,61 @@ class DoctorProfilePage extends StatelessWidget {
                 ),
                 SizedBox(height: 10.h),
                 // Calendar grid
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 7,
-                    crossAxisSpacing: 12.w,
-                    mainAxisSpacing: 12.h,
-                    childAspectRatio: 1.0,
-                  ),
-                  itemCount: total,
-                  itemBuilder: (_, i) {
-                    if (i < startIndex || i >= startIndex + daysInMonth) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14.r),
-                          border: Border.all(
-                            color: AppColors.divider,
-                            width: 1,
-                            style: BorderStyle.solid,
-                          ),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final cellSize = (constraints.maxWidth - (6 * 12.w)) / 7;
+                    final rows = (total / 7).ceil();
+                    final gridHeight = (rows * cellSize) + ((rows - 1) * 12.h);
+
+                    return SizedBox(
+                      height: gridHeight,
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 7,
+                          crossAxisSpacing: 12.w,
+                          mainAxisSpacing: 12.h,
+                          childAspectRatio: 1.0,
                         ),
-                      );
-                    }
-                    final day = i - startIndex + 1;
-                    // Use Obx for each day to track individual status changes
-                    return Obx(() {
-                      final status = controller.dayStatuses[day] ?? 'open';
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: bgForStatus(status),
-                          borderRadius: BorderRadius.circular(14.r),
-                        ),
-                        child: Center(
-                          child: MyText(
-                            '$day',
-                            fontSize: 20.sp,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      );
-                    });
+                        itemCount: total,
+                        itemBuilder: (_, i) {
+                          if (i < startIndex || i >= startIndex + daysInMonth) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(14.r),
+                                border: Border.all(
+                                  color: AppColors.divider,
+                                  width: 1,
+                                  style: BorderStyle.solid,
+                                ),
+                              ),
+                            );
+                          }
+                          final day = i - startIndex + 1;
+                          // Use Obx for each day to track individual status changes
+                          return Obx(() {
+                            final status =
+                                controller.dayStatuses[day] ?? 'open';
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: bgForStatus(status),
+                                borderRadius: BorderRadius.circular(14.r),
+                              ),
+                              child: Center(
+                                child: MyText(
+                                  '$day',
+                                  fontSize: 20.sp,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            );
+                          });
+                        },
+                      ),
+                    );
                   },
                 ),
                 SizedBox(height: 16.h),
@@ -1470,8 +1815,8 @@ class DoctorProfilePage extends StatelessWidget {
                   ],
                 ),
               ],
-            ),
-    );
+            );
+    });
   }
 
   Widget _buildInsuranceContent(DoctorProfileController controller) {
@@ -1578,9 +1923,9 @@ class DoctorProfilePage extends StatelessWidget {
         onTap: () {
           Get.to(
             () => PatientRegistrationPage(
-              doctorId: doctorId,
-              doctorName: doctorName,
-              doctorSpecialty: specializationId,
+              doctorId: widget.doctorId,
+              doctorName: widget.doctorName,
+              doctorSpecialty: widget.specializationId,
             ),
           );
         },
@@ -1608,6 +1953,49 @@ class DoctorProfilePage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _openPhone(String phoneNumber) async {
+    final phone = phoneNumber.trim().replaceAll(RegExp(r'[^0-9+]'), '');
+    if (phone.isEmpty) {
+      Get.snackbar(
+        'لا يوجد رقم هاتف',
+        'لم يتم ضبط رقم الهاتف',
+        backgroundColor: Colors.black87,
+        colorText: Colors.white,
+      );
+      return;
+    }
+    final url = 'tel:$phone';
+    await _launchExternal(url);
+  }
+
+  Future<void> _copyProfileLink() async {
+    // استخدام رابط ويب (https) مثل Facebook
+    // هذا الرابط سيظهر كرابط ويب عادي لكنه سيفتح التطبيق مباشرة
+    // عند إعداد Universal Links على السيرفر (ملفات assetlinks.json و apple-app-site-association)
+    // الرابط: https://hagz.app/doctor/{doctorId}
+    final link = 'https://hagz.app/doctor/${widget.doctorId}';
+
+    try {
+      await Clipboard.setData(ClipboardData(text: link));
+      Get.snackbar(
+        'تم النسخ',
+        'تم نسخ رابط الملف الشخصي\nسيتم فتح التطبيق مباشرة عند الضغط على الرابط',
+        backgroundColor: AppColors.primary,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'خطأ',
+        'تعذر نسخ الرابط',
+        backgroundColor: const Color(0xFFFF3B30),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+      );
+    }
   }
 
   Future<void> _openWhatsapp(String input) async {
