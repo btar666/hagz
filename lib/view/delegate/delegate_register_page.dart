@@ -286,11 +286,220 @@ class DelegateRegisterPage extends StatelessWidget {
               ),
             ),
             SizedBox(height: 8.h),
-            _roundedField(
-              controller: c.regionCtrl,
-              hint: 'أدخل المنطقة',
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'field_required'.tr : null,
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              child: Obx(
+                () {
+                  // إذا لم يتم اختيار المحافظة
+                  if (c.selectedCity.value == null || c.selectedCity.value!.isEmpty) {
+                    return DropdownButtonFormField<String>(
+                      key: ValueKey(
+                        'region_dropdown_${localeController.selectedLanguage.value}',
+                      ),
+                      value: null,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 16.h,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(
+                            color: AppColors.textLight,
+                            width: 1,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(
+                            color: AppColors.primary,
+                            width: 1,
+                          ),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(color: Colors.red, width: 1),
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(color: Colors.red, width: 1),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(
+                            color: AppColors.textLight,
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      hint: MyText(
+                        'اختر المحافظة أولاً',
+                        fontSize: 14.sp,
+                        color: AppColors.textSecondary,
+                      ),
+                      items: [],
+                      onChanged: null,
+                      validator: (value) => (value == null || value.isEmpty)
+                          ? 'field_required'.tr
+                          : null,
+                    );
+                  }
+
+                  // إذا كان يتم تحميل المناطق
+                  if (c.loadingDistricts.value) {
+                    return DropdownButtonFormField<String>(
+                      key: ValueKey(
+                        'region_dropdown_${localeController.selectedLanguage.value}',
+                      ),
+                      value: null,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 16.h,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(
+                            color: AppColors.textLight,
+                            width: 1,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(
+                            color: AppColors.primary,
+                            width: 1,
+                          ),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(color: Colors.red, width: 1),
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(color: Colors.red, width: 1),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide(
+                            color: AppColors.textLight,
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      hint: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 16.w,
+                            height: 16.w,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          SizedBox(width: 8.w),
+                          MyText(
+                            'جاري التحميل...',
+                            fontSize: 14.sp,
+                            color: AppColors.textSecondary,
+                          ),
+                        ],
+                      ),
+                      items: [],
+                      onChanged: null,
+                      validator: (value) => (value == null || value.isEmpty)
+                          ? 'field_required'.tr
+                          : null,
+                    );
+                  }
+
+                  // القائمة المنسدلة العادية
+                  return DropdownButtonFormField<String>(
+                    key: ValueKey(
+                      'region_dropdown_${localeController.selectedLanguage.value}',
+                    ),
+                    value: c.selectedRegionId.value,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 16.h,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                        borderSide: BorderSide(
+                          color: AppColors.textLight,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                        borderSide: BorderSide(
+                          color: AppColors.primary,
+                          width: 1,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                        borderSide: BorderSide(color: Colors.red, width: 1),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                        borderSide: BorderSide(color: Colors.red, width: 1),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16.r),
+                        borderSide: BorderSide(
+                          color: AppColors.textLight,
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    hint: MyText(
+                      'اختر المنطقة',
+                      fontSize: 14.sp,
+                      color: AppColors.textSecondary,
+                    ),
+                    icon: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.textSecondary,
+                      size: 24.r,
+                    ),
+                    style: TextStyle(
+                      fontFamily: 'Expo Arabic',
+                      fontSize: 18.sp,
+                      color: AppColors.textPrimary,
+                    ),
+                    items: c.districts
+                        .map(
+                          (district) => DropdownMenuItem<String>(
+                            value: district['id'],
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: MyText(
+                                district['name'] ?? '',
+                                fontSize: 14.sp,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) {
+                      c.selectedRegionId.value = v;
+                    },
+                    validator: (value) => (value == null || value.isEmpty)
+                        ? 'field_required'.tr
+                        : null,
+                  );
+                },
+              ),
             ),
           ],
         );
@@ -648,6 +857,13 @@ class DelegateRegisterPage extends StatelessWidget {
                   onChanged: (v) {
                     c.selectedCity.value = v;
                     c.cityCtrl.text = v ?? '';
+                    // تحميل المناطق عند تغيير المحافظة
+                    if (v != null && v.isNotEmpty) {
+                      c.loadDistricts(v);
+                    } else {
+                      c.districts.clear();
+                      c.selectedRegionId.value = null;
+                    }
                   },
                 ),
               ),

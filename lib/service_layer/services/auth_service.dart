@@ -44,6 +44,7 @@ class AuthService {
     String image = '',
     String address = '',
     String region = '', // المنطقة
+    String district = '', // المنطقة (اسم الحقل في API)
     String certificate = '',
     String idFrontImage = '',
     String idBackImage = '',
@@ -62,7 +63,7 @@ class AuthService {
       if (deviceToken.isNotEmpty) 'deviceToken': deviceToken,
       if (image.isNotEmpty) 'image': image,
       if (address.isNotEmpty) 'address': address,
-      if (region.isNotEmpty) 'region': region, // المنطقة
+      if (district.isNotEmpty) 'district': district, // المنطقة (اسم الحقل في API)
       if (certificate.isNotEmpty) 'certificate': certificate,
       if (idFrontImage.isNotEmpty) 'idFrontImage': idFrontImage,
       if (idBackImage.isNotEmpty) 'idBackImage': idBackImage,

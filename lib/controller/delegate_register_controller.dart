@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../service_layer/services/upload_service.dart';
 import '../service_layer/services/auth_service.dart';
+import '../service_layer/services/districts_service.dart';
 import '../widget/loading_dialog.dart';
 import '../widget/status_dialog.dart';
 import '../utils/app_colors.dart';
@@ -19,13 +20,16 @@ class DelegateRegisterController extends GetxController {
   final passwordCtrl = TextEditingController();
   final cityCtrl = TextEditingController();
   final addressCtrl = TextEditingController();
-  final regionCtrl = TextEditingController(); // المنطقة
   final companyCtrl = TextEditingController();
   final certificateCtrl = TextEditingController();
 
   var selectedCity = Rxn<String>();
   var selectedAge = Rxn<String>();
+  var selectedRegionId = Rxn<String>(); // ID المنطقة المختارة
   var genderIndex = Rxn<int>(); // 0 = ذكر, 1 = انثى
+
+  var districts = <Map<String, String>>[].obs; // [{id: "...", name: "..."}, ...]
+  var loadingDistricts = false.obs;
 
   var profileImageUrl = Rxn<String>();
   var idFrontImageUrl = Rxn<String>();
@@ -60,10 +64,66 @@ class DelegateRegisterController extends GetxController {
     passwordCtrl.dispose();
     cityCtrl.dispose();
     addressCtrl.dispose();
-    regionCtrl.dispose();
     companyCtrl.dispose();
     certificateCtrl.dispose();
     super.onClose();
+  }
+
+  /// جلب المناطق حسب المدينة
+  Future<void> loadDistricts(String city) async {
+    if (city.isEmpty) {
+      districts.clear();
+      selectedRegionId.value = null;
+      return;
+    }
+
+    try {
+      loadingDistricts.value = true;
+      districts.clear();
+      selectedRegionId.value = null;
+
+      final districtsService = DistrictsService();
+      final res = await districtsService.getDistrictsByCity(city: city);
+
+      if (res['ok'] == true && res['data'] != null) {
+        final responseData = res['data'];
+        
+        // التحقق من بنية الاستجابة
+        if (responseData is Map<String, dynamic> && 
+            responseData['status'] == true && 
+            responseData['data'] is List) {
+          final List<dynamic> dataList = responseData['data'] as List<dynamic>;
+          
+          // استخراج id و name للمناطق
+          final List<Map<String, String>> districtList = dataList
+              .map((item) {
+                if (item is Map<String, dynamic> && 
+                    item['_id'] != null && 
+                    item['name'] != null) {
+                  return {
+                    'id': item['_id'].toString(),
+                    'name': item['name'].toString(),
+                  };
+                }
+                return null;
+              })
+              .where((district) => district != null)
+              .cast<Map<String, String>>()
+              .toList();
+          
+          districts.value = districtList;
+          print('📍 Loaded ${districtList.length} districts for city: $city');
+        }
+      } else {
+        print('📍 Failed to load districts: ${res['error'] ?? 'Unknown error'}');
+        districts.clear();
+      }
+    } catch (e) {
+      print('📍 Error loading districts: $e');
+      districts.clear();
+    } finally {
+      loadingDistricts.value = false;
+    }
   }
 
   Future<void> pickAndUploadImage(String type) async {
@@ -125,6 +185,16 @@ class DelegateRegisterController extends GetxController {
       return;
     }
 
+    if (selectedRegionId.value == null || selectedRegionId.value!.isEmpty) {
+      Get.snackbar(
+        'خطأ',
+        'يرجى اختيار المنطقة',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
     if (selectedAge.value == null || selectedAge.value!.isEmpty) {
       Get.snackbar(
         'خطأ',
@@ -149,7 +219,7 @@ class DelegateRegisterController extends GetxController {
         'gender': genderIndex.value == 0 ? 'ذكر' : 'أنثى',
         'age': int.parse(selectedAge.value!),
         'city': selectedCity.value!,
-        'region': regionCtrl.text.trim(), // المنطقة
+        'district': selectedRegionId.value!, // ID المنطقة
         'userType': 'Representative',
         'company': companyCtrl.text.trim(),
         'deviceToken': '',
@@ -168,7 +238,7 @@ class DelegateRegisterController extends GetxController {
       print('📋 Gender: ${registrationData['gender']}');
       print('📋 Age: ${registrationData['age']}');
       print('📋 City: ${registrationData['city']}');
-      print('📋 Region: ${registrationData['region']}');
+      print('📋 District: ${registrationData['district']}');
       print('📋 UserType: ${registrationData['userType']}');
       print('📋 Company: ${registrationData['company']}');
       print('📋 Address: ${registrationData['address']}');
@@ -185,7 +255,7 @@ class DelegateRegisterController extends GetxController {
         gender: registrationData['gender'] as String,
         age: registrationData['age'] as int,
         city: registrationData['city'] as String,
-        region: registrationData['region'] as String,
+        district: registrationData['district'] as String, // ID المنطقة
         userType: registrationData['userType'] as String,
         company: registrationData['company'] as String,
         deviceToken: registrationData['deviceToken'] as String,
