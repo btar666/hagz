@@ -21,6 +21,8 @@ class HomeController extends GetxController {
   // Filter parameters
   var selectedCity = ''.obs;
   var sortOrder = ''.obs; // 'أ-ي' or 'ي-أ' or ''
+  var selectedDistrict = ''.obs;
+  var minFollowersFilter = ''.obs;
 
   // Top-rated doctors
   var isLoadingTopRated = false.obs;
@@ -48,7 +50,12 @@ class HomeController extends GetxController {
 
     // Use filter API if filters are applied
     Map<String, dynamic> res;
-    if (selectedCity.value.isNotEmpty || sortOrder.value.isNotEmpty) {
+    final bool hasFilters = selectedCity.value.isNotEmpty ||
+        sortOrder.value.isNotEmpty ||
+        selectedDistrict.value.isNotEmpty ||
+        minFollowersFilter.value.isNotEmpty;
+
+    if (hasFilters) {
       String? sortBy = sortOrder.value == 'أ-ي' ? 'name' : null;
       String? order = sortOrder.value == 'أ-ي'
           ? 'asc'
@@ -57,6 +64,11 @@ class HomeController extends GetxController {
       res = await _userService.filterDoctors(
         query: search.value,
         city: selectedCity.value.isNotEmpty ? selectedCity.value : null,
+        districtName:
+            selectedDistrict.value.isNotEmpty ? selectedDistrict.value : null,
+        followersMin: minFollowersFilter.value.isNotEmpty
+            ? int.tryParse(minFollowersFilter.value)
+            : null,
         sortBy: sortBy,
         order: order,
         page: page.value,
@@ -103,15 +115,19 @@ class HomeController extends GetxController {
     isLoadingMoreDoctors.value = false;
   }
 
-  void applyFilters(String city, String alpha) {
+  void applyFilters(String city, String alpha, {String? district, String? followersMin}) {
     selectedCity.value = city;
     sortOrder.value = alpha;
+    selectedDistrict.value = district ?? '';
+    minFollowersFilter.value = followersMin ?? '';
     fetchDoctors(reset: true);
   }
 
   void clearFilters() {
     selectedCity.value = '';
     sortOrder.value = '';
+    selectedDistrict.value = '';
+    minFollowersFilter.value = '';
     fetchDoctors(reset: true);
   }
 

@@ -132,10 +132,14 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
         if (cv != null) {
           _cvId = (cv['_id']?.toString() ?? '');
           _cvDescCtrl.text = (cv['description']?.toString() ?? '');
-          final certs = (cv['certificates'] as List?)?.cast<dynamic>() ?? [];
+          final certsRaw = (cv['certificatesInfo'] ?? cv['certificates']);
+          final certsList = (certsRaw as List?)?.cast<dynamic>() ?? [];
           _cvCertificates
             ..clear()
-            ..addAll(certs.map((e) => e.toString()));
+            ..addAll(certsList.map((e) {
+              if (e is Map) return (e['url'] ?? '').toString();
+              return e.toString();
+            }).where((e) => e.toString().trim().isNotEmpty));
           setState(() {});
         }
       }
@@ -627,21 +631,42 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
     // TODO: integrate image_picker similarly to delegate page, then call _uploadService.uploadImage(file)
   }
 
+  String _fallbackCertName(String url, int index) {
+    final trimmed = url.trim();
+    final fallback = 'شهادة ${index + 1}';
+    if (trimmed.isEmpty) return fallback;
+    try {
+      final last = trimmed.split('/').last;
+      final decoded = Uri.decodeComponent(last);
+      return decoded.isNotEmpty ? decoded : fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
   Future<void> _onSaveCv() async {
     await LoadingDialog.show(message: 'جاري حفظ السيرة...');
     try {
       final desc = _cvDescCtrl.text.trim();
+      final certificatesPayload = _cvCertificates
+          .asMap()
+          .entries
+          .map((entry) => {
+                'url': entry.value,
+                'name': _fallbackCertName(entry.value, entry.key),
+              })
+          .toList();
       Map<String, dynamic> res;
       if (_cvId.isNotEmpty) {
         res = await _cvService.updateCv(
           cvId: _cvId,
           description: desc,
-          certificates: _cvCertificates,
+          certificates: certificatesPayload,
         );
       } else {
         res = await _cvService.createCv(
           description: desc,
-          certificates: _cvCertificates,
+          certificates: certificatesPayload,
         );
         if (res['ok'] == true) {
           try {

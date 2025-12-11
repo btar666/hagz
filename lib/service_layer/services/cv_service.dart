@@ -6,7 +6,7 @@ class CvService {
 
   Future<Map<String, dynamic>> createCv({
     required String description,
-    required List<String> certificates,
+    required List<Map<String, String>> certificates,
   }) async {
     final body = {'description': description, 'certificates': certificates};
     return await _api.post(ApiConstants.userCv, body);
@@ -25,7 +25,7 @@ class CvService {
   Future<Map<String, dynamic>> updateCv({
     required String cvId,
     required String description,
-    required List<String> certificates,
+    required List<Map<String, String>> certificates,
   }) async {
     final url = '${ApiConstants.cv}/$cvId';
     final body = {'description': description, 'certificates': certificates};

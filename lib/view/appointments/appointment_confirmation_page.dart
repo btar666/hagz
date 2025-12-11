@@ -406,7 +406,7 @@ class _AppointmentConfirmationPageState
                   children: [
                     MyText(
                       'تأكيد الحجز',
-                      fontSize: 24.sp,
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF374151),
                       textAlign: TextAlign.right,

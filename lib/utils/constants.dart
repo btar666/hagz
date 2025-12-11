@@ -1,5 +1,7 @@
 class ApiConstants {
   static const String baseUrl = 'http://62.169.19.162:3005';
+  static const String socketUrl = 'http://62.169.19.162:3005';
+  static const String socketNamespace = '/chat';
 
   // Users
   static const String register = '$baseUrl/api/users/register';

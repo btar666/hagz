@@ -58,8 +58,8 @@ class DoctorProfileController extends GetxController {
   var doctorBio = ''.obs;
   var doctorAddress = ''.obs;
   var doctorPhone = ''.obs;
-  // Certificates images (paths or URLs)
-  var certificateImages = <String>[].obs;
+  // Certificates images (paths or URLs + display name)
+  var certificateImages = <Map<String, String>>[].obs;
   // Paths can be absolute files or asset paths
   // Addresses: each item has value and isLink (website)
   var addresses = <Map<String, dynamic>>[].obs;
@@ -78,7 +78,7 @@ class DoctorProfileController extends GetxController {
   // CV state
   var cvId = ''.obs;
   var cvDescription = ''.obs;
-  var cvCertificates = <String>[].obs;
+  var cvCertificates = <Map<String, String>>[].obs;
   var isLoadingCv = false.obs;
 
   // Cases state from API
@@ -219,6 +219,51 @@ class DoctorProfileController extends GetxController {
     // For now using sample data
   }
 
+  String _deriveCertificateName(String url, {int? index, String? provided}) {
+    final trimmedProvided = (provided ?? '').trim();
+    if (trimmedProvided.isNotEmpty) return trimmedProvided;
+    final fallback = index != null ? 'شهادة ${index + 1}' : 'شهادة';
+    final cleanUrl = url.trim();
+    if (cleanUrl.isEmpty) return fallback;
+    try {
+      final last = cleanUrl.split('/').last;
+      final decoded = Uri.decodeComponent(last);
+      return decoded.isNotEmpty ? decoded : fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  List<Map<String, String>> _parseCertificates(dynamic raw) {
+    if (raw == null) return <Map<String, String>>[];
+    List list;
+    if (raw is List) {
+      list = raw;
+    } else {
+      list = [raw];
+    }
+    return list
+        .asMap()
+        .entries
+        .map((entry) {
+          final idx = entry.key;
+          final item = entry.value;
+          if (item is Map) {
+            final url = (item['url'] ?? item['path'] ?? '').toString().trim();
+            if (url.isEmpty) return null;
+            final name =
+                _deriveCertificateName(url, index: idx, provided: item['name']?.toString());
+            return {'url': url, 'name': name};
+          }
+          final url = item?.toString().trim() ?? '';
+          if (url.isEmpty) return null;
+          final name = _deriveCertificateName(url, index: idx);
+          return {'url': url, 'name': name};
+        })
+        .whereType<Map<String, String>>()
+        .toList();
+  }
+
   Future<void> fetchMyCvIfAny() async {
     final String? uid = _session.currentUser.value?.id;
     if (uid == null || uid.isEmpty) return;
@@ -232,14 +277,15 @@ class DoctorProfileController extends GetxController {
         if (cvData != null) {
           cvId.value = (cvData['_id']?.toString() ?? '');
           cvDescription.value = (cvData['description']?.toString() ?? '');
-          final certs =
-              (cvData['certificates'] as List?)?.cast<dynamic>() ?? [];
-          cvCertificates.value = certs.map((e) => e.toString()).toList();
+          final certsRaw =
+              (cvData['certificatesInfo'] ?? cvData['certificates']);
+          final parsedCerts = _parseCertificates(certsRaw);
+          cvCertificates.value = parsedCerts;
           // reflect into existing UI state
           doctorBio.value = cvDescription.value.isNotEmpty
               ? cvDescription.value
               : doctorBio.value;
-          certificateImages.value = List<String>.from(cvCertificates);
+          certificateImages.value = List<Map<String, String>>.from(parsedCerts);
         }
       }
     } catch (_) {
@@ -259,9 +305,9 @@ class DoctorProfileController extends GetxController {
             data['data'] as Map<String, dynamic>?;
         if (cvData != null) {
           cvDescription.value = (cvData['description']?.toString() ?? '');
-          final certs =
-              (cvData['certificates'] as List?)?.cast<dynamic>() ?? [];
-          cvCertificates.value = certs.map((e) => e.toString()).toList();
+          final certsRaw =
+              (cvData['certificatesInfo'] ?? cvData['certificates']);
+          cvCertificates.value = _parseCertificates(certsRaw);
         }
       }
     } catch (_) {
@@ -272,7 +318,7 @@ class DoctorProfileController extends GetxController {
 
   Future<Map<String, dynamic>> saveMyCv({
     required String description,
-    required List<String> certificates,
+    required List<Map<String, String>> certificates,
   }) async {
     final bool hasExisting = cvId.value.isNotEmpty;
     if (hasExisting) {
@@ -333,12 +379,16 @@ class DoctorProfileController extends GetxController {
     doctorBio.value = value;
   }
 
-  void addCertificate(String path) {
+  void addCertificate(String path, {String? name}) {
+    final item = {
+      'url': path,
+      'name': _deriveCertificateName(path, provided: name),
+    };
     // إضافة إلى القائمتين
     if (cvCertificates.isNotEmpty || cvId.value.isNotEmpty) {
-      cvCertificates.add(path);
+      cvCertificates.add(item);
     } else {
-      certificateImages.add(path);
+      certificateImages.add(item);
     }
   }
 

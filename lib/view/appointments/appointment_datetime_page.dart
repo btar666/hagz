@@ -16,7 +16,7 @@ class AppointmentDateTimePage extends StatefulWidget {
   final int patientAge;
   final String patientGender;
   final String patientPhone;
-
+  
   const AppointmentDateTimePage({
     Key? key,
     required this.doctorId,
@@ -417,12 +417,8 @@ class _AppointmentDateTimePageState extends State<AppointmentDateTimePage> {
         SizedBox(height: 20.h),
         // التقويم الأفقي
         Container(
-          padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 12.w),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20.r),
-            border: Border.all(color: const Color(0xFFE6F2F1), width: 1),
-          ),
+          padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 0.w),
+          
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(7, (index) {

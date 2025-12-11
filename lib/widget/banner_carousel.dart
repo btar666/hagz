@@ -126,7 +126,7 @@ class _BannerCarouselState extends State<BannerCarousel>
           // النقاط داخل الصورة
           if (bannerController.activeBanners.length > 1)
             Positioned(
-              bottom: 12.h, // تقليل من 20.h إلى 12.h
+              bottom: 5.h, // تقليل من 20.h إلى 12.h
               left: 0,
               right: 0,
               child: Center(child: _buildIndicators(bannerController)),
@@ -241,8 +241,8 @@ class _BannerCarouselState extends State<BannerCarousel>
         activeIndex: bannerController.activeIndex.value,
         count: bannerController.activeBanners.length,
         effect: ExpandingDotsEffect(
-          dotHeight: 10.h,
-          dotWidth: 10.w,
+          dotHeight: 5.h,
+          dotWidth: 5.w,
           activeDotColor: Colors.white,
           dotColor: Colors.white.withOpacity(0.5),
           expansionFactor: 2.5,

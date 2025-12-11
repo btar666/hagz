@@ -9,55 +9,137 @@ import '../../widget/my_text.dart';
 import '../../controller/chat_controller.dart';
 import '../../controller/session_controller.dart';
 
-class ChatDetailsPage extends StatelessWidget {
+class ChatDetailsPage extends StatefulWidget {
   final String title;
   final String? receiverId;
   const ChatDetailsPage({super.key, required this.title, this.receiverId});
 
   @override
-  Widget build(BuildContext context) {
-    final TextEditingController _msgCtrl = TextEditingController();
-    final ChatController ctrl = Get.find<ChatController>();
-    final SessionController session = Get.find<SessionController>();
+  State<ChatDetailsPage> createState() => _ChatDetailsPageState();
+}
 
+class _ChatDetailsPageState extends State<ChatDetailsPage> {
+  final TextEditingController _msgCtrl = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  final ChatController ctrl = Get.find<ChatController>();
+  final SessionController session = Get.find<SessionController>();
+  int _previousMessageCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    
     // Set receiverId and load doctor conversation if provided
-    if (receiverId != null && receiverId!.isNotEmpty) {
+    if (widget.receiverId != null && widget.receiverId!.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // openDoctorChat will handle clearing messages only if switching to different doctor
-        ctrl.openDoctorChat(receiverId!, title);
+        ctrl.openDoctorChat(widget.receiverId!, widget.title);
       });
     }
+
+    // Listen to messages changes for auto-scroll
+    ever(ctrl.messages, (_) {
+      // Update previous count if it's the first load
+      if (_previousMessageCount == 0 && ctrl.messages.isNotEmpty) {
+        _previousMessageCount = ctrl.messages.length;
+      }
+      _scrollToBottom();
+    });
+
+    // Initial scroll to bottom after first load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _scrollToBottom(force: true);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _msgCtrl.dispose();
+    super.dispose();
+  }
+
+  /// Scroll to bottom of messages list
+  void _scrollToBottom({bool force = false}) {
+    if (!_scrollController.hasClients) {
+      // If scroll controller is not ready, try again after a short delay
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _scrollToBottom(force: force);
+      });
+      return;
+    }
+
+    if (ctrl.messages.isEmpty) return;
+
+    // Check if new message was added or force scroll
+    final currentCount = ctrl.messages.length;
+    if (force || currentCount > _previousMessageCount) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
+    _previousMessageCount = currentCount;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
       appBar: AppBar(
         backgroundColor: const Color(0xFFF4FEFF),
         elevation: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            MyText(
-              title,
-              fontSize: 22.sp,
-              fontWeight: FontWeight.w900,
-              color: AppColors.textPrimary,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF18A2AE),
-                    shape: BoxShape.circle,
+        title: Obx(() {
+          // Get receiver name or use widget.title as fallback
+          final displayName = ctrl.receiverName.value.isNotEmpty 
+              ? ctrl.receiverName.value 
+              : widget.title;
+          
+          // Get connection status
+          final isConnected = ctrl.isSocketConnected.value;
+          
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              MyText(
+                displayName,
+                fontSize: 22.sp,
+                fontWeight: FontWeight.w900,
+                color: AppColors.textPrimary,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: isConnected 
+                          ? const Color(0xFF18A2AE) 
+                          : Colors.grey,
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                ),
-                SizedBox(width: 6.w),
-                MyText('متصل', fontSize: 14.sp, color: AppColors.textSecondary),
-              ],
-            ),
-          ],
-        ),
+                  SizedBox(width: 6.w),
+                  MyText(
+                    isConnected ? 'متصل' : 'غير متصل',
+                    fontSize: 14.sp,
+                    color: isConnected 
+                        ? AppColors.textSecondary 
+                        : Colors.grey,
+                  ),
+                ],
+              ),
+            ],
+          );
+        }),
         centerTitle: true,
         leading: IconButton(
           onPressed: () => Get.back(),
@@ -72,6 +154,7 @@ class ChatDetailsPage extends StatelessWidget {
               final currentUserId = session.currentUser.value?.id ?? '';
 
               return ListView.builder(
+                controller: _scrollController,
                 reverse: false,
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                 itemCount: items.length,
@@ -195,6 +278,10 @@ class ChatDetailsPage extends StatelessWidget {
                     final ok = await ctrl.sendMessage(text);
                     if (ok) {
                       _msgCtrl.clear();
+                      // Scroll to bottom after sending message
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        _scrollToBottom(force: true);
+                      });
                     } else {
                       Get.snackbar(
                         'فشل الإرسال',
@@ -262,6 +349,10 @@ class ChatDetailsPage extends StatelessWidget {
                                 final ok = await ctrl.sendMessage(text, imageFile: imageFile);
                                 if (ok) {
                                   _msgCtrl.clear();
+                                  // Scroll to bottom after sending image
+                                  Future.delayed(const Duration(milliseconds: 300), () {
+                                    _scrollToBottom(force: true);
+                                  });
                                 } else {
                                   Get.snackbar(
                                     'فشل الإرسال',

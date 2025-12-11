@@ -4,6 +4,8 @@ class DoctorsFilterController extends GetxController {
   // Selected filters
   var selectedRegion = ''.obs; // empty = no filter
   var alphaOrder = 'أ-ي'.obs; // or 'ي-أ'
+  var minFollowers = ''.obs; // نص لتسهيل الإدخال ثم التحويل
+  var districtName = ''.obs;
 
   // UI state
   var isRegionMenuOpen = false.obs;
@@ -47,6 +49,8 @@ class DoctorsFilterController extends GetxController {
   void clearAll() {
     selectedRegion.value = '';
     alphaOrder.value = 'أ-ي';
+    minFollowers.value = '';
+    districtName.value = '';
     isRegionMenuOpen.value = false;
   }
 }

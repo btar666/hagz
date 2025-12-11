@@ -90,6 +90,9 @@ class UserService {
   Future<Map<String, dynamic>> filterDoctors({
     String? query,
     String? city,
+    String? districtName,
+    int? followersMin,
+    int? followersMax,
     String? sortBy,
     String? order,
     int page = 1,
@@ -105,6 +108,15 @@ class UserService {
     }
     if (city != null && city.trim().isNotEmpty) {
       params['city'] = city.trim();
+    }
+    if (districtName != null && districtName.trim().isNotEmpty) {
+      params['districtName'] = districtName.trim();
+    }
+    if (followersMin != null) {
+      params['followersMin'] = followersMin.toString();
+    }
+    if (followersMax != null) {
+      params['followersMax'] = followersMax.toString();
     }
     if (sortBy != null && sortBy.trim().isNotEmpty) {
       params['sortBy'] = sortBy.trim();

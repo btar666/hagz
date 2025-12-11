@@ -60,6 +60,28 @@ class DoctorsFilterDialog extends StatelessWidget {
               _regionSelector(controller),
               SizedBox(height: 20.h),
 
+              // Followers filter
+              MyText(
+                'عدد المتابعين (حد أدنى)',
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+              SizedBox(height: 8.h),
+              _followersInput(controller),
+              SizedBox(height: 20.h),
+
+              // District filter
+              MyText(
+                'المنطقة (اختياري)',
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+              SizedBox(height: 8.h),
+              _districtInput(controller),
+              SizedBox(height: 20.h),
+
               // Alphabetical order selector
               MyText(
                 'الترتيب الأبجدي',
@@ -85,6 +107,8 @@ class DoctorsFilterDialog extends StatelessWidget {
                           Get.back(result: {
                             'region': '',
                             'alpha': '',
+                            'followersMin': '',
+                            'district': '',
                           });
                         },
                         style: OutlinedButton.styleFrom(
@@ -112,6 +136,8 @@ class DoctorsFilterDialog extends StatelessWidget {
                           result: {
                             'region': controller.selectedRegion.value,
                             'alpha': controller.alphaOrder.value,
+                            'followersMin': controller.minFollowers.value,
+                            'district': controller.districtName.value,
                           },
                         ),
                         style: ElevatedButton.styleFrom(
@@ -217,6 +243,53 @@ class DoctorsFilterDialog extends StatelessWidget {
             color: AppColors.textPrimary,
             textAlign: TextAlign.center,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _followersInput(DoctorsFilterController controller) {
+    return Obx(
+      () => TextField(
+        keyboardType: TextInputType.number,
+        onChanged: (val) => controller.minFollowers.value = val,
+        controller: TextEditingController(text: controller.minFollowers.value),
+        decoration: InputDecoration(
+          hintText: 'مثال: 50',
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20.r),
+            borderSide: BorderSide(color: AppColors.divider),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20.r),
+            borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+          ),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+        ),
+      ),
+    );
+  }
+
+  Widget _districtInput(DoctorsFilterController controller) {
+    return Obx(
+      () => TextField(
+        onChanged: (val) => controller.districtName.value = val,
+        controller: TextEditingController(text: controller.districtName.value),
+        decoration: InputDecoration(
+          hintText: 'اكتب اسم المنطقة (اختياري)',
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20.r),
+            borderSide: BorderSide(color: AppColors.divider),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20.r),
+            borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+          ),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
         ),
       ),
     );

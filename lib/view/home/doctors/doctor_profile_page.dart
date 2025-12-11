@@ -841,10 +841,8 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
           ),
           SizedBox(height: 8.h),
           Obx(() {
-            final images = controller.cvCertificates.isNotEmpty
-                ? controller.cvCertificates
-                : <String>[]; // لا نعرض عينات ثابتة
-            if (images.isEmpty) {
+            final certificates = controller.cvCertificates;
+            if (certificates.isEmpty) {
               return Container(
                 height: 150.h,
                 width: double.infinity,
@@ -857,31 +855,30 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
                 ),
               );
             }
-            return Center(
-              child: Directionality(
-                textDirection: TextDirection.rtl,
-                child: SizedBox(
-                  height: 180.h,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    shrinkWrap: true,
-                    physics: images.length > 2
-                        ? const BouncingScrollPhysics()
-                        : const NeverScrollableScrollPhysics(),
-                    itemBuilder: (_, i) {
-                      final url = images[i];
-                      return GestureDetector(
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: List.generate(certificates.length, (i) {
+                final item = certificates[i];
+                final url = item['url'] ?? '';
+                final name = _certificateName(item, i);
+                return Padding(
+                  padding: EdgeInsets.only(
+                      bottom: i == certificates.length - 1 ? 0 : 12.h),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      GestureDetector(
                         onTap: () => _openImage(url),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12.r),
                           child: Image(
                             image: _imageProvider(url),
                             height: 180.h,
-                            width: 240.w,
+                            width: double.infinity,
                             fit: BoxFit.cover,
                             errorBuilder: (c, e, s) => Container(
                               height: 180.h,
-                              width: 240.w,
+                              width: double.infinity,
                               color: Colors.grey[200],
                               child: const Icon(
                                 Icons.broken_image,
@@ -890,13 +887,19 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
                             ),
                           ),
                         ),
-                      );
-                    },
-                    separatorBuilder: (_, __) => SizedBox(width: 10.w),
-                    itemCount: images.length,
+                      ),
+                      SizedBox(height: 8.h),
+                      MyText(
+                        name,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
-                ),
-              ),
+                );
+              }),
             );
           }),
           // Read-only in doctor details page (no actions)
@@ -1309,6 +1312,21 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
         ),
       ],
     );
+  }
+
+  String _certificateName(Map<String, String> cert, int index) {
+    final provided = (cert['name'] ?? '').trim();
+    if (provided.isNotEmpty) return provided;
+    final url = (cert['url'] ?? '').trim();
+    final fallback = 'شهادة ${index + 1}';
+    if (url.isEmpty) return fallback;
+    try {
+      final last = url.split('/').last;
+      final decoded = Uri.decodeComponent(last);
+      return decoded.isNotEmpty ? decoded : fallback;
+    } catch (_) {
+      return fallback;
+    }
   }
 
   void _openImage(String url) {

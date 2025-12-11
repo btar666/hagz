@@ -6,20 +6,39 @@ import 'package:http_parser/http_parser.dart';
 import '../../utils/constants.dart';
 import '../../controller/session_controller.dart';
 import 'api_request.dart';
+import 'socket_service.dart';
 
 class ChatService {
   final ApiRequest _api = ApiRequest();
+  final SocketService _socketService = SocketService();
 
-  /// POST /api/chats/send
-  /// Send a message to a receiver
+  /// Send a message to a receiver using Socket.IO
+  /// Note: This uses WebSocket for real-time delivery. The response is immediate
+  /// but the actual message object will be received via Socket.IO events.
   Future<Map<String, dynamic>> sendMessage({
     required String receiverId,
     required String content,
   }) async {
-    return await _api.post(ApiConstants.chatSend, {
-      'receiverId': receiverId,
-      'content': content,
-    });
+    // Ensure socket is connected
+    if (!_socketService.isConnected) {
+      await _socketService.connect();
+    }
+
+    // Send via Socket.IO
+    _socketService.sendMessage(
+      receiverId: receiverId,
+      content: content,
+    );
+
+    // Return success immediately (actual message will come via Socket.IO event)
+    return {
+      'ok': true,
+      'statusCode': 200,
+      'data': {
+        'message': 'Message sent',
+        'receiverId': receiverId,
+      },
+    };
   }
 
   /// GET /api/chats/conversations
@@ -65,16 +84,33 @@ class ChatService {
     return await _api.get(url);
   }
 
-  /// POST /api/chats/secretary/send
-  /// Send a message as secretary
+  /// Send a message as secretary using Socket.IO
+  /// Note: This uses WebSocket for real-time delivery. The response is immediate
+  /// but the actual message object will be received via Socket.IO events.
   Future<Map<String, dynamic>> sendSecretaryMessage({
     required String receiverId,
     required String content,
   }) async {
-    return await _api.post(ApiConstants.chatSecretarySend, {
-      'receiverId': receiverId,
-      'content': content,
-    });
+    // Ensure socket is connected
+    if (!_socketService.isConnected) {
+      await _socketService.connect();
+    }
+
+    // Send via Socket.IO
+    _socketService.sendMessageAsSecretary(
+      receiverId: receiverId,
+      content: content,
+    );
+
+    // Return success immediately (actual message will come via Socket.IO event)
+    return {
+      'ok': true,
+      'statusCode': 200,
+      'data': {
+        'message': 'Message sent',
+        'receiverId': receiverId,
+      },
+    };
   }
 
   /// GET /api/chats/secretary/conversations
@@ -88,8 +124,8 @@ class ChatService {
     return await _api.get(url);
   }
 
-  /// POST /api/chats/send
-  /// Send a message with image using multipart/form-data
+  /// Send a message with image
+  /// First uploads image via REST API, then sends message via Socket.IO
   Future<Map<String, dynamic>> sendMessageWithImage({
     required String receiverId,
     required File imageFile,

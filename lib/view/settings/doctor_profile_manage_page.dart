@@ -950,7 +950,7 @@ class DoctorProfileManagePage extends StatelessWidget {
         SizedBox(height: 8.h),
         Obx(() {
           // استخدام قائمة موحدة للعرض
-          final List<String> displayImages =
+          final List<Map<String, String>> displayImages =
               controller.cvCertificates.isNotEmpty
               ? controller.cvCertificates.toList()
               : controller.certificateImages.toList();
@@ -969,7 +969,8 @@ class DoctorProfileManagePage extends StatelessWidget {
                         color: Colors.grey[200],
                         borderRadius: BorderRadius.circular(12.r),
                         image: DecorationImage(
-                          image: _imageProvider(displayImages[i]),
+                          image:
+                              _imageProvider(displayImages[i]['url'] ?? ''),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -996,6 +997,35 @@ class DoctorProfileManagePage extends StatelessWidget {
                             Icons.delete_forever,
                             size: 18,
                             color: Colors.redAccent,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 6,
+                      left: 8,
+                      right: 8,
+                      child: Center(
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 6.w,
+                            vertical: 4.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.45),
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child: MyText(
+                            (displayImages[i]['name'] ?? '')
+                                    .trim()
+                                    .isNotEmpty
+                                ? displayImages[i]['name']!
+                                : _fallbackCertName(displayImages[i]['url'] ?? '', i),
+                            fontSize: 11.sp,
+                            color: Colors.white,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ),
@@ -1198,7 +1228,7 @@ class DoctorProfileManagePage extends StatelessWidget {
           if (res['ok'] == true) {
             final url = (res['data']?['data']?['url']?.toString() ?? '');
             if (url.isNotEmpty) {
-              controller.addCertificate(url);
+              controller.addCertificate(url, name: picked.name);
               await showStatusDialog(
                 title: 'success'.tr,
                 message: res['message']?.toString().isNotEmpty == true
@@ -1257,6 +1287,19 @@ class DoctorProfileManagePage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _fallbackCertName(String url, int index) {
+    final cleanUrl = url.trim();
+    final fallback = 'شهادة ${index + 1}';
+    if (cleanUrl.isEmpty) return fallback;
+    try {
+      final last = cleanUrl.split('/').last;
+      final decoded = Uri.decodeComponent(last);
+      return decoded.isNotEmpty ? decoded : fallback;
+    } catch (_) {
+      return fallback;
+    }
   }
 
   // Address manage tile

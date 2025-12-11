@@ -2,11 +2,13 @@ import 'dart:io';
 import 'package:get/get.dart';
 import '../service_layer/services/chat_service.dart';
 import '../service_layer/services/user_service.dart';
+import '../service_layer/services/socket_service.dart';
 import 'session_controller.dart';
 
 class ChatController extends GetxController {
   final ChatService _service = ChatService();
   final UserService _userService = UserService();
+  final SocketService _socketService = SocketService();
 
   // Conversations list
   var conversations = <Map<String, dynamic>>[].obs;
@@ -19,14 +21,220 @@ class ChatController extends GetxController {
     super.onInit();
     _sessionController = Get.find<SessionController>();
     
+    // Initialize Socket.IO connection
+    _initializeSocket();
+    
     // Watch for user changes and reload conversations
     ever(_sessionController.currentUser, (user) {
       final currentUserId = user?.id ?? '';
       if (currentUserId.isNotEmpty && currentUserId != lastUserId.value) {
         print('🔄 User changed detected! Reloading conversations...');
+        // Reconnect socket with new user token
+        _socketService.reconnect();
         loadConversations(forceReload: true);
       }
     });
+  }
+
+  @override
+  void onClose() {
+    // Disconnect socket when controller is disposed
+    _socketService.disconnect();
+    super.onClose();
+  }
+
+  /// Initialize Socket.IO connection and set up event listeners
+  Future<void> _initializeSocket() async {
+    // Set up connection status callback
+    _socketService.onConnectionStatusChanged = (bool connected) {
+      isSocketConnected.value = connected;
+      print('📡 ChatController: Connection status changed: ${connected ? "متصل" : "غير متصل"}');
+    };
+
+    // Connect to Socket.IO
+    await _socketService.connect();
+
+    // Update connection status immediately
+    isSocketConnected.value = _socketService.isConnected;
+
+    if (!_socketService.isConnected) {
+      print('⚠️ ChatController: Socket not connected, retrying...');
+      // Retry connection after a delay
+      Future.delayed(const Duration(seconds: 2), () async {
+        await _socketService.connect();
+        isSocketConnected.value = _socketService.isConnected;
+        _setupSocketListeners();
+      });
+      return;
+    }
+
+    _setupSocketListeners();
+  }
+
+  /// Setup Socket.IO event listeners
+  void _setupSocketListeners() {
+    // Update connection status immediately
+    isSocketConnected.value = _socketService.isConnected;
+
+    // Listen for incoming messages
+    _socketService.on('message_received', (data) {
+      print('📨 ChatController: Message received via Socket.IO');
+      _handleReceivedMessage(data);
+    });
+
+    // Listen for message sent confirmation
+    _socketService.on('message_sent', (data) {
+      print('✅ ChatController: Message sent confirmation via Socket.IO');
+      _handleSentMessage(data);
+    });
+
+    // Listen for conversation updates
+    _socketService.on('conversation_updated', (data) {
+      print('🔄 ChatController: Conversation updated via Socket.IO');
+      // Reload conversations list
+      loadConversations();
+    });
+
+    // Listen for errors
+    _socketService.on('error', (data) {
+      print('❌ ChatController: Socket.IO error: $data');
+      final message = data['message'] ?? 'حدث خطأ';
+      Get.snackbar('خطأ', message);
+    });
+
+    // Listen for joined conversation confirmation
+    _socketService.on('joined_conversation', (data) {
+      print('✅ ChatController: Joined conversation: ${data['conversationId']}');
+    });
+  }
+
+
+  /// Handle received message from Socket.IO
+  void _handleReceivedMessage(dynamic data) {
+    try {
+      final messageData = data['message'];
+      if (messageData == null) return;
+
+      final message = Map<String, dynamic>.from(messageData);
+      final conversationId = message['conversation']?.toString() ?? '';
+      
+      // Only add message if it's for the current conversation
+      if (conversationId.isNotEmpty && 
+          conversationId == currentConversationId.value) {
+        final currentUserId = _sessionController.currentUser.value?.id ?? '';
+        final senderId = message['sender']?['_id']?.toString() ?? 
+                        message['sender']?.toString() ?? '';
+        
+        // If message is from current user, ignore it because message_sent will handle it
+        // This prevents duplicate messages when sender receives their own message via message_received
+        if (senderId == currentUserId) {
+          print('ℹ️ ChatController: Ignoring message_received for own message (message_sent will handle it)');
+          
+          // But still check if we need to update a temporary message
+          final messageContent = message['content']?.toString() ?? '';
+          final tempIndex = messages.indexWhere((m) => 
+            (m['_id']?.toString() ?? '').startsWith('temp_') &&
+            (m['content']?.toString() ?? '') == messageContent &&
+            (m['sending'] == true)
+          );
+          
+          if (tempIndex >= 0) {
+            // Update temporary message with real message
+            final formattedMessage = {
+              ...message,
+              'isMe': true,
+              'sending': false,
+            };
+            messages[tempIndex] = formattedMessage;
+            print('✅ ChatController: Updated temp message from message_received: ${message['_id']}');
+          }
+          
+          return;
+        }
+        
+        // Check if message already exists (avoid duplicates)
+        final messageId = message['_id']?.toString() ?? '';
+        final exists = messages.any((m) => 
+          (m['_id']?.toString() ?? '') == messageId
+        );
+
+        if (!exists) {
+          // Format message for UI
+          final formattedMessage = {
+            ...message,
+            'isMe': false,
+          };
+
+          messages.add(formattedMessage);
+          print('✅ ChatController: Added received message to list: ${message['_id']}');
+        } else {
+          print('ℹ️ ChatController: Message already exists, skipping: ${message['_id']}');
+        }
+      }
+
+      // Update conversations list to reflect new message
+      loadConversations();
+    } catch (e) {
+      print('❌ ChatController: Error handling received message: $e');
+    }
+  }
+
+  /// Handle sent message confirmation from Socket.IO
+  void _handleSentMessage(dynamic data) {
+    try {
+      final messageData = data['message'];
+      if (messageData == null) return;
+
+      final message = Map<String, dynamic>.from(messageData);
+      final messageId = message['_id']?.toString() ?? '';
+      final messageContent = message['content']?.toString() ?? '';
+      
+      // Find and update temporary message by content match (more reliable)
+      final index = messages.indexWhere((m) => 
+        (m['_id']?.toString() ?? '').startsWith('temp_') &&
+        (m['content']?.toString() ?? '') == messageContent &&
+        (m['sending'] == true)
+      );
+
+      if (index >= 0) {
+        // Replace temporary message with real message
+        final currentUserId = _sessionController.currentUser.value?.id ?? '';
+        final senderId = message['sender']?['_id']?.toString() ?? 
+                        message['sender']?.toString() ?? '';
+        
+        final formattedMessage = {
+          ...message,
+          'isMe': senderId == currentUserId,
+          'sending': false,
+        };
+
+        messages[index] = formattedMessage;
+        print('✅ ChatController: Updated temporary message with real message from message_sent: $messageId');
+      } else {
+        // If no temp message found, check if message already exists
+        final exists = messages.any((m) => 
+          (m['_id']?.toString() ?? '') == messageId
+        );
+        
+        if (!exists) {
+          // Add message if it doesn't exist (fallback)
+          final currentUserId = _sessionController.currentUser.value?.id ?? '';
+          final senderId = message['sender']?['_id']?.toString() ?? 
+                          message['sender']?.toString() ?? '';
+          
+          final formattedMessage = {
+            ...message,
+            'isMe': senderId == currentUserId,
+            'sending': false,
+          };
+          
+          messages.add(formattedMessage);
+          print('✅ ChatController: Added message from message_sent (no temp found): $messageId');
+        }
+      }
+    } catch (e) {
+      print('❌ ChatController: Error handling sent message: $e');
+    }
   }
 
   // Current conversation/messages
@@ -38,6 +246,9 @@ class ChatController extends GetxController {
   // Current receiver (when opening chat from doctor profile)
   var receiverId = ''.obs;
   var receiverName = ''.obs;
+  
+  // Socket connection status
+  var isSocketConnected = false.obs;
 
   // Cache for user images (userId -> imageUrl)
   final Map<String, String> _userImageCache = {};
@@ -161,6 +372,10 @@ class ChatController extends GetxController {
     final isDifferentConversation =
         currentConversationId.value != conversationId;
     if (isDifferentConversation) {
+      // Leave previous conversation room
+      if (currentConversationId.value.isNotEmpty) {
+        _socketService.leaveConversation(currentConversationId.value);
+      }
       messages.clear();
       print('🔄 Cleared previous messages (switching conversation)');
     } else {
@@ -169,6 +384,13 @@ class ChatController extends GetxController {
 
     currentConversationId.value = conversationId;
     isLoadingMessages.value = true;
+
+    // Ensure socket is connected and join conversation room
+    if (!_socketService.isConnected) {
+      await _socketService.connect();
+      _setupSocketListeners();
+    }
+    _socketService.joinConversation(conversationId);
     try {
       final res = await _service.getMessages(conversationId: conversationId);
       print('Load messages API response: $res');
@@ -510,36 +732,10 @@ class ChatController extends GetxController {
       }
 
       if (res['ok'] == true) {
-        // Remove temp message and reload from server
-        messages.removeWhere((m) => m['_id'] == tempMessage['_id']);
-
-        // Add the real message from server response if available
-        if (res['data'] != null && res['data']['data'] != null) {
-          final newMessage = res['data']['data'];
-          final messageData = {
-            '_id': newMessage['_id']?.toString() ?? '',
-            'content': newMessage['content']?.toString() ?? content.trim(),
-            'sender': 'me',
-            'isMe': true,
-            'createdAt':
-                newMessage['createdAt']?.toString() ??
-                DateTime.now().toIso8601String(),
-          };
-          // Add image URL if present
-          if (newMessage['image'] != null) {
-            messageData['image'] = newMessage['image'].toString();
-          }
-          messages.add(messageData);
-        } else {
-          // If no message data returned, keep temp message but mark as sent
-          messages.removeWhere((m) => m['_id'] == tempMessage['_id']);
-          tempMessage['_id'] = 'sent_${DateTime.now().millisecondsSinceEpoch}';
-          tempMessage.remove('sending');
-          tempMessage.remove('imageLocal');
-          // If we have a local image, we'll need to wait for server response
-          // For now, keep the local path
-          messages.add(tempMessage);
-        }
+        // Don't remove temp message here - let Socket.IO events handle it
+        // message_sent or message_received will update/replace the temp message
+        // This prevents duplicate messages
+        print('✅ Message sent successfully, waiting for Socket.IO confirmation...');
         return true;
       } else {
         // Remove temp message on failure

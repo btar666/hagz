@@ -325,7 +325,7 @@ class HomePage extends StatelessWidget {
             children: [
               MyText(
                 displayText,
-                fontSize: 18.sp,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
                 textAlign: TextAlign.start,
@@ -360,6 +360,8 @@ class HomePage extends StatelessWidget {
       Get.find<HomeController>().applyFilters(
         result['region'] as String,
         result['alpha'] as String,
+        district: result['district'] as String?,
+        followersMin: result['followersMin'] as String?,
       );
     }
   }
@@ -445,7 +447,7 @@ class HomePage extends StatelessWidget {
             crossAxisCount: 2,
             crossAxisSpacing: 12.w,
             mainAxisSpacing: 12.h,
-            childAspectRatio: 178 / 247,
+            childAspectRatio: 178 / 228,
           ),
           itemCount: isLoading ? 6 : items.length + (isLoadingMore ? 2 : 0),
           itemBuilder: (context, index) {
@@ -663,9 +665,9 @@ class HomePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(height: 8.h),
+            SizedBox(height: 3.h),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.w),
+              padding: EdgeInsets.symmetric(horizontal: 3.w),
               child: AspectRatio(
                 aspectRatio: 1.0,
                 child: Container(
@@ -945,7 +947,7 @@ class HomePage extends StatelessWidget {
                       Expanded(
                         child: MyText(
                           'top_rated_doctors'.tr,
-                          fontSize: 16.sp,
+                          fontSize: 14.sp,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
                           textAlign: TextAlign.start,
