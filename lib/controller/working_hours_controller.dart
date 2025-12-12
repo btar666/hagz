@@ -12,6 +12,9 @@ class WorkingHoursController extends GetxController {
   // قائمة أوقات العمل (7 أيام)
   RxList<Map<String, dynamic>> workingHours = <Map<String, dynamic>>[].obs;
 
+  // حالة التوسع لكل يوم
+  RxMap<int, bool> expandedDays = <int, bool>{}.obs;
+
   // أسماء الأيام
   final List<String> dayNames = [
     'الأحد',
@@ -197,5 +200,24 @@ class WorkingHoursController extends GetxController {
       workingHours[dayIndex]['slotDuration'] = duration;
       workingHours.refresh();
     }
+  }
+
+  /// تطبيق أوقات يوم معين على جميع الأيام
+  void applyDayToAllDays(int sourceDayIndex) {
+    if (sourceDayIndex < 0 || sourceDayIndex >= workingHours.length) return;
+
+    final sourceDay = workingHours[sourceDayIndex];
+    final startTime = sourceDay['startTime'];
+    final endTime = sourceDay['endTime'];
+    final slotDuration = sourceDay['slotDuration'];
+    final isWorking = sourceDay['isWorking'];
+
+    for (int i = 0; i < workingHours.length; i++) {
+      workingHours[i]['startTime'] = startTime;
+      workingHours[i]['endTime'] = endTime;
+      workingHours[i]['slotDuration'] = slotDuration;
+      workingHours[i]['isWorking'] = isWorking;
+    }
+    workingHours.refresh();
   }
 }

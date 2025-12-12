@@ -24,7 +24,10 @@ class AboutPage extends StatelessWidget {
           automaticallyImplyLeading: false,
           leadingWidth: 0,
           actions: [
-            const BackButtonWidget(),
+            Padding(
+              padding: EdgeInsets.only(right: 16.w, left: 16.w),
+              child: const BackButtonWidget(),
+            ),
           ],
           title: MyText(
             'about_app_title'.tr,

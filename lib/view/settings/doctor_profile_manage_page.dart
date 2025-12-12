@@ -15,6 +15,7 @@ import '../../widget/status_dialog.dart';
 import '../../widget/confirm_dialogs.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/services.dart';
 import '../../widget/back_button_widget.dart';
 import '../../controller/doctor_profile_manage_controller.dart';
 
@@ -51,99 +52,117 @@ class DoctorProfileManagePage extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          padding: EdgeInsets.symmetric(vertical: 12.h),
           child: Column(
             children: [
-              Row(
-                children: [
-                  SizedBox(width: 48.h),
-                  Expanded(
-                    child: Center(
-                      child: MyText(
-                        'manage_personal_account_title'.tr,
-                        fontSize: 22.sp,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimary,
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                child: Row(
+                  children: [
+                    SizedBox(width: 48.h),
+                    Expanded(
+                      child: Center(
+                        child: MyText(
+                          'manage_personal_account_title'.tr,
+                          fontSize: 22.sp,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ),
-                  ),
-                  const BackButtonWidget(),
-                ],
+                    const BackButtonWidget(),
+                  ],
+                ),
               ),
               SizedBox(height: 16.h),
 
               _buildProfileCard(),
 
               SizedBox(height: 12.h),
-              Obx(
-                () => !controller.isEditingSocial.value
-                    ? SizedBox(
-                        width: double.infinity,
-                        height: 64.h,
-                        child: ElevatedButton(
-                          onPressed: () => controller.toggleEditingSocial(),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18.r),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 28.w),
+                child: Obx(
+                  () => !controller.isEditingSocial.value
+                      ? SizedBox(
+                          width: double.infinity,
+                          height: 64.h,
+                          child: ElevatedButton(
+                            onPressed: () => controller.toggleEditingSocial(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18.r),
+                              ),
+                              elevation: 0,
                             ),
-                            elevation: 0,
+                            child: MyText(
+                              'edit_social_media'.tr,
+                              fontSize: 20.sp,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
                           ),
-                          child: MyText(
-                            'edit_social_media'.tr,
-                            fontSize: 20.sp,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                          ),
-                        ),
-                      )
-                    : const SizedBox.shrink(),
+                        )
+                      : const SizedBox.shrink(),
+                ),
               ),
 
               Obx(
                 () => controller.isEditingSocial.value
-                    ? _buildSocialEditCard(controller)
+                    ? Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 28.w),
+                        child: _buildSocialEditCard(controller),
+                      )
                     : const SizedBox.shrink(),
               ),
 
               SizedBox(height: 12.h),
 
               // Personal info edit button
-              Obx(
-                () => !controller.isEditingPersonal.value
-                    ? SizedBox(
-                        width: double.infinity,
-                        height: 56.h,
-                        child: OutlinedButton(
-                          onPressed: () => controller.toggleEditingPersonal(),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: AppColors.primary),
-                            foregroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18.r),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 28.w),
+                child: Obx(
+                  () => !controller.isEditingPersonal.value
+                      ? SizedBox(
+                          width: double.infinity,
+                          height: 56.h,
+                          child: OutlinedButton(
+                            onPressed: () => controller.toggleEditingPersonal(),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: AppColors.primary),
+                              foregroundColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18.r),
+                              ),
+                              padding: EdgeInsets.symmetric(vertical: 14.h),
                             ),
-                            padding: EdgeInsets.symmetric(vertical: 14.h),
+                            child: MyText(
+                              'edit_personal_info'.tr,
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.primary,
+                            ),
                           ),
-                          child: MyText(
-                            'edit_personal_info'.tr,
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      )
-                    : const SizedBox.shrink(),
+                        )
+                      : const SizedBox.shrink(),
+                ),
               ),
 
               Obx(
                 () => controller.isEditingPersonal.value
-                    ? _buildPersonalEditCard(controller)
+                    ? Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 28.w),
+                        child: _buildPersonalEditCard(controller),
+                      )
                     : const SizedBox.shrink(),
               ),
 
               SizedBox(height: 16.h),
 
-              _buildSectionsList(),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 28.w),
+                child: _buildSectionsList(),
+              ),
               SizedBox(height: 16.h),
             ],
           ),
@@ -156,218 +175,266 @@ class DoctorProfileManagePage extends StatelessWidget {
     final session = Get.find<SessionController>();
     final DoctorProfileController controller =
         Get.find<DoctorProfileController>();
-    // مطابق لتصميم صفحة بروفايل الطبيب الحالية
-    return Column(
-      children: [
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 28.w),
-          child: Container(
-            width: double.infinity,
-            height: 400.h,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20.r),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
-                ),
-              ],
+    final manageController = Get.find<DoctorProfileManageController>();
+    
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 28.w),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20.r),
-              child: Stack(
+          ],
+        ),
+        child: Column(
+          children: [
+            // Doctor image
+            _buildProfileImage(controller, session),
+            
+            SizedBox(height: 20.h),
+            
+            // Doctor name and specialty
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Column(
                 children: [
                   Obx(() {
-                    final img = session.currentUser.value?.image ?? '';
-                    final loading = controller.isLoadingSocial.value;
-
-                    if (loading) {
-                      return Skeletonizer(
-                        enabled: true,
-                        child: Container(
-                          width: double.infinity,
-                          height: double.infinity,
-                          color: Colors.grey[300],
-                        ),
-                      );
-                    }
-
-                    if (img.isNotEmpty) {
-                      return Image.network(
-                        img,
-                        width: double.infinity,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (c, e, s) => Image.asset(
-                          'assets/icons/home/doctor.png',
-                          width: double.infinity,
-                          height: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
-                      );
-                    }
-                    return Image.asset(
-                      'assets/icons/home/doctor.png',
-                      width: double.infinity,
-                      height: double.infinity,
-                      fit: BoxFit.cover,
+                    final name = session.currentUser.value?.name ?? '—';
+                    return MyText(
+                      name.isNotEmpty ? name : '—',
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                      textAlign: TextAlign.center,
                     );
                   }),
-                  Positioned(
-                    top: 12.h,
-                    right: 12.w,
-                    child: InkWell(
-                      onTap: () => Get.find<DoctorProfileManageController>()
-                          .uploadProfileImage(),
-                      child: Container(
-                        padding: EdgeInsets.all(8.w),
-                        decoration: BoxDecoration(
-                          color: Colors.black45,
-                          borderRadius: BorderRadius.circular(20.r),
-                        ),
-                        child: const Icon(
-                          Icons.camera_alt,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Rating badge
-                  Positioned(
-                    bottom: 16.h,
-                    left: 16.w,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 6.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(20.r),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Obx(
-                            () => MyText(
-                              '${controller.ratingsCount.value} تقييم',
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          SizedBox(width: 4.w),
-                          const Icon(
-                            Icons.favorite,
-                            color: Colors.red,
-                            size: 16,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Followers count badge
-                  Positioned(
-                    bottom: 16.h,
-                    right: 16.w,
-                    child: Obx(
-                      () => Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12.w,
-                          vertical: 6.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(20.r),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            MyText(
-                              '${controller.followersCount.value} متابع',
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                            SizedBox(width: 4.w),
-                            const Icon(
-                              Icons.people,
-                              color: AppColors.primary,
-                              size: 16,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                  SizedBox(height: 8.h),
+                  Obx(() {
+                    final spec = session.currentUser.value?.specialization ?? '';
+                    return SpecializationText(
+                      specializationId: spec.isEmpty ? null : spec,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.textSecondary,
+                      textAlign: TextAlign.center,
+                      defaultText: '—',
+                    );
+                  }),
                 ],
               ),
             ),
-          ),
+            
+            SizedBox(height: 20.h),
+            
+            // Social media icons
+            Padding(
+              padding: EdgeInsets.only(bottom: 20.h),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _socialIconImage(
+                      'assets/icons/home/instgram.png',
+                      const Color(0xFFE4405F),
+                      onTap: () => _openUrlIfAny(
+                        manageController.instagramCtrl.text,
+                        fallbackHost: 'instagram.com',
+                      ),
+                    ),
+                    SizedBox(width: 6.w),
+                    _socialIconImage(
+                      'assets/icons/home/watsapp.png',
+                      const Color(0xFF25D366),
+                      onTap: () =>
+                          _openWhatsapp(manageController.whatsappCtrl.text),
+                    ),
+                    SizedBox(width: 6.w),
+                    _socialIconImage(
+                      'assets/icons/home/facebook.png',
+                      const Color(0xFF1877F2),
+                      onTap: () => _openUrlIfAny(
+                        manageController.facebookCtrl.text,
+                        fallbackHost: 'facebook.com',
+                      ),
+                    ),
+                    SizedBox(width: 6.w),
+                    _socialIconImage(
+                      'assets/icons/home/phone.png',
+                      const Color.fromARGB(255, 182, 113, 103),
+                      onTap: () {
+                        final phone = session.currentUser.value?.phone ?? '';
+                        if (phone.isNotEmpty) {
+                          _openPhone(phone);
+                        }
+                      },
+                    ),
+                    SizedBox(width: 6.w),
+                    _socialIconImage(
+                      'assets/icons/home/link.png',
+                      const Color(0xFF6366F1),
+                      onTap: () => _copyProfileLink(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-        SizedBox(height: 20.h),
-        Obx(() {
-          final session = Get.find<SessionController>();
-          final name = session.currentUser.value?.name ?? '—';
-          return MyText(
-            name.isNotEmpty ? name : '—',
-            fontSize: 24.sp,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          );
-        }),
-        SizedBox(height: 8.h),
-        Obx(() {
-          final session = Get.find<SessionController>();
-          final spec = session.currentUser.value?.specialization ?? '';
-          return SpecializationText(
-            specializationId: spec.isEmpty ? null : spec,
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w400,
-            color: AppColors.textSecondary,
-            defaultText: '—',
-          );
-        }),
-        SizedBox(height: 20.h),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w),
-          child: Builder(
-            builder: (context) {
-              final manageController =
-                  Get.find<DoctorProfileManageController>();
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _socialIconImage(
-                    'assets/icons/home/instgram.png',
-                    const Color(0xFFE4405F),
-                    onTap: () => _openUrlIfAny(
-                      manageController.instagramCtrl.text,
-                      fallbackHost: 'instagram.com',
-                    ),
+      ),
+    );
+  }
+
+  Widget _buildProfileImage(DoctorProfileController controller, SessionController session) {
+    return Container(
+      width: double.infinity,
+      height: 400.h,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20.r),
+          bottom: Radius.circular(20.r),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20.r),
+          bottom: Radius.circular(20.r),
+        ),
+        child: Stack(
+          children: [
+            Obx(() {
+              final img = session.currentUser.value?.image ?? '';
+              final loading = controller.isLoadingSocial.value;
+
+              if (loading) {
+                return Skeletonizer(
+                  enabled: true,
+                  child: Container(
+                    width: double.infinity,
+                    height: double.infinity,
+                    color: Colors.grey[300],
                   ),
-                  _socialIconImage(
-                    'assets/icons/home/watsapp.png',
-                    const Color(0xFF25D366),
-                    onTap: () =>
-                        _openWhatsapp(manageController.whatsappCtrl.text),
+                );
+              }
+
+              if (img.isNotEmpty) {
+                return Image.network(
+                  img,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (c, e, s) => Image.asset(
+                    'assets/icons/home/doctor.png',
+                    width: double.infinity,
+                    height: double.infinity,
+                    fit: BoxFit.cover,
                   ),
-                  _socialIconImage(
-                    'assets/icons/home/facebook.png',
-                    const Color(0xFF1877F2),
-                    onTap: () => _openUrlIfAny(
-                      manageController.facebookCtrl.text,
-                      fallbackHost: 'facebook.com',
-                    ),
-                  ),
-                ],
+                );
+              }
+              return Image.asset(
+                'assets/icons/home/doctor.png',
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
               );
-            },
-          ),
+            }),
+            Positioned(
+              top: 12.h,
+              right: 12.w,
+              child: InkWell(
+                onTap: () => Get.find<DoctorProfileManageController>()
+                    .uploadProfileImage(),
+                child: Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: Colors.black45,
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                  child: const Icon(
+                    Icons.camera_alt,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+            // Rating badge
+            Positioned(
+              bottom: 16.h,
+              left: 16.w,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 12.w,
+                  vertical: 6.h,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Obx(
+                      () => MyText(
+                        '${controller.ratingsCount.value} تقييم',
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(width: 4.w),
+                    const Icon(
+                      Icons.favorite,
+                      color: Colors.red,
+                      size: 16,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Followers count badge
+            Positioned(
+              bottom: 16.h,
+              right: 16.w,
+              child: Obx(
+                () => Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 6.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      MyText(
+                        '${controller.followersCount.value} متابع',
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                      SizedBox(width: 4.w),
+                      const Icon(
+                        Icons.people,
+                        color: AppColors.primary,
+                        size: 16,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -2970,5 +3037,56 @@ class DoctorProfileManagePage extends StatelessWidget {
         }),
       ],
     );
+  }
+
+  Future<void> _openPhone(String phoneNumber) async {
+    final phone = phoneNumber.trim().replaceAll(RegExp(r'[^0-9+]'), '');
+    if (phone.isEmpty) {
+      Get.snackbar(
+        'لا يوجد رقم هاتف',
+        'لم يتم ضبط رقم الهاتف',
+        backgroundColor: Colors.black87,
+        colorText: Colors.white,
+      );
+      return;
+    }
+    final url = 'tel:$phone';
+    await _launchExternal(url);
+  }
+
+  Future<void> _copyProfileLink() async {
+    final session = Get.find<SessionController>();
+    final userId = session.currentUser.value?.id ?? '';
+    if (userId.isEmpty) {
+      Get.snackbar(
+        'خطأ',
+        'تعذر الحصول على معرف المستخدم',
+        backgroundColor: const Color(0xFFFF3B30),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+      );
+      return;
+    }
+    final link = 'https://hagz.app/doctor/$userId';
+
+    try {
+      await Clipboard.setData(ClipboardData(text: link));
+      Get.snackbar(
+        'تم النسخ',
+        'تم نسخ رابط الملف الشخصي\nسيتم فتح التطبيق مباشرة عند الضغط على الرابط',
+        backgroundColor: AppColors.primary,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'خطأ',
+        'تعذر نسخ الرابط',
+        backgroundColor: const Color(0xFFFF3B30),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+      );
+    }
   }
 }

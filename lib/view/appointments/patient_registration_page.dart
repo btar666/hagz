@@ -133,6 +133,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: const Color(0xFFF4FEFF),
+        resizeToAvoidBottomInset: true,
         body: SafeArea(
           child: Column(
             children: [
@@ -144,9 +145,9 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                     padding: EdgeInsets.symmetric(horizontal: 30.w),
                     child: Column(
                       children: [
-                        SizedBox(height: 40.h),
+                        SizedBox(height: 20.h),
                         Container(
-                          padding: EdgeInsets.all(24.w),
+                          padding: EdgeInsets.all(20.w),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(28.r),
@@ -161,25 +162,25 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                           child: Column(
                             children: [
                               _buildPatientNameField(),
-                              SizedBox(height: 30.h),
+                              SizedBox(height: 24.h),
                               _buildAgeField(),
-                              SizedBox(height: 30.h),
+                              SizedBox(height: 24.h),
                               _buildGenderSelection(),
-                              SizedBox(height: 30.h),
+                              SizedBox(height: 24.h),
                               _buildPhoneField(),
                             ],
                           ),
                         ),
-                        SizedBox(height: 60.h),
+                        SizedBox(height: 20.h),
                       ],
                     ),
                   ),
                 ),
               ),
-              _buildNextButton(),
             ],
           ),
         ),
+        bottomNavigationBar: _buildNextButton(),
       ),
     );
   }
@@ -288,15 +289,15 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                   children: [
                     MyText(
                       'تسجيل معلومات المريض',
-                      fontSize: 24.sp,
+                      fontSize: 22.sp,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF374151),
                       textAlign: TextAlign.right,
                     ),
-                    SizedBox(height: 6.h),
+                    SizedBox(height: 5.h),
                     MyText(
                       'الخطوة التالية : اختيار تاريخ و وقت الموعد',
-                      fontSize: 14.sp,
+                      fontSize: 13.sp,
                       fontWeight: FontWeight.w400,
                       color: const Color(0xFF6B7280),
                       textAlign: TextAlign.right,
@@ -316,10 +317,10 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.only(bottom: 12.h),
+          padding: EdgeInsets.only(bottom: 10.h),
           child: MyText(
             'اسم المريض الثلاثي',
-            fontSize: 18.sp,
+            fontSize: 17.sp,
             fontWeight: FontWeight.w700,
             color: Colors.black87,
             textAlign: TextAlign.right,
@@ -342,8 +343,8 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
               hintTextDirection: TextDirection.rtl,
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(
-                horizontal: 24.w,
-                vertical: 18.h,
+                horizontal: 22.w,
+                vertical: 16.h,
               ),
             ),
           ),
@@ -357,10 +358,10 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.only(bottom: 12.h),
+          padding: EdgeInsets.only(bottom: 10.h),
           child: MyText(
             'عمر المريض',
-            fontSize: 18.sp,
+            fontSize: 17.sp,
             fontWeight: FontWeight.w700,
             color: Colors.black87,
             textAlign: TextAlign.right,
@@ -379,8 +380,8 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
               hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16.sp),
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(
-                horizontal: 24.w,
-                vertical: 18.h,
+                horizontal: 22.w,
+                vertical: 16.h,
               ),
             ),
             icon: Padding(
@@ -429,7 +430,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
           color: Colors.black87,
           textAlign: TextAlign.right,
         ),
-        SizedBox(height: 18.h),
+        SizedBox(height: 14.h),
         Row(
           children: [
             Expanded(
@@ -438,7 +439,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                   setState(() => _selectedGender = 'ذكر');
                 },
                 child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                  padding: EdgeInsets.symmetric(vertical: 14.h),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(22.r),
@@ -478,7 +479,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                   setState(() => _selectedGender = 'أنثى');
                 },
                 child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                  padding: EdgeInsets.symmetric(vertical: 14.h),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(22.r),
@@ -522,10 +523,10 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.only(bottom: 12.h),
+          padding: EdgeInsets.only(bottom: 10.h),
           child: MyText(
             'رقم الهاتف',
-            fontSize: 18.sp,
+            fontSize: 17.sp,
             fontWeight: FontWeight.w700,
             color: Colors.black87,
             textAlign: TextAlign.right,
@@ -543,7 +544,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
             textDirection: TextDirection.ltr, // أرقام الهاتف تبقى LTR
             keyboardType: TextInputType.phone,
             style: TextStyle(
-              fontSize: 18.sp,
+              fontSize: 17.sp,
               color: Colors.black87,
               letterSpacing: 2,
               fontWeight: FontWeight.w500,
@@ -552,15 +553,15 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
               hintText: '0000 000 0000',
               hintStyle: TextStyle(
                 color: Colors.grey[400],
-                fontSize: 18.sp,
+                fontSize: 17.sp,
                 letterSpacing: 2,
                 fontWeight: FontWeight.w500,
               ),
               hintTextDirection: TextDirection.ltr,
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(
-                horizontal: 24.w,
-                vertical: 18.h,
+                horizontal: 22.w,
+                vertical: 16.h,
               ),
             ),
           ),
@@ -571,10 +572,11 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
 
   Widget _buildNextButton() {
     return Container(
-      padding: EdgeInsets.all(30.w),
-      child: SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
+      padding: EdgeInsets.fromLTRB(30.w, 16.h, 30.w, 30.h),
+      child: SafeArea(
+        child: SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
           onPressed: () {
             // فحص صحة البيانات
             if (_nameController.text.trim().isEmpty) {
@@ -615,6 +617,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
             fontSize: 20.sp,
             fontWeight: FontWeight.w700,
             color: Colors.white,
+          ),
           ),
         ),
       ),

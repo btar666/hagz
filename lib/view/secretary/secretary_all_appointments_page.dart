@@ -86,7 +86,7 @@ class _SecretaryAllAppointmentsPageState
             ],
           ),
           body: SingleChildScrollView(
-            padding: EdgeInsets.all(16.w),
+            padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 16.w),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

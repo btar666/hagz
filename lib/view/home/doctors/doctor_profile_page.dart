@@ -231,35 +231,28 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
         backgroundColor: const Color(0xFFF4FEFF),
         appBar: _buildAppBar(),
         body: SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                // Doctor image section
-                _buildDoctorImage(controller),
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      // Doctor profile container (image, name, specialty, social media)
+                      _buildDoctorProfileContainer(controller),
 
-                SizedBox(height: 20.h),
+                      SizedBox(height: 30.h),
 
-                // Doctor name and specialty
-                _buildDoctorInfo(),
+                      // Expandable sections
+                      _buildExpandableSections(controller),
 
-                SizedBox(height: 20.h),
-
-                // Social media icons
-                _buildSocialMediaIcons(),
-
-                SizedBox(height: 30.h),
-
-                // Expandable sections
-                _buildExpandableSections(controller),
-
-                SizedBox(height: 30.h),
-
-                // Book appointment button
-                _buildBookButton(),
-
-                SizedBox(height: 30.h),
-              ],
-            ),
+                      SizedBox(height: 30.h),
+                    ],
+                  ),
+                ),
+              ),
+              // Book appointment button - fixed at bottom
+              _buildBookButton(),
+            ],
           ),
         ),
       ),
@@ -333,13 +326,12 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
     );
   }
 
-  Widget _buildDoctorImage(DoctorProfileController controller) {
+  Widget _buildDoctorProfileContainer(DoctorProfileController controller) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 28.w),
       child: Container(
-        width: double.infinity,
-        height: 400.h,
         decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(20.r),
           boxShadow: [
             BoxShadow(
@@ -349,52 +341,119 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20.r),
-          child: Stack(
-            children: [
-              // Doctor image
-              Obx(() {
-                final img = controller.doctorImageUrl.value.trim();
-                final loading = controller.isLoadingSocial.value;
-                return Hero(
-                  tag: 'doctor-image-${widget.doctorId}',
-                  child: loading
-                      ? Skeletonizer(
-                          enabled: true,
-                          child: Container(
-                            width: double.infinity,
-                            height: double.infinity,
-                            color: Colors.grey[300],
-                          ),
-                        )
-                      : (img.isNotEmpty
-                            ? Image.network(
-                                img,
-                                width: double.infinity,
-                                height: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (c, e, s) => Image.asset(
-                                  'assets/icons/home/doctor.png',
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  fit: BoxFit.cover,
-                                ),
-                              )
-                            : Image.asset(
+        child: Column(
+          children: [
+            // Doctor image
+            _buildDoctorImage(controller),
+
+            SizedBox(height: 20.h),
+
+            // Doctor name and specialty
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: _buildDoctorInfo(),
+            ),
+
+            SizedBox(height: 20.h),
+
+            // Social media icons
+            Padding(
+              padding: EdgeInsets.only(bottom: 20.h),
+              child: _buildSocialMediaIcons(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDoctorImage(DoctorProfileController controller) {
+    return Container(
+      width: double.infinity,
+      height: 400.h,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20.r),
+          bottom: Radius.circular(20.r),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20.r),
+          bottom: Radius.circular(20.r),
+        ),
+        child: Stack(
+          children: [
+            // Doctor image
+            Obx(() {
+              final img = controller.doctorImageUrl.value.trim();
+              final loading = controller.isLoadingSocial.value;
+              return Hero(
+                tag: 'doctor-image-${widget.doctorId}',
+                child: loading
+                    ? Skeletonizer(
+                        enabled: true,
+                        child: Container(
+                          width: double.infinity,
+                          height: double.infinity,
+                          color: Colors.grey[300],
+                        ),
+                      )
+                    : (img.isNotEmpty
+                          ? Image.network(
+                              img,
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (c, e, s) => Image.asset(
                                 'assets/icons/home/doctor.png',
                                 width: double.infinity,
                                 height: double.infinity,
                                 fit: BoxFit.cover,
-                              )),
-                );
-              }),
+                              ),
+                            )
+                          : Image.asset(
+                              'assets/icons/home/doctor.png',
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                            )),
+              );
+            }),
 
-              // Rating badge
-              Positioned(
-                bottom: 16.h,
-                left: 16.w,
-                child: Container(
+            // Rating badge
+            Positioned(
+              bottom: 16.h,
+              left: 16.w,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Obx(
+                      () => MyText(
+                        '${controller.ratingsCount.value} تقييم',
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(width: 4.w),
+                    const Icon(Icons.favorite, color: Colors.red, size: 16),
+                  ],
+                ),
+              ),
+            ),
+            // Followers count badge
+            Positioned(
+              bottom: 16.h,
+              right: 16.w,
+              child: Obx(
+                () => Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: 12.w,
                     vertical: 6.h,
@@ -406,56 +465,24 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Obx(
-                        () => MyText(
-                          '${controller.ratingsCount.value} تقييم',
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
+                      MyText(
+                        '${followersCount.value} متابع',
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
                       ),
                       SizedBox(width: 4.w),
-                      const Icon(Icons.favorite, color: Colors.red, size: 16),
+                      const Icon(
+                        Icons.people,
+                        color: AppColors.primary,
+                        size: 16,
+                      ),
                     ],
                   ),
                 ),
               ),
-              // Followers count badge
-              Positioned(
-                bottom: 16.h,
-                right: 16.w,
-                child: Obx(
-                  () => Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12.w,
-                      vertical: 6.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(20.r),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        MyText(
-                          '${followersCount.value} متابع',
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                        SizedBox(width: 4.w),
-                        const Icon(
-                          Icons.people,
-                          color: AppColors.primary,
-                          size: 16,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -551,7 +578,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
   Widget _buildSocialMediaIcons() {
     final controller = Get.find<DoctorProfileController>();
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 40.w),
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
@@ -564,6 +591,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
               fallbackIcon: Icons.phone,
             );
           }),
+          SizedBox(width: 8.w),
           Obx(() {
             final ig = controller.instagram.value;
             return _buildSocialIconImage(
@@ -572,6 +600,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
               onTap: ig.trim().isEmpty ? null : () => _openUrlIfAny(ig),
             );
           }),
+          SizedBox(width: 8.w),
           Obx(() {
             final wa = controller.whatsapp.value;
             return _buildSocialIconImage(
@@ -580,6 +609,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
               onTap: wa.trim().isEmpty ? null : () => _openWhatsapp(wa),
             );
           }),
+          SizedBox(width: 8.w),
           Obx(() {
             final fb = controller.facebook.value;
             return _buildSocialIconImage(
@@ -588,6 +618,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
               onTap: fb.trim().isEmpty ? null : () => _openUrlIfAny(fb),
             );
           }),
+          SizedBox(width: 8.w),
           _buildSocialIconImage(
             'assets/icons/home/link.png',
             const Color(0xFF6366F1),
@@ -787,20 +818,22 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
         ),
 
         // Content with animation
-        Obx(
-          () => AnimatedCrossFade(
-            duration: const Duration(milliseconds: 300),
-            crossFadeState: isExpanded.value
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            firstChild: const SizedBox(),
-            secondChild: Container(
-              width: double.infinity,
-              padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
-              child: content,
+        Obx(() {
+          if (!isExpanded.value) {
+            return const SizedBox.shrink();
+          }
+          return ClipRect(
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+                child: content,
+              ),
             ),
-          ),
-        ),
+          );
+        }),
       ],
     );
   }
@@ -863,7 +896,8 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
                 final name = _certificateName(item, i);
                 return Padding(
                   padding: EdgeInsets.only(
-                      bottom: i == certificates.length - 1 ? 0 : 12.h),
+                    bottom: i == certificates.length - 1 ? 0 : 12.h,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -1612,16 +1646,16 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
     Color bgForStatus(String status) {
       switch (status) {
         case 'full':
-          return const Color(0xFFE3F5ED); // light green - الحجز ممتلأ
+          return const Color(0xFFB8E6D1); // darker green - الحجز ممتلأ
         case 'available':
-          return const Color(0xFFEFF3F8); // light gray - الحجز متاح
+          return const Color(0xFFD1D9E6); // darker gray - الحجز متاح
         case 'holiday':
-          return const Color(0xFFFFF0D5); // light yellow
+          return const Color(0xFFFFE0A8); // darker yellow
         case 'closed':
-          return const Color(0xFFFFE4E4); // light red
+          return const Color(0xFFFFC9C9); // darker red
         case 'open':
         default:
-          return const Color(0xFFEFF3F8); // light gray
+          return const Color(0xFFD1D9E6); // darker gray
       }
     }
 
@@ -1788,7 +1822,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
                           color: AppColors.textPrimary,
                         ),
                         SizedBox(width: 10.w),
-                        legendDot(const Color(0xFFEFF3F8)),
+                        legendDot(const Color(0xFF9FB0C8)),
                       ],
                     ),
                     SizedBox(height: 12.h),
@@ -1801,7 +1835,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
                           color: AppColors.textPrimary,
                         ),
                         SizedBox(width: 10.w),
-                        legendDot(const Color(0xFFE3F5ED)), // أخضر - full
+                        legendDot(const Color(0xFF62C299)), // أخضر - full
                       ],
                     ),
                     SizedBox(height: 12.h),
@@ -1814,7 +1848,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
                           color: AppColors.textPrimary,
                         ),
                         SizedBox(width: 10.w),
-                        legendDot(const Color(0xFFFFF0D5)),
+                        legendDot(const Color(0xFFFFC04D)),
                       ],
                     ),
                     SizedBox(height: 12.h),
@@ -1827,7 +1861,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
                           color: AppColors.textPrimary,
                         ),
                         SizedBox(width: 10.w),
-                        legendDot(const Color(0xFFFFE4E4)),
+                        legendDot(const Color(0xFFFF8787)),
                       ],
                     ),
                   ],
@@ -1936,7 +1970,7 @@ class _DoctorProfilePageState extends State<DoctorProfilePage> {
 
   Widget _buildBookButton() {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 28.w),
+      padding: EdgeInsets.fromLTRB(28.w, 16.h, 28.w, 28.h),
       child: GestureDetector(
         onTap: () {
           Get.to(

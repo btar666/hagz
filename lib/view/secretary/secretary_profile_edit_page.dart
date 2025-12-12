@@ -11,6 +11,7 @@ import '../../controller/session_controller.dart';
 import '../../service_layer/services/user_service.dart';
 import '../../service_layer/services/upload_service.dart';
 import '../../widget/status_dialog.dart';
+import '../../widget/back_button_widget.dart';
 
 class SecretaryProfileEditPage extends StatefulWidget {
   const SecretaryProfileEditPage({super.key});
@@ -67,43 +68,32 @@ class _SecretaryProfileEditPageState extends State<SecretaryProfileEditPage> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: const Color(0xFFF4FEFF),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          leadingWidth: 0,
+          actions: [
+            Padding(
+              padding: EdgeInsets.only(right: 16.w, left: 16.w),
+              child: const BackButtonWidget(),
+            ),
+          ],
+          title: MyText(
+            'تعديل الملف الشخصي',
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+            textAlign: TextAlign.center,
+          ),
+          centerTitle: true,
+        ),
         body: SafeArea(
           child: SingleChildScrollView(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
             child: Column(
               children: [
-                // Header
-                Row(
-                  children: [
-                    Container(
-                      width: 48.h,
-                      height: 48.h,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      child: IconButton(
-                        onPressed: () => Get.back(),
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Center(
-                        child: MyText(
-                          'تعديل الملف الشخصي',
-                          fontSize: 22.sp,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 48.h),
-                  ],
-                ),
-                SizedBox(height: 24.h),
+                SizedBox(height: 12.h),
 
                 // Profile Image Section
                 _buildProfileImageSection(),
@@ -139,6 +129,29 @@ class _SecretaryProfileEditPageState extends State<SecretaryProfileEditPage> {
                       _buildTextField(_addressCtrl, 'أدخل العنوان التفصيلي'),
                       SizedBox(height: 32.h),
 
+                      // Change Password Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48.h,
+                        child: OutlinedButton.icon(
+                          onPressed: _showChangePasswordDialog,
+                          icon: Icon(Icons.lock, size: 20.sp),
+                          label: MyText(
+                            'تغيير كلمة المرور',
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.orange),
+                            foregroundColor: Colors.orange,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18.r),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16.h),
+
                       // Save Button
                       SizedBox(
                         width: double.infinity,
@@ -167,29 +180,6 @@ class _SecretaryProfileEditPageState extends State<SecretaryProfileEditPage> {
                                   fontWeight: FontWeight.w900,
                                   color: Colors.white,
                                 ),
-                        ),
-                      ),
-                      SizedBox(height: 16.h),
-
-                      // Change Password Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48.h,
-                        child: OutlinedButton.icon(
-                          onPressed: _showChangePasswordDialog,
-                          icon: Icon(Icons.lock, size: 20.sp),
-                          label: MyText(
-                            'تغيير كلمة المرور',
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Colors.orange),
-                            foregroundColor: Colors.orange,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18.r),
-                            ),
-                          ),
                         ),
                       ),
                     ],

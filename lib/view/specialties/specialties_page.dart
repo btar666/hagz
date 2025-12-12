@@ -174,9 +174,13 @@ class _SpecialtiesPageState extends State<SpecialtiesPage> {
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20.w),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Specialties sidebar
-                      _buildSpecialtiesSidebar(),
+                      Padding(
+                        padding: EdgeInsets.only(bottom: 20.h),
+                        child: _buildSpecialtiesSidebar(),
+                      ),
 
                       SizedBox(width: 15.w),
 
@@ -453,7 +457,7 @@ class _SpecialtiesPageState extends State<SpecialtiesPage> {
         ],
       ),
       child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 20.h),
+        padding: EdgeInsets.only(top: 20.h, bottom: 30.h),
         child: Column(
           children: [
             if (_isLoadingSpecializations)
@@ -461,6 +465,7 @@ class _SpecialtiesPageState extends State<SpecialtiesPage> {
                 child: Skeletonizer(
                   enabled: true,
                   child: ListView.separated(
+                    padding: EdgeInsets.only(bottom: 30.h),
                     itemCount: 5,
                     separatorBuilder: (context, index) =>
                         SizedBox(height: 20.h),
@@ -493,6 +498,7 @@ class _SpecialtiesPageState extends State<SpecialtiesPage> {
             else
               Expanded(
                 child: ListView.separated(
+                  padding: EdgeInsets.only(bottom: 30.h),
                   itemCount: _specializations.length,
                   separatorBuilder: (context, index) => SizedBox(height: 20.h),
                   itemBuilder: (context, index) {
@@ -504,6 +510,88 @@ class _SpecialtiesPageState extends State<SpecialtiesPage> {
         ),
       ),
     );
+  }
+
+  IconData _getSpecializationIcon(String specializationName) {
+    final name = specializationName.toLowerCase();
+    if (name.contains('عيون') || name.contains('eye')) {
+      return Icons.remove_red_eye;
+    } else if (name.contains('قلب') ||
+        name.contains('cardio') ||
+        name.contains('heart')) {
+      return Icons.favorite;
+    } else if (name.contains('أسنان') ||
+        name.contains('dental') ||
+        name.contains('tooth')) {
+      return Icons.local_hospital;
+    } else if (name.contains('أطفال') ||
+        name.contains('pediatric') ||
+        name.contains('child')) {
+      return Icons.child_care;
+    } else if (name.contains('نساء') ||
+        name.contains('ولادة') ||
+        name.contains('gynec') ||
+        name.contains('obstet')) {
+      return Icons.pregnant_woman;
+    } else if (name.contains('جلد') ||
+        name.contains('dermat') ||
+        name.contains('skin')) {
+      return Icons.face;
+    } else if (name.contains('عظام') ||
+        name.contains('ortho') ||
+        name.contains('bone')) {
+      return Icons.healing;
+    } else if (name.contains('أذن') ||
+        name.contains('أنف') ||
+        name.contains('حنجرة') ||
+        name.contains('ent') ||
+        name.contains('ear') ||
+        name.contains('nose')) {
+      return Icons.hearing;
+    } else if (name.contains('جراحة') ||
+        name.contains('surgery') ||
+        name.contains('surgical')) {
+      return Icons.medical_services;
+    } else if (name.contains('باطنية') ||
+        name.contains('باطنة') ||
+        name.contains('internal') ||
+        name.contains('digestive')) {
+      return Icons.medical_information;
+    } else if (name.contains('أعصاب') ||
+        name.contains('neuro') ||
+        name.contains('nerve')) {
+      return Icons.psychology;
+    } else if (name.contains('نفسي') ||
+        name.contains('psych') ||
+        name.contains('mental')) {
+      return Icons.psychology;
+    } else if (name.contains('أورام') ||
+        name.contains('oncology') ||
+        name.contains('cancer')) {
+      return Icons.coronavirus;
+    } else if (name.contains('مسالك') ||
+        name.contains('urology') ||
+        name.contains('urinary')) {
+      return Icons.water_drop;
+    } else if (name.contains('أشعة') ||
+        name.contains('radiology') ||
+        name.contains('radiology') ||
+        name.contains('x-ray') ||
+        name.contains('imaging')) {
+      return Icons.scanner;
+    } else if (name.contains('تخدير') ||
+        name.contains('anesthesia') ||
+        name.contains('anesthesiology')) {
+      return Icons.medication;
+    } else if (name.contains('طوارئ') ||
+        name.contains('emergency') ||
+        name.contains('er')) {
+      return Icons.local_hospital;
+    } else if (name.contains('أنف') || name.contains('nose')) {
+      return Icons.air;
+    } else {
+      return Icons.medical_services;
+    }
   }
 
   Widget _buildSidebarSpecialtyItem(SpecializationModel specialty) {
@@ -528,7 +616,7 @@ class _SpecialtiesPageState extends State<SpecialtiesPage> {
                     : null,
               ),
               child: Icon(
-                Icons.medical_services,
+                _getSpecializationIcon(specialty.name),
                 color: isSelected ? Colors.white : const Color(0xFF7FC8D6),
                 size: 28.r,
               ),

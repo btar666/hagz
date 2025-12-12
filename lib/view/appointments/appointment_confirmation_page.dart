@@ -282,22 +282,19 @@ class _AppointmentConfirmationPageState
             _buildHeader(context),
             _buildProgressIndicator(),
             Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 30.w),
-                  child: Column(
-                    children: [
-                      SizedBox(height: 40.h),
-                      _buildDoctorInfo(),
-                      SizedBox(height: 30.h),
-                      _buildQueueNumber(),
-                      SizedBox(height: 20.h),
-                      _buildWishMessage(),
-                      SizedBox(height: 30.h),
-                      _buildBaleyCab(),
-                      SizedBox(height: 40.h),
-                    ],
-                  ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 30.w),
+                child: Column(
+                  children: [
+                    SizedBox(height: 16.h),
+                    _buildDoctorInfo(),
+                    SizedBox(height: 16.h),
+                    _buildQueueNumber(),
+                    SizedBox(height: 12.h),
+                    _buildWishMessage(),
+                    // SizedBox(height: 12.h),
+                    // _buildBaleyCab(),
+                  ],
                 ),
               ),
             ),
@@ -423,7 +420,7 @@ class _AppointmentConfirmationPageState
 
   Widget _buildDoctorInfo() {
     return Container(
-      padding: EdgeInsets.all(24.w),
+      padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(28.r),
@@ -439,36 +436,36 @@ class _AppointmentConfirmationPageState
         children: [
           // Doctor avatar and name
           CircleAvatar(
-            radius: 35.r,
+            radius: 28.r,
             backgroundColor: const Color(0xFF7FC8D6),
-            child: Icon(Icons.person, size: 40.r, color: Colors.white),
+            child: Icon(Icons.person, size: 32.r, color: Colors.white),
           ),
-          SizedBox(height: 15.h),
+          SizedBox(height: 10.h),
           MyText(
             widget.doctorName,
-            fontSize: 20.sp,
+            fontSize: 18.sp,
             fontWeight: FontWeight.w700,
             color: Colors.black87,
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: 5.h),
+          SizedBox(height: 4.h),
           SpecializationText(
             specializationId: widget.doctorSpecialty,
-            fontSize: 16.sp,
+            fontSize: 14.sp,
             fontWeight: FontWeight.w500,
             color: Colors.grey[600],
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: 25.h),
+          SizedBox(height: 16.h),
           Divider(color: Colors.grey[200], thickness: 1),
-          SizedBox(height: 20.h),
+          SizedBox(height: 12.h),
           // Patient and appointment details
           _buildInfoRow('اسم المريض', widget.patientName),
-          SizedBox(height: 12.h),
+          SizedBox(height: 8.h),
           _buildInfoRow('تاريخ الحجز', widget.appointmentDate),
-          SizedBox(height: 12.h),
+          SizedBox(height: 8.h),
           _buildInfoRow('وقت الحجز', '${widget.appointmentTime} صباحاً'),
-          SizedBox(height: 12.h),
+          SizedBox(height: 8.h),
           _buildInfoRow(
             'سعر الحجز',
             _isLoadingPrice
@@ -488,16 +485,16 @@ class _AppointmentConfirmationPageState
       children: [
         MyText(
           '$label :',
-          fontSize: 16.sp,
+          fontSize: 14.sp,
           fontWeight: FontWeight.w500,
           color: Colors.grey[600],
           textAlign: TextAlign.right,
         ),
-        SizedBox(width: 20.w),
+        SizedBox(width: 16.w),
         Expanded(
           child: MyText(
             value,
-            fontSize: isPrice ? 18.sp : 16.sp,
+            fontSize: isPrice ? 16.sp : 14.sp,
             fontWeight: isPrice ? FontWeight.w700 : FontWeight.w600,
             color: isPrice ? const Color(0xFF7FC8D6) : Colors.black87,
             textAlign: TextAlign.right,
@@ -509,7 +506,7 @@ class _AppointmentConfirmationPageState
 
   Widget _buildQueueNumber() {
     return Container(
-      padding: EdgeInsets.all(24.w),
+      padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(28.r),
@@ -531,15 +528,15 @@ class _AppointmentConfirmationPageState
                   children: [
                     MyText(
                       _isLoadingQueue ? '...' : '$_queueNumber',
-                      fontSize: 47.sp,
+                      fontSize: 36.sp,
                       fontWeight: FontWeight.w900,
                       color: Colors.black87,
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: 10.h),
+                    SizedBox(height: 6.h),
                     MyText(
                       'تسلسل الموعد',
-                      fontSize: 14.sp,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
                       textAlign: TextAlign.center,
@@ -547,7 +544,7 @@ class _AppointmentConfirmationPageState
                   ],
                 ),
               ),
-              Container(width: 1, height: 60, color: Colors.grey[300]),
+              Container(width: 1, height: 50, color: Colors.grey[300]),
               Expanded(
                 child: Column(
                   children: [
@@ -555,15 +552,15 @@ class _AppointmentConfirmationPageState
                       _isLoadingCurrentAppointment
                           ? '...'
                           : (_currentAppointmentNumber?.toString() ?? '-'),
-                      fontSize: 47.sp,
+                      fontSize: 36.sp,
                       fontWeight: FontWeight.w900,
                       color: const Color(0xFF7FC8D6),
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: 10.h),
+                    SizedBox(height: 6.h),
                     MyText(
                       'الموعد الحالي',
-                      fontSize: 14.sp,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF7FC8D6),
                       textAlign: TextAlign.center,
@@ -580,7 +577,7 @@ class _AppointmentConfirmationPageState
 
   Widget _buildWishMessage() {
     return Container(
-      padding: EdgeInsets.all(20.w),
+      padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF8E1),
         borderRadius: BorderRadius.circular(15.r),
@@ -591,12 +588,12 @@ class _AppointmentConfirmationPageState
       ),
       child: Row(
         children: [
-          Text('🧡', style: TextStyle(fontSize: 24.sp)),
-          SizedBox(width: 10.w),
+          Text('🧡', style: TextStyle(fontSize: 20.sp)),
+          SizedBox(width: 8.w),
           Expanded(
             child: MyText(
               '" نتمناكم أيام كلها صحة و عافية "',
-              fontSize: 16.sp,
+              fontSize: 14.sp,
               fontWeight: FontWeight.w600,
               color: const Color(0xFFB45309),
               textAlign: TextAlign.right,
@@ -609,7 +606,7 @@ class _AppointmentConfirmationPageState
 
   Widget _buildBaleyCab() {
     return Container(
-      padding: EdgeInsets.all(20.w),
+      padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
         color: const Color(0xFFE3F2FD),
         borderRadius: BorderRadius.circular(15.r),
@@ -617,37 +614,37 @@ class _AppointmentConfirmationPageState
       child: Row(
         children: [
           Container(
-            width: 60.w,
-            height: 60.w,
+            width: 50.w,
+            height: 50.w,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(30.r),
+              borderRadius: BorderRadius.circular(25.r),
             ),
             child: Center(
               child: MyText(
                 'بلي',
-                fontSize: 14.sp,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w800,
                 color: const Color(0xFF1976D2),
               ),
             ),
           ),
-          SizedBox(width: 15.w),
+          SizedBox(width: 12.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 MyText(
                   'اضغط هنا و اطلب سيارة أجرة لنقلك',
-                  fontSize: 14.sp,
+                  fontSize: 12.sp,
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
                   textAlign: TextAlign.right,
                 ),
-                SizedBox(height: 5.h),
+                SizedBox(height: 4.h),
                 MyText(
                   'من شركة بلي',
-                  fontSize: 12.sp,
+                  fontSize: 11.sp,
                   fontWeight: FontWeight.w500,
                   color: Colors.grey[600],
                   textAlign: TextAlign.right,

@@ -39,8 +39,9 @@ class SecretaryHomePage extends StatelessWidget {
                       final user = sessionController.currentUser.value;
 
                       if (user?.associatedDoctor.isNotEmpty == true) {
-                        // Fetch doctor to get specialization id
+                        // Fetch doctor to get specialization id and name
                         String specializationId = '';
+                        String doctorName = '';
                         try {
                           final res = await UserService().getUserById(
                             user!.associatedDoctor,
@@ -50,6 +51,10 @@ class SecretaryHomePage extends StatelessWidget {
                               ? (data['data'] ?? data)
                               : null;
                           if (inner is Map<String, dynamic>) {
+                            // Get doctor name
+                            doctorName = inner['name']?.toString() ?? '';
+                            
+                            // Get specialization
                             final spec = inner['specialization'];
                             if (spec is String) {
                               specializationId = spec;
@@ -63,7 +68,7 @@ class SecretaryHomePage extends StatelessWidget {
                         Get.to(
                           () => PatientRegistrationPage(
                             doctorId: user!.associatedDoctor,
-                            doctorName: user.name,
+                            doctorName: doctorName.isNotEmpty ? doctorName : 'طبيب',
                             doctorSpecialty: specializationId,
                           ),
                         );
@@ -84,7 +89,7 @@ class SecretaryHomePage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16.r),
                       ),
                       child: const Icon(
-                        Icons.calendar_today,
+                        Icons.add,
                         color: Colors.white,
                         size: 28,
                       ),

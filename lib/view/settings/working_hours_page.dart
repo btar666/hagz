@@ -275,24 +275,29 @@ class WorkingHoursPage extends StatelessWidget {
             splashColor: Colors.transparent,
             highlightColor: Colors.transparent,
           ),
-          child: ExpansionTile(
-            tilePadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-            childrenPadding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
-            leading: Container(
-              width: 40.w,
-              height: 40.w,
-              decoration: BoxDecoration(
-                color: isWorking
-                    ? AppColors.primary.withOpacity(0.1)
-                    : Colors.grey[200],
-                shape: BoxShape.circle,
+          child: Obx(() {
+            final isExpanded = controller.expandedDays[dayIndex] ?? false;
+            return ExpansionTile(
+              tilePadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+              childrenPadding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+              onExpansionChanged: (expanded) {
+                controller.expandedDays[dayIndex] = expanded;
+              },
+              leading: Container(
+                width: 40.w,
+                height: 40.w,
+                decoration: BoxDecoration(
+                  color: isWorking
+                      ? AppColors.primary.withOpacity(0.1)
+                      : Colors.grey[200],
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  color: isWorking ? AppColors.primary : Colors.grey[400],
+                  size: 24.sp,
+                ),
               ),
-              child: Icon(
-                isWorking ? Icons.check_circle : Icons.cancel,
-                color: isWorking ? AppColors.primary : Colors.grey[400],
-                size: 24.sp,
-              ),
-            ),
             title: MyText(
               day['dayName'],
               fontSize: 16.sp,
@@ -336,9 +341,12 @@ class WorkingHoursPage extends StatelessWidget {
                     ),
                     SizedBox(height: 12.h),
                     _buildSlotDurationRow(dayIndex, day['slotDuration']),
+                    SizedBox(height: 12.h),
+                    _buildApplyToAllDaysButton(dayIndex),
                   ]
                 : [],
-          ),
+            );
+          }),
         ),
       );
     });
@@ -424,8 +432,8 @@ class WorkingHoursPage extends StatelessWidget {
               children: [
                 IconButton(
                   onPressed: () {
-                    if (duration > 15) {
-                      controller.updateSlotDuration(dayIndex, duration - 15);
+                    if (duration > 5) {
+                      controller.updateSlotDuration(dayIndex, duration - 5);
                     }
                   },
                   icon: Icon(
@@ -460,7 +468,7 @@ class WorkingHoursPage extends StatelessWidget {
                 IconButton(
                   onPressed: () {
                     if (duration < 120) {
-                      controller.updateSlotDuration(dayIndex, duration + 15);
+                      controller.updateSlotDuration(dayIndex, duration + 5);
                     }
                   },
                   icon: Icon(
@@ -476,6 +484,38 @@ class WorkingHoursPage extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildApplyToAllDaysButton(int dayIndex) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () {
+          controller.applyDayToAllDays(dayIndex);
+          Get.snackbar(
+            'تم التطبيق',
+            'تم تطبيق أوقات هذا اليوم على جميع الأيام',
+            backgroundColor: AppColors.primary,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 2),
+          );
+        },
+        icon: Icon(Icons.copy_all, size: 18.sp),
+        label: MyText(
+          'تطبيق على كل الأيام',
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w700,
+        ),
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: AppColors.primary),
+          foregroundColor: AppColors.primary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          padding: EdgeInsets.symmetric(vertical: 10.h),
+        ),
+      ),
     );
   }
 

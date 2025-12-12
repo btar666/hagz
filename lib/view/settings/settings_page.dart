@@ -193,18 +193,6 @@ class SettingsPage extends StatelessWidget {
                 },
               ),
               SizedBox(height: 16.h),
-              _buildSettingsItem(
-                icon: Icons.lock,
-                title: 'change_password'.tr,
-                color: AppColors.secondary,
-                onTap: () {
-                  Get.to(
-                    () => const ChangePasswordPage(),
-                    binding: ChangePasswordBinding(),
-                  );
-                },
-              ),
-              SizedBox(height: 16.h),
             ],
 
             if (isDelegate) ...[
