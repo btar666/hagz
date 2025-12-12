@@ -307,6 +307,13 @@ class ChatsPage extends StatelessWidget {
                 if (receiverId.isNotEmpty) {
                   ctrl.receiverId.value = receiverId;
                   ctrl.receiverName.value = name;
+                  // Set image if available
+                  if (userImageUrl != null && userImageUrl.isNotEmpty) {
+                    ctrl.receiverImage.value = userImageUrl;
+                  } else if (receiverId.isNotEmpty) {
+                    // Try to load image from API
+                    ctrl.loadReceiverImage(receiverId);
+                  }
                 }
 
                 // Load messages - this will extract receiver info from messages

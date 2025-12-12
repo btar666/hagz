@@ -28,7 +28,7 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
   @override
   void initState() {
     super.initState();
-    
+
     // Set receiverId and load doctor conversation if provided
     if (widget.receiverId != null && widget.receiverId!.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -90,7 +90,6 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: const Color(0xFFF4FEFF),
       appBar: AppBar(
@@ -98,13 +97,13 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
         elevation: 0,
         title: Obx(() {
           // Get receiver name or use widget.title as fallback
-          final displayName = ctrl.receiverName.value.isNotEmpty 
-              ? ctrl.receiverName.value 
+          final displayName = ctrl.receiverName.value.isNotEmpty
+              ? ctrl.receiverName.value
               : widget.title;
-          
+
           // Get connection status
           final isConnected = ctrl.isSocketConnected.value;
-          
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -113,7 +112,9 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
                 fontSize: 22.sp,
                 fontWeight: FontWeight.w900,
                 color: AppColors.textPrimary,
+                textAlign: TextAlign.center,
               ),
+              SizedBox(height: 4.h),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -121,8 +122,8 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
                     width: 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: isConnected 
-                          ? const Color(0xFF18A2AE) 
+                      color: isConnected
+                          ? const Color(0xFF18A2AE)
                           : Colors.grey,
                       shape: BoxShape.circle,
                     ),
@@ -131,9 +132,7 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
                   MyText(
                     isConnected ? 'متصل' : 'غير متصل',
                     fontSize: 14.sp,
-                    color: isConnected 
-                        ? AppColors.textSecondary 
-                        : Colors.grey,
+                    color: isConnected ? AppColors.textSecondary : Colors.grey,
                   ),
                 ],
               ),
@@ -145,6 +144,37 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
           onPressed: () => Get.back(),
           icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.primary),
         ),
+        actions: [
+          Obx(() {
+            // Get receiver image
+            final receiverImage = ctrl.receiverImage.value;
+
+            // Check if current user is a user (patient) to show doctor image
+            final currentRole = session.role.value;
+            final showImage = currentRole == 'user' && receiverImage.isNotEmpty;
+
+            if (!showImage) {
+              return const SizedBox.shrink();
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(right: 10.w, left: 10.w, top: 5.h),
+              child: CircleAvatar(
+                radius: 26.r,
+                backgroundColor: AppColors.primary.withOpacity(0.1),
+                backgroundImage: receiverImage.isNotEmpty
+                    ? NetworkImage(receiverImage)
+                    : null,
+                onBackgroundImageError: (exception, stackTrace) {
+                  print('Error loading image: $exception');
+                },
+                child: receiverImage.isEmpty
+                    ? Icon(Icons.person, size: 24.r, color: AppColors.primary)
+                    : null,
+              ),
+            );
+          }),
+        ],
       ),
       body: Column(
         children: [
@@ -182,7 +212,7 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
 
                   // Handle message display based on user role
                   final currentRole = session.role.value;
-                  
+
                   if (currentRole == 'secretary') {
                     // For secretary: show doctor and secretary messages on right, patient on left
                     if (isMe) {
@@ -212,13 +242,14 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
                             ?.toString()
                             .toLowerCase();
                       }
-                      
+
                       // If sender is secretary and current user is patient, show as doctor message (left)
                       if (senderRole == 'secretary' && currentRole == 'user') {
                         isMe = false; // Show on left (as doctor)
                       }
                       // If sender is secretary and current user is doctor, show as own message (right)
-                      else if (senderRole == 'secretary' && currentRole == 'doctor') {
+                      else if (senderRole == 'secretary' &&
+                          currentRole == 'doctor') {
                         isMe = true; // Show on right (as own team)
                       }
                     }
@@ -346,13 +377,19 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
                               if (picked != null) {
                                 final imageFile = File(picked.path);
                                 final text = _msgCtrl.text.trim();
-                                final ok = await ctrl.sendMessage(text, imageFile: imageFile);
+                                final ok = await ctrl.sendMessage(
+                                  text,
+                                  imageFile: imageFile,
+                                );
                                 if (ok) {
                                   _msgCtrl.clear();
                                   // Scroll to bottom after sending image
-                                  Future.delayed(const Duration(milliseconds: 300), () {
-                                    _scrollToBottom(force: true);
-                                  });
+                                  Future.delayed(
+                                    const Duration(milliseconds: 300),
+                                    () {
+                                      _scrollToBottom(force: true);
+                                    },
+                                  );
                                 } else {
                                   Get.snackbar(
                                     'فشل الإرسال',
@@ -422,7 +459,9 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment: isMe
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
           children: [
             // Image
             if (hasImage)
@@ -443,21 +482,29 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
                                       fit: BoxFit.contain,
                                     )
                                   : imageUrl != null
-                                      ? Image.network(
-                                          imageUrl,
-                                          fit: BoxFit.contain,
-                                          loadingBuilder: (context, child, loadingProgress) {
-                                            if (loadingProgress == null) return child;
+                                  ? Image.network(
+                                      imageUrl,
+                                      fit: BoxFit.contain,
+                                      loadingBuilder:
+                                          (context, child, loadingProgress) {
+                                            if (loadingProgress == null)
+                                              return child;
                                             return Center(
                                               child: CircularProgressIndicator(
-                                                value: loadingProgress.expectedTotalBytes != null
-                                                    ? loadingProgress.cumulativeBytesLoaded /
-                                                        loadingProgress.expectedTotalBytes!
+                                                value:
+                                                    loadingProgress
+                                                            .expectedTotalBytes !=
+                                                        null
+                                                    ? loadingProgress
+                                                              .cumulativeBytesLoaded /
+                                                          loadingProgress
+                                                              .expectedTotalBytes!
                                                     : null,
                                               ),
                                             );
                                           },
-                                          errorBuilder: (context, error, stackTrace) {
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
                                             return Container(
                                               padding: EdgeInsets.all(20.w),
                                               child: const Icon(
@@ -467,8 +514,8 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
                                               ),
                                             );
                                           },
-                                        )
-                                      : const SizedBox(),
+                                    )
+                                  : const SizedBox(),
                             ),
                           ),
                           Positioned(
@@ -492,12 +539,16 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
                     ),
                   );
                 },
-                  child: ClipRRect(
+                child: ClipRRect(
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(18.r),
                     topRight: Radius.circular(18.r),
-                    bottomLeft: hasText ? Radius.zero : Radius.circular(isMe ? 18.r : 4.r),
-                    bottomRight: hasText ? Radius.zero : Radius.circular(isMe ? 4.r : 18.r),
+                    bottomLeft: hasText
+                        ? Radius.zero
+                        : Radius.circular(isMe ? 18.r : 4.r),
+                    bottomRight: hasText
+                        ? Radius.zero
+                        : Radius.circular(isMe ? 4.r : 18.r),
                   ),
                   child: isLocalImage && imagePath != null
                       ? Image.file(
@@ -507,41 +558,42 @@ class _ChatDetailsPageState extends State<ChatDetailsPage> {
                           width: 200.w,
                         )
                       : imageUrl != null
-                          ? Image.network(
-                              imageUrl,
-                              fit: BoxFit.cover,
+                      ? Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          height: 200.h,
+                          width: 200.w,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
                               height: 200.h,
-                              width: 200.w,
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return Container(
-                                  height: 200.h,
-                                  color: Colors.grey[300],
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                      value: loadingProgress.expectedTotalBytes != null
-                                          ? loadingProgress.cumulativeBytesLoaded /
-                                              loadingProgress.expectedTotalBytes!
-                                          : null,
-                                    ),
-                                  ),
-                                );
-                              },
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  height: 200.h,
-                                  color: Colors.grey[300],
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.error_outline,
-                                      color: Colors.grey,
-                                      size: 48,
-                                    ),
-                                  ),
-                                );
-                              },
-                            )
-                          : const SizedBox(),
+                              color: Colors.grey[300],
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value:
+                                      loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                      : null,
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              height: 200.h,
+                              color: Colors.grey[300],
+                              child: const Center(
+                                child: Icon(
+                                  Icons.error_outline,
+                                  color: Colors.grey,
+                                  size: 48,
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : const SizedBox(),
                 ),
               ),
             // Text

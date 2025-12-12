@@ -246,6 +246,7 @@ class ChatController extends GetxController {
   // Current receiver (when opening chat from doctor profile)
   var receiverId = ''.obs;
   var receiverName = ''.obs;
+  var receiverImage = ''.obs;
   
   // Socket connection status
   var isSocketConnected = false.obs;
@@ -295,6 +296,7 @@ class ChatController extends GetxController {
         currentConversationId.value = '';
         receiverId.value = '';
         receiverName.value = '';
+        receiverImage.value = '';
         lastUserId.value = currentUserId;
       }
 
@@ -465,7 +467,25 @@ class ChatController extends GetxController {
 
     receiverId.value = doctorId;
     receiverName.value = doctorName;
+    receiverImage.value = ''; // Reset image
     isLoadingMessages.value = true;
+    
+    // Load doctor image
+    try {
+      final doctorRes = await _userService.getUserById(doctorId);
+      if (doctorRes['ok'] == true) {
+        final doctorData = doctorRes['data'];
+        final inner = (doctorData is Map<String, dynamic>)
+            ? (doctorData['data'] ?? doctorData)
+            : null;
+        if (inner is Map<String, dynamic>) {
+          final image = inner['image']?.toString() ?? '';
+          receiverImage.value = image;
+        }
+      }
+    } catch (e) {
+      print('Error loading doctor image: $e');
+    }
 
     try {
       final SessionController session = Get.find<SessionController>();
@@ -855,6 +875,8 @@ class ChatController extends GetxController {
       final receiverIdFromMsg = receiver['_id']?.toString() ?? '';
       final senderName = sender['name']?.toString() ?? '';
       final receiverNameFromMsg = receiver['name']?.toString() ?? '';
+      final senderImage = sender['image']?.toString() ?? '';
+      final receiverImageFromMsg = receiver['image']?.toString() ?? '';
 
       print('Sender ID: $senderId, Name: $senderName');
       print('Receiver ID: $receiverIdFromMsg, Name: $receiverNameFromMsg');
@@ -864,6 +886,7 @@ class ChatController extends GetxController {
         // Current user is sender, so set receiver as the receiverId
         receiverId.value = receiverIdFromMsg;
         receiverName.value = receiverNameFromMsg;
+        receiverImage.value = receiverImageFromMsg;
         print(
           'Set receiver as: ID=$receiverIdFromMsg, Name=$receiverNameFromMsg',
         );
@@ -871,13 +894,42 @@ class ChatController extends GetxController {
         // Current user is receiver, so set sender as the receiverId
         receiverId.value = senderId;
         receiverName.value = senderName;
+        receiverImage.value = senderImage;
         print('Set sender as: ID=$senderId, Name=$senderName');
+      }
+      
+      // If image is empty, try to load it from API
+      if (receiverImage.value.isEmpty && receiverId.value.isNotEmpty) {
+        loadReceiverImage(receiverId.value);
       }
     }
 
     print('Final receiverId: ${receiverId.value}');
     print('Final receiverName: ${receiverName.value}');
+    print('Final receiverImage: ${receiverImage.value}');
     print('=== DEBUG: Receiver extraction finished ===');
+  }
+
+  /// Load receiver image from API
+  Future<void> loadReceiverImage(String userId) async {
+    try {
+      final userRes = await _userService.getUserById(userId);
+      if (userRes['ok'] == true) {
+        final userData = userRes['data'];
+        final inner = (userData is Map<String, dynamic>)
+            ? (userData['data'] ?? userData)
+            : null;
+        if (inner is Map<String, dynamic>) {
+          final image = inner['image']?.toString() ?? '';
+          if (image.isNotEmpty) {
+            receiverImage.value = image;
+            print('✅ Loaded receiver image: $image');
+          }
+        }
+      }
+    } catch (e) {
+      print('❌ Error loading receiver image: $e');
+    }
   }
 
   /// Enrich conversations with participant names and images by loading first message of each
